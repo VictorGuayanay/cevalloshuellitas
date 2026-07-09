@@ -82,6 +82,146 @@ class NotificacionModel {
   bool get tieneSolicitante =>
       solicitanteId != null && solicitanteId!.isNotEmpty;
 
+  // ── Factory constructors por tipo de evento ────────────────────────────────
+
+  factory NotificacionModel.urgencia({
+    required String citaId,
+    required String propietarioNombre,
+    required String mascotaNombre,
+    required String sintomas,
+    String? fecha,
+    String? hora,
+  }) =>
+      NotificacionModel(
+        id: 'urgencia_$citaId',
+        tipo: TipoNotificacion.urgencia,
+        titulo: '🚨 Urgencia crítica',
+        cuerpo: '$propietarioNombre reporta urgencia de $mascotaNombre: $sintomas',
+        citaId: citaId,
+        mascotaNombre: mascotaNombre,
+        fecha: fecha,
+        hora: hora,
+      );
+
+  factory NotificacionModel.nuevaCita({
+    required String citaId,
+    required String propietarioNombre,
+    required String mascotaNombre,
+    String? fecha,
+    String? hora,
+  }) =>
+      NotificacionModel(
+        id: 'nueva_$citaId',
+        tipo: TipoNotificacion.nuevaCita,
+        titulo: 'Nueva solicitud de cita',
+        cuerpo: '$propietarioNombre solicita cita para $mascotaNombre',
+        citaId: citaId,
+        mascotaNombre: mascotaNombre,
+        fecha: fecha,
+        hora: hora,
+      );
+
+  factory NotificacionModel.citaConfirmada({
+    required String citaId,
+    required String mascotaNombre,
+    String? fecha,
+    String? hora,
+    bool esUrgencia = false,
+    String idPrefix = 'confirmada',
+  }) =>
+      NotificacionModel(
+        id: '${idPrefix}_$citaId',
+        tipo: TipoNotificacion.citaConfirmada,
+        titulo: esUrgencia ? '🚨 ¡Urgencia aceptada!' : '¡Cita confirmada! 🎉',
+        cuerpo: esUrgencia
+            ? 'El veterinario aceptó tu emergencia de $mascotaNombre. Está en camino.'
+            : 'Tu cita para $mascotaNombre el ${_formatFecha(fecha)} a las $hora fue confirmada.',
+        citaId: citaId,
+        mascotaNombre: mascotaNombre,
+        fecha: fecha,
+        hora: hora,
+      );
+
+  factory NotificacionModel.citaRechazada({
+    required String citaId,
+    required String mascotaNombre,
+    String? fecha,
+    String? hora,
+    bool esUrgencia = false,
+    String idPrefix = 'rechazada',
+  }) =>
+      NotificacionModel(
+        id: '${idPrefix}_$citaId',
+        tipo: TipoNotificacion.citaRechazada,
+        titulo: esUrgencia ? '❌ Urgencia rechazada' : 'Cita rechazada',
+        cuerpo: esUrgencia
+            ? 'El veterinario no puede atender la emergencia de $mascotaNombre. Intenta con otro veterinario.'
+            : 'Tu cita para $mascotaNombre el ${_formatFecha(fecha)} no pudo ser agendada.',
+        citaId: citaId,
+        mascotaNombre: mascotaNombre,
+        fecha: fecha,
+        hora: hora,
+      );
+
+  factory NotificacionModel.citaPendiente({
+    required String citaId,
+    required String mascotaNombre,
+    String? fecha,
+    String? hora,
+  }) =>
+      NotificacionModel(
+        id: 'pendiente_$citaId',
+        tipo: TipoNotificacion.citaPendiente,
+        titulo: 'Cita en espera ⏳',
+        cuerpo: 'Tu cita para $mascotaNombre el ${_formatFecha(fecha)} a las $hora está pendiente de confirmación.',
+        citaId: citaId,
+        mascotaNombre: mascotaNombre,
+        fecha: fecha,
+        hora: hora,
+      );
+
+  factory NotificacionModel.recordatorio30min({
+    required String citaId,
+    required String mascotaNombre,
+    required String prefixRol,
+    String? fecha,
+    String? hora,
+  }) =>
+      NotificacionModel(
+        id: 'recuerdo30_$citaId',
+        tipo: TipoNotificacion.recordatorio30min,
+        titulo: '⏰ Cita en 30 minutos',
+        cuerpo: '$prefixRol $mascotaNombre tiene cita a las $hora.',
+        citaId: citaId,
+        mascotaNombre: mascotaNombre,
+        fecha: fecha,
+        hora: hora,
+      );
+
+  factory NotificacionModel.recordatorioAhora({
+    required String citaId,
+    required String mascotaNombre,
+    required String prefixRol,
+    String? fecha,
+    String? hora,
+  }) =>
+      NotificacionModel(
+        id: 'recuerdoAhora_$citaId',
+        tipo: TipoNotificacion.recordatorioAhora,
+        titulo: '🔔 ¡Es la hora de la cita!',
+        cuerpo: '$prefixRol $mascotaNombre — cita comenzando ahora ($hora).',
+        citaId: citaId,
+        mascotaNombre: mascotaNombre,
+        fecha: fecha,
+        hora: hora,
+      );
+
+  /// Formatea 'yyyy-MM-dd' → 'dd/MM/yyyy'. Retorna la cadena original si falla.
+  static String _formatFecha(String? fecha) {
+    if (fecha == null) return '';
+    return fecha.split('-').reversed.join('/');
+  }
+
   /// Tiempo relativo legible
   String get tiempoRelativo {
     final diff = DateTime.now().difference(creadaEn);

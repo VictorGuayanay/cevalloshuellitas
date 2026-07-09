@@ -7,6 +7,7 @@ import '../../../data/models/servicio_model.dart';
 import '../../../domain/controllers/auth_controller.dart';
 import '../../../domain/controllers/cita_controller.dart';
 import '../../../domain/controllers/mascota_controller.dart';
+import '../../../presentation/widgets/common_widgets.dart';
 
 class AgendarCitaScreen extends StatefulWidget {
   final VeterinarioServicioModel vsm;
@@ -42,6 +43,10 @@ class _AgendarCitaScreenState extends State<AgendarCitaScreen> {
   String? _fechaSeleccionada;
   String? _horaSeleccionada;
 
+  // ── Horarios ocupados del veterinario ──
+  Set<String> _horasOcupadas = {};
+  bool _cargandoHorarios = false;
+
   // ── Motivo ──
   final _motivoCtrl = TextEditingController();
 
@@ -69,6 +74,28 @@ class _AgendarCitaScreenState extends State<AgendarCitaScreen> {
     _edadCtrl.dispose();
     _motivoCtrl.dispose();
     super.dispose();
+  }
+
+  /// Consulta Supabase por los horarios ya ocupados para el vet en la fecha elegida.
+  Future<void> _cargarHorasOcupadas(String fecha) async {
+    final veteId = widget.vsm.veteId;
+    if (veteId.isEmpty) return;
+    setState(() => _cargandoHorarios = true);
+    try {
+      final ocupadas = await context
+          .read<CitaController>()
+          .obtenerHorasOcupadas(veteId: veteId, fecha: fecha);
+      if (!mounted) return;
+      setState(() {
+        _horasOcupadas = ocupadas;
+        // Si la hora seleccionada quedó ocupada, limpiarla
+        if (_horaSeleccionada != null && _horasOcupadas.contains(_horaSeleccionada)) {
+          _horaSeleccionada = null;
+        }
+      });
+    } finally {
+      if (mounted) setState(() => _cargandoHorarios = false);
+    }
   }
 
   bool get _paso0Valido {
@@ -289,7 +316,7 @@ class _AgendarCitaScreenState extends State<AgendarCitaScreen> {
           controller: _motivoCtrl,
           maxLines: 3,
           style: GoogleFonts.poppins(fontSize: 13),
-          decoration: _inputDeco('Describe el motivo (opcional)', Icons.notes_rounded),
+          decoration: appInputDeco('Describe el motivo (opcional)', Icons.notes_rounded),
         ),
       ]),
     );
@@ -408,23 +435,27 @@ class _AgendarCitaScreenState extends State<AgendarCitaScreen> {
               ),
             );
             if (fecha != null) {
+              final nuevaFecha =
+                  '${fecha.year}-${fecha.month.toString().padLeft(2, '0')}-${fecha.day.toString().padLeft(2, '0')}';
               setState(() {
-                _fechaSeleccionada =
-                    '${fecha.year}-${fecha.month.toString().padLeft(2, '0')}-${fecha.day.toString().padLeft(2, '0')}';
+                _fechaSeleccionada = nuevaFecha;
+                // Limpiar hora si ya es pasada en el día de hoy
                 if (_horaSeleccionada != null) {
                   final ahora = DateTime.now();
-                  final hoyStr = '${ahora.year}-${ahora.month.toString().padLeft(2, '0')}-${ahora.day.toString().padLeft(2, '0')}';
+                  final hoyStr =
+                      '${ahora.year}-${ahora.month.toString().padLeft(2, '0')}-${ahora.day.toString().padLeft(2, '0')}';
                   if (_fechaSeleccionada == hoyStr) {
                     final parts = _horaSeleccionada!.split(':');
                     final hourInt = int.parse(parts[0]);
                     final minInt = int.parse(parts[1]);
-                    final timeVal = DateTime(ahora.year, ahora.month, ahora.day, hourInt, minInt);
-                    if (timeVal.isBefore(ahora)) {
-                      _horaSeleccionada = null;
-                    }
+                    final timeVal = DateTime(
+                        ahora.year, ahora.month, ahora.day, hourInt, minInt);
+                    if (timeVal.isBefore(ahora)) _horaSeleccionada = null;
                   }
                 }
               });
+              // Cargar horarios ocupados para la nueva fecha
+              _cargarHorasOcupadas(nuevaFecha);
             }
           },
           child: Container(
@@ -461,51 +492,121 @@ class _AgendarCitaScreenState extends State<AgendarCitaScreen> {
           ),
         ),
         const SizedBox(height: 24),
-        _sectionTitle('Selecciona un horario', Icons.access_time_rounded),
+        // Título horarios + indicador de carga
+        Row(children: [
+          Container(
+            padding: const EdgeInsets.all(7),
+            decoration: BoxDecoration(
+                color: const Color(0xFFE8F6F8),
+                borderRadius: BorderRadius.circular(10)),
+            child: const Icon(Icons.access_time_rounded,
+                color: Color(0xFF5BBFBF), size: 18),
+          ),
+          const SizedBox(width: 10),
+          Text('Selecciona un horario',
+              style: GoogleFonts.poppins(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF1A1A2E))),
+          const Spacer(),
+          if (_cargandoHorarios)
+            const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(
+                  strokeWidth: 2, color: Color(0xFF5BBFBF)),
+            ),
+        ]),
+        // Leyenda ocupado/disponible (solo cuando ya hay fecha)
+        if (_fechaSeleccionada != null && !_cargandoHorarios) ...[
+          const SizedBox(height: 8),
+          Row(children: [
+            Container(
+              width: 10, height: 10,
+              decoration: BoxDecoration(
+                  color: Colors.grey.shade300, shape: BoxShape.circle),
+            ),
+            const SizedBox(width: 5),
+            Text('Ocupado',
+                style: GoogleFonts.poppins(
+                    fontSize: 10, color: Colors.grey.shade500)),
+            const SizedBox(width: 14),
+            Container(
+              width: 10, height: 10,
+              decoration: const BoxDecoration(
+                  color: Color(0xFF5BBFBF), shape: BoxShape.circle),
+            ),
+            const SizedBox(width: 5),
+            Text('Disponible',
+                style: GoogleFonts.poppins(
+                    fontSize: 10, color: Colors.grey.shade500)),
+          ]),
+        ],
         const SizedBox(height: 12),
         Wrap(
           spacing: 8, runSpacing: 8,
           children: _horas.map((h) {
             final ahora = DateTime.now();
-            final hoyStr = '${ahora.year}-${ahora.month.toString().padLeft(2, '0')}-${ahora.day.toString().padLeft(2, '0')}';
+            final hoyStr =
+                '${ahora.year}-${ahora.month.toString().padLeft(2, '0')}-${ahora.day.toString().padLeft(2, '0')}';
+
+            // Hora pasada (solo si la fecha es hoy)
             bool esPasado = false;
             if (_fechaSeleccionada == hoyStr) {
               final parts = h.split(':');
-              final hourInt = int.parse(parts[0]);
-              final minInt = int.parse(parts[1]);
-              final timeVal = DateTime(ahora.year, ahora.month, ahora.day, hourInt, minInt);
-              if (timeVal.isBefore(ahora)) {
-                esPasado = true;
-              }
+              final timeVal = DateTime(ahora.year, ahora.month, ahora.day,
+                  int.parse(parts[0]), int.parse(parts[1]));
+              if (timeVal.isBefore(ahora)) esPasado = true;
             }
 
-            final sel = _horaSeleccionada == h && !esPasado;
+            // Hora ocupada por cita existente del veterinario
+            final estaOcupado = _horasOcupadas.contains(h);
+            final deshabilitado = esPasado || estaOcupado;
+            final sel = _horaSeleccionada == h && !deshabilitado;
+
             return GestureDetector(
-              onTap: esPasado ? null : () => setState(() => _horaSeleccionada = h),
+              onTap: deshabilitado
+                  ? null
+                  : () => setState(() => _horaSeleccionada = h),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 150),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
                 decoration: BoxDecoration(
-                  color: esPasado
-                      ? Colors.grey.shade200
+                  color: deshabilitado
+                      ? Colors.grey.shade100
                       : (sel ? color : Colors.white),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                      color: esPasado
-                          ? Colors.grey.shade300
-                          : (sel ? color : Colors.grey.shade200),
-                      width: sel ? 0 : 1.2),
-                  boxShadow: (sel && !esPasado) ? [BoxShadow(
-                      color: color.withValues(alpha: 0.3),
-                      blurRadius: 8, offset: const Offset(0, 3))] : [],
+                    color: deshabilitado
+                        ? Colors.grey.shade200
+                        : (sel ? color : Colors.grey.shade200),
+                    width: sel ? 0 : 1.2,
+                  ),
+                  boxShadow: (sel && !deshabilitado)
+                      ? [BoxShadow(
+                          color: color.withValues(alpha: 0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3))]
+                      : [],
                 ),
-                child: Text(h,
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  if (estaOcupado)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 5),
+                      child: Icon(Icons.lock_rounded,
+                          size: 11, color: Colors.grey.shade400),
+                    ),
+                  Text(
+                    h,
                     style: GoogleFonts.poppins(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: esPasado
-                            ? Colors.grey.shade400
-                            : (sel ? Colors.white : Colors.grey.shade600))),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: deshabilitado
+                          ? Colors.grey.shade400
+                          : (sel ? Colors.white : Colors.grey.shade700),
+                    ),
+                  ),
+                ]),
               ),
             );
           }).toList(),
@@ -587,55 +688,10 @@ class _AgendarCitaScreenState extends State<AgendarCitaScreen> {
   }
 
   Widget _resumenCard({required IconData icon, required Color color,
-      required String titulo, required List<Widget> items}) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: color.withValues(alpha: 0.2), width: 1.5),
-        boxShadow: [BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8, offset: const Offset(0, 3))],
-      ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Container(
-            padding: const EdgeInsets.all(7),
-            decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(10)),
-            child: Icon(icon, color: color, size: 18),
-          ),
-          const SizedBox(width: 10),
-          Text(titulo, style: GoogleFonts.poppins(
-              fontSize: 14, fontWeight: FontWeight.w700,
-              color: const Color(0xFF1A1A2E))),
-        ]),
-        const SizedBox(height: 10),
-        const Divider(height: 1, color: Color(0xFFF0F0F0)),
-        const SizedBox(height: 8),
-        ...items,
-      ]),
-    );
-  }
+      required String titulo, required List<Widget> items}) =>
+      ResumenCard(icon: icon, color: color, titulo: titulo, items: items);
 
-  Widget _resumenRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
-      child: Row(children: [
-        SizedBox(
-          width: 100,
-          child: Text(label, style: GoogleFonts.poppins(
-              fontSize: 12, color: Colors.grey.shade500)),
-        ),
-        Expanded(child: Text(value, style: GoogleFonts.poppins(
-            fontSize: 13, fontWeight: FontWeight.w600,
-            color: const Color(0xFF1A1A2E)))),
-      ]),
-    );
-  }
+  Widget _resumenRow(String label, String value) => ResumenRow(label, value);
 
   // ── Confirmar y guardar ──────────────────────────────────────────────────
   Future<void> _confirmarCita() async {
@@ -690,21 +746,9 @@ class _AgendarCitaScreenState extends State<AgendarCitaScreen> {
   }
 
   // ── Helpers de UI ────────────────────────────────────────────────────────
-  Widget _sectionTitle(String t, IconData icon) {
-    return Row(children: [
-      Container(
-        padding: const EdgeInsets.all(7),
-        decoration: BoxDecoration(
-            color: const Color(0xFFE8F6F8),
-            borderRadius: BorderRadius.circular(10)),
-        child: Icon(icon, color: const Color(0xFF5BBFBF), size: 18),
-      ),
-      const SizedBox(width: 10),
-      Text(t, style: GoogleFonts.poppins(
-          fontSize: 15, fontWeight: FontWeight.w700,
-          color: const Color(0xFF1A1A2E))),
-    ]);
-  }
+  Widget _sectionTitle(String t, IconData icon) => SectionTitle(t, icon);
+
+
 
   Widget _field(String label, TextEditingController ctrl, IconData icon,
       {TextInputType? keyboard}) {
@@ -713,26 +757,7 @@ class _AgendarCitaScreenState extends State<AgendarCitaScreen> {
       keyboardType: keyboard,
       onChanged: (_) => setState(() {}),
       style: GoogleFonts.poppins(fontSize: 13, color: const Color(0xFF2D2D2D)),
-      decoration: _inputDeco(label, icon),
-    );
-  }
-
-  InputDecoration _inputDeco(String label, IconData icon) {
-    return InputDecoration(
-      labelText: label,
-      labelStyle: GoogleFonts.poppins(color: Colors.grey.shade500, fontSize: 12),
-      prefixIcon: Icon(icon, color: const Color(0xFF5BBFBF), size: 18),
-      filled: true,
-      fillColor: Colors.white,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
-      enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Color(0xFFDDEEF0), width: 1.2)),
-      focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Color(0xFF5BBFBF), width: 2)),
+      decoration: appInputDeco(label, icon),
     );
   }
 }

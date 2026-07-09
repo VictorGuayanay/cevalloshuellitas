@@ -8,9 +8,12 @@ import '../../../domain/controllers/auth_controller.dart';
 import '../../../domain/controllers/cita_controller.dart';
 import '../../../domain/controllers/mascota_controller.dart';
 import '../../../domain/controllers/solicitud_adopcion_controller.dart';
+import '../../../domain/controllers/noticia_controller.dart';
 import '../../../data/models/mascota_model.dart';
+import '../../../data/models/noticia_model.dart';
 import '../../../presentation/widgets/notificaciones_sheet.dart';
 import '../../../presentation/widgets/safe_network_image.dart';
+import '../../../presentation/widgets/header_wave_clipper.dart';
 
 // Constante de color naranja para adopciones
 const _adoptOrange = Color(0xFFE58D57);
@@ -48,7 +51,8 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
-      context.read<MascotaController>().cargarMascotasAdopcion();
+      context.read<MascotaController>().cargarMascotasPerdidas();
+      context.read<NoticiaController>().cargarNoticias();
       final uid = context.read<AuthController>().currentUser?.id;
       if (uid != null) {
         final solicCtrl = context.read<SolicitudAdopcionController>();
@@ -420,6 +424,150 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // ── Contactar dueño de mascota perdida ────────────────────────────────────
+  void _mostrarContactoDuenio(BuildContext context, MascotaModel mascota) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFEBEE),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(Icons.location_off_rounded,
+                color: Color(0xFFE53935), size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Mascota perdida',
+              style: GoogleFonts.poppins(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
+                  color: _dark),
+            ),
+          ),
+        ]),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Foto + nombre
+            Row(children: [
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF3F9FA),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: SafeNetworkImage(
+                  url: mascota.fotoUrl,
+                  borderRadius: BorderRadius.circular(12),
+                  fallbackIcon: Icons.pets_rounded,
+                  fallbackColor: _teal,
+                  fallbackIconSize: 26,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                  Text(mascota.nombre,
+                      style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                          color: _dark)),
+                  Text('${mascota.especie} · ${mascota.raza}',
+                      style: GoogleFonts.poppins(
+                          fontSize: 12, color: Colors.grey.shade500)),
+                ]),
+              ),
+            ]),
+            if (mascota.descripcion != null &&
+                mascota.descripcion!.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF3F3),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                      color: const Color(0xFFFFCDD2), width: 1),
+                ),
+                child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                  const Icon(Icons.info_outline_rounded,
+                      color: Color(0xFFE53935), size: 16),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      mascota.descripcion!,
+                      style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: const Color(0xFFE53935),
+                          height: 1.4),
+                    ),
+                  ),
+                ]),
+              ),
+            ],
+            const SizedBox(height: 12),
+            // Datos de contacto del dueño
+            if (mascota.propietarioNombre != null) ...[
+              Text('Dueño:',
+                  style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: _grey,
+                      fontWeight: FontWeight.w600)),
+              const SizedBox(height: 4),
+              Row(children: [
+                const Icon(Icons.person_rounded, color: _teal, size: 16),
+                const SizedBox(width: 6),
+                Text(mascota.propietarioNombre!,
+                    style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        color: _dark,
+                        fontWeight: FontWeight.w600)),
+              ]),
+            ],
+            if (mascota.propietarioTelefono != null) ...[
+              const SizedBox(height: 6),
+              Row(children: [
+                const Icon(Icons.phone_rounded, color: _teal, size: 16),
+                const SizedBox(width: 6),
+                Text(mascota.propietarioTelefono!,
+                    style: GoogleFonts.poppins(
+                        fontSize: 13, color: _dark)),
+              ]),
+            ],
+            if (mascota.propietarioNombre == null &&
+                mascota.propietarioTelefono == null)
+              Text(
+                'No hay datos de contacto disponibles.',
+                style: GoogleFonts.poppins(
+                    fontSize: 12, color: _grey),
+              ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cerrar',
+                style: GoogleFonts.poppins(
+                    color: _teal, fontWeight: FontWeight.w600)),
+          ),
+        ],
+      ),
+    );
+  }
+
   // ── Confirmar y enviar solicitud de adopción ──────────────────────────────
   void _confirmarAdopcion(BuildContext context, MascotaModel mascota) {
     final uid = context.read<AuthController>().currentUser?.id;
@@ -610,7 +758,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final ctrl = context.watch<MascotaController>();
-    final mascotas = ctrl.mascotasAdopcion;
+    final mascotas = ctrl.mascotasPerdidas;
 
     return Scaffold(
       backgroundColor: _bg,
@@ -660,7 +808,7 @@ class _HomeScreenState extends State<HomeScreen> {
           // ── Cabecera celeste con curva exacta ──
           SliverToBoxAdapter(
             child: ClipPath(
-              clipper: _HeaderWaveClipper(),
+              clipper: HeaderWaveClipper(),
               child: Container(
                 height: 250,
                 color: _headerBg,
@@ -859,7 +1007,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
 
-          // ── Sección Mascotas Destacadas ──
+          // ── Sección Mascotas Perdidas ──
           SliverToBoxAdapter(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -867,19 +1015,26 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 24),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Text(
-                    'Mascotas Destacadas',
-                    style: GoogleFonts.poppins(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      color: _dark,
-                    ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.location_off_rounded,
+                          color: Color(0xFFE53935), size: 22),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Mascotas Perdidas',
+                        style: GoogleFonts.poppins(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          color: _dark,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 16),
                 SizedBox(
                   height: 236,
-                  child: ctrl.isLoadingAdopciones
+                  child: ctrl.isLoadingPerdidas
                       ? const Center(
                           child: CircularProgressIndicator(color: _teal))
                       : mascotas.isEmpty
@@ -892,7 +1047,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       color: Colors.grey.shade300),
                                   const SizedBox(height: 8),
                                   Text(
-                                    'No hay mascotas destacadas.',
+                                    'No hay mascotas perdidas reportadas.',
                                     style: GoogleFonts.poppins(
                                       color: Colors.grey.shade400,
                                       fontSize: 13,
@@ -913,48 +1068,216 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 const SizedBox(height: 28),
 
-                // ── Botón ¡Adopta Hoy! ──
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: GestureDetector(
-                    onTap: () => Navigator.pushNamed(context, '/adopciones'),
-                    child: Container(
-                      width: double.infinity,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        color: _orange,
-                        borderRadius: BorderRadius.circular(18),
-                        boxShadow: [
-                          BoxShadow(
-                            color: _orange.withValues(alpha: 0.35),
-                            blurRadius: 16,
-                            offset: const Offset(0, 6),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            '¡Adopta Hoy!',
-                            style: GoogleFonts.poppins(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          const Icon(
-                            Icons.volunteer_activism_rounded,
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                        ],
-                      ),
+                // ── Sección Noticias ──
+                _buildSeccionNoticias(),
+
+                const SizedBox(height: 100),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Sección Noticias ────────────────────────────────────────────────────────
+  Widget _buildSeccionNoticias() {
+    return Consumer<NoticiaController>(
+      builder: (ctx, ctrl, _) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Encabezado
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: _teal.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.newspaper_rounded,
+                        color: _teal, size: 20),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    'Noticias',
+                    style: GoogleFonts.poppins(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: _dark,
                     ),
                   ),
+                  const Spacer(),
+                  if (ctrl.isLoading)
+                    const SizedBox(
+                      width: 16, height: 16,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: _teal),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Publicadas por el equipo de Huellitas',
+                style: GoogleFonts.poppins(fontSize: 12, color: _grey),
+              ),
+              const SizedBox(height: 16),
+
+              // Estado vacío
+              if (!ctrl.isLoading && ctrl.noticias.isEmpty)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 32),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(18),
+                    boxShadow: [BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 10, offset: const Offset(0, 4))],
+                  ),
+                  child: Column(children: [
+                    Icon(Icons.newspaper_rounded,
+                        size: 40, color: Colors.grey.shade300),
+                    const SizedBox(height: 8),
+                    Text('No hay noticias publicadas aún',
+                        style: GoogleFonts.poppins(
+                            fontSize: 13, color: Colors.grey.shade400)),
+                  ]),
+                )
+              else
+                ...ctrl.noticias.map((n) => _noticiaCard(n)),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _noticiaCard(NoticiaModel noticia) {
+    // Color por categoría
+    final colores = {
+      'salud':     const Color(0xFF4A9B7F),
+      'perdidos':  const Color(0xFFE53935),
+      'adopcion':  const Color(0xFFE58D57),
+      'nutricion': const Color(0xFFE58D57),
+      'bienestar': const Color(0xFF7C6FCD),
+      'prevencion':const Color(0xFF5BBFBF),
+      'emergencias': const Color(0xFFE53935),
+    };
+    final color = colores[noticia.categoria.toLowerCase()] ?? _teal;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [BoxShadow(
+          color: color.withValues(alpha: 0.07),
+          blurRadius: 12, offset: const Offset(0, 4),
+        )],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Imagen si existe
+          if (noticia.imagenUrl != null && noticia.imagenUrl!.isNotEmpty)
+            ClipRRect(
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(18)),
+              child: Image.network(
+                noticia.imagenUrl!,
+                height: 160,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+              ),
+            ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Ícono categoría
+                Container(
+                  width: 44, height: 44,
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(Icons.newspaper_rounded,
+                      color: color, size: 22),
                 ),
-                const SizedBox(height: 100),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Badge categoría + tiempo
+                      Row(children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: color.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            noticia.categoria,
+                            style: GoogleFonts.poppins(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: color,
+                            ),
+                          ),
+                        ),
+                        const Spacer(),
+                        Text(
+                          noticia.tiempoRelativo,
+                          style: GoogleFonts.poppins(
+                              fontSize: 10, color: _grey),
+                        ),
+                      ]),
+                      const SizedBox(height: 6),
+                      Text(
+                        noticia.titulo,
+                        style: GoogleFonts.poppins(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: _dark,
+                          height: 1.3,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        noticia.contenido,
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.poppins(
+                          fontSize: 11,
+                          color: _grey,
+                          height: 1.4,
+                        ),
+                      ),
+                      // Autor si existe
+                      if (noticia.autorNombre != null) ...[
+                        const SizedBox(height: 6),
+                        Row(children: [
+                          const Icon(Icons.person_outline_rounded,
+                              size: 12, color: _grey),
+                          const SizedBox(width: 4),
+                          Text(
+                            noticia.autorNombre!,
+                            style: GoogleFonts.poppins(
+                                fontSize: 10, color: _grey),
+                          ),
+                        ]),
+                      ],
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
@@ -1055,21 +1378,54 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Expanded(
             flex: 6,
-            child: Container(
-              width: double.infinity,
-              margin: const EdgeInsets.fromLTRB(10, 10, 10, 0),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF3F9FA),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: SafeNetworkImage(
-                url: mascota.fotoUrl,
-                borderRadius: BorderRadius.circular(16),
-                fallbackIcon: Icons.pets_rounded,
-                fallbackColor: _teal,
-                fallbackIconSize: 48,
-                width: double.infinity,
-              ),
+            child: Stack(
+              children: [
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.fromLTRB(10, 10, 10, 0),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF3F9FA),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: SafeNetworkImage(
+                    url: mascota.fotoUrl,
+                    borderRadius: BorderRadius.circular(16),
+                    fallbackIcon: Icons.pets_rounded,
+                    fallbackColor: _teal,
+                    fallbackIconSize: 48,
+                    width: double.infinity,
+                  ),
+                ),
+                // Badge "Perdido" en la esquina superior derecha
+                Positioned(
+                  top: 14,
+                  right: 14,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 6, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE53935),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.location_off_rounded,
+                            color: Colors.white, size: 9),
+                        const SizedBox(width: 3),
+                        Text(
+                          'Perdido',
+                          style: GoogleFonts.poppins(
+                            fontSize: 8,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           Expanded(
@@ -1089,56 +1445,26 @@ class _HomeScreenState extends State<HomeScreen> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  Row(
-                    children: [
-                      // Ver Perfil
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () => _showPerfil(context, mascota),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 6),
-                            decoration: BoxDecoration(
-                              color: _teal,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Center(
-                              child: Text(
-                                'Perfil',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
+                  GestureDetector(
+                    onTap: () => _showPerfil(context, mascota),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      decoration: BoxDecoration(
+                        color: _teal,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Center(
+                        child: Text(
+                          'Ver Perfil',
+                          style: GoogleFonts.poppins(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
                           ),
                         ),
                       ),
-                      const SizedBox(width: 6),
-                      // Adoptar
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () => _confirmarAdopcion(context, mascota),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 6),
-                            decoration: BoxDecoration(
-                              color: _orange,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Center(
-                              child: Text(
-                                'Adoptar',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ],
               ),
@@ -1164,12 +1490,18 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             _navBtn(Icons.home_rounded, 0, onTap: () {}),
             _navBtn(Icons.map_outlined, 1,
-                onTap: () => Navigator.pushNamed(context, '/mapa_veterinarios')),
+                onTap: () async {
+                  await Navigator.pushNamed(context, '/mapa_veterinarios');
+                  setState(() => _selectedIndex = 0);
+                }),
             const SizedBox(width: 48), // Espacio para el FAB central
             _navBtn(Icons.store_rounded, 2,
                 onTap: () => _showProximamenteSheet(context)),
             _navBtn(Icons.person_outline_rounded, 3,
-                onTap: () => Navigator.pushNamed(context, '/perfil')),
+                onTap: () async {
+                  await Navigator.pushNamed(context, '/perfil');
+                  setState(() => _selectedIndex = 0);
+                }),
           ],
         ),
       ),
@@ -1195,28 +1527,6 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-}
-
-// ── Cortador de cabecera en onda convexa ──────────────────────────────────────
-class _HeaderWaveClipper extends CustomClipper<Path> {
-  @override
-  Path getClip(Size size) {
-    final path = Path();
-    path.lineTo(0, size.height - 40);
-    // Dibuja una curva de bezier cuadrática que baja en el centro
-    path.quadraticBezierTo(
-      size.width / 2,
-      size.height + 15,
-      size.width,
-      size.height - 40,
-    );
-    path.lineTo(size.width, 0);
-    path.close();
-    return path;
-  }
-
-  @override
-  bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
 }
 
 // ── Dialog: Perfil de mascota con datos del dueño real (desde Supabase) ──────
@@ -1270,7 +1580,6 @@ class _PerfilMascotaDialogState extends State<_PerfilMascotaDialog> {
     final mascota = widget.mascota;
     return Consumer<MascotaController>(
       builder: (ctx, ctrl, _) {
-        final esFav = ctrl.esFavorito(mascota.id);
         return Dialog(
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
@@ -1279,7 +1588,7 @@ class _PerfilMascotaDialogState extends State<_PerfilMascotaDialog> {
             child: Padding(
               padding: const EdgeInsets.all(20),
               child: Column(mainAxisSize: MainAxisSize.min, children: [
-                // Foto con botón de favorito
+                // Foto
                 Stack(children: [
                   Container(
                     width: 140,
@@ -1294,35 +1603,6 @@ class _PerfilMascotaDialogState extends State<_PerfilMascotaDialog> {
                       fallbackIcon: Icons.pets_rounded,
                       fallbackColor: _teal,
                       fallbackIconSize: 80,
-                    ),
-                  ),
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: GestureDetector(
-                      onTap: () => ctrl.toggleFavorito(mascota.id),
-                      child: Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: _white,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.12),
-                              blurRadius: 6,
-                            ),
-                          ],
-                        ),
-                        child: Icon(
-                          esFav
-                              ? Icons.favorite_rounded
-                              : Icons.favorite_border_rounded,
-                          color: esFav
-                              ? const Color(0xFFE53935)
-                              : Colors.grey.shade400,
-                          size: 20,
-                        ),
-                      ),
                     ),
                   ),
                 ]),
@@ -1473,61 +1753,24 @@ class _PerfilMascotaDialogState extends State<_PerfilMascotaDialog> {
                           ]),
                 ),
                 const SizedBox(height: 18),
-                // ── Botones: Adoptar + Cerrar ──────────────────────────
-                Row(children: [
-                  // Botón Adoptar
-                  Expanded(
-                    child: Consumer<SolicitudAdopcionController>(
-                      builder: (ctx, solicCtrl, _) => ElevatedButton.icon(
-                        onPressed: solicCtrl.isLoading
-                            ? null
-                            : () {
-                                Navigator.pop(context);
-                                // Obtener uid del usuario actual
-                                final uid = ctx
-                                    .read<AuthController>()
-                                    .currentUser
-                                    ?.id;
-                                if (uid == null) return;
-                                // Reusar el diálogo de confirmación del HomeScreen
-                                // buscando el ancestro correcto del context
-                                _mostrarDialogoAdopcion(ctx, mascota, uid);
-                              },
-                        icon: const Icon(Icons.volunteer_activism_rounded,
-                            size: 16),
-                        label: Text('Adoptar',
-                            style: GoogleFonts.poppins(
-                                fontWeight: FontWeight.w700, fontSize: 14)),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _orange,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14)),
-                          padding: const EdgeInsets.symmetric(vertical: 13),
-                        ),
-                      ),
+                // ── Botón: Cerrar ──────────────────────────────────────
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: _teal,
+                      side: BorderSide(
+                          color: _teal.withValues(alpha: 0.4), width: 1.5),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14)),
+                      padding: const EdgeInsets.symmetric(vertical: 13),
                     ),
+                    child: Text('Cerrar',
+                        style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.w600, fontSize: 14)),
                   ),
-                  const SizedBox(width: 10),
-                  // Botón Cerrar
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: _teal,
-                        side: BorderSide(
-                            color: _teal.withValues(alpha: 0.4), width: 1.5),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14)),
-                        padding: const EdgeInsets.symmetric(vertical: 13),
-                      ),
-                      child: Text('Cerrar',
-                          style: GoogleFonts.poppins(
-                              fontWeight: FontWeight.w600, fontSize: 14)),
-                    ),
-                  ),
-                ]),
+                ),
               ]),
             ),
           ),
@@ -1662,6 +1905,7 @@ class _AddMascotaSheetState extends State<_AddMascotaSheet> {
   String _especie = 'Perro';
   String _genero = 'Macho';
   String _estado = 'propio';
+  bool _menorDeUnAnio = false;
   File? _imagenFisica;
   final _picker = ImagePicker();
 
@@ -1698,23 +1942,35 @@ class _AddMascotaSheetState extends State<_AddMascotaSheet> {
     if (uid == null) return;
 
     if (_nombreCtrl.text.trim().isEmpty ||
-        _razaCtrl.text.trim().isEmpty ||
-        _edadCtrl.text.trim().isEmpty) {
+        _razaCtrl.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Nombre, raza y edad son obligatorios.')),
+        const SnackBar(content: Text('Nombre y raza son obligatorios.')),
       );
       return;
     }
 
-    final edadVal = int.tryParse(_edadCtrl.text.trim());
-    if (edadVal == null || edadVal < 0 || edadVal > 100) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('La edad debe ser un número entre 0 y 100.'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
-      return;
+    // Calcular edad
+    final String edadFinal;
+    if (_menorDeUnAnio) {
+      edadFinal = 'Menor de 1 año';
+    } else {
+      if (_edadCtrl.text.trim().isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Ingresa la edad de la mascota.')),
+        );
+        return;
+      }
+      final edadVal = int.tryParse(_edadCtrl.text.trim());
+      if (edadVal == null || edadVal < 1 || edadVal > 100) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('La edad debe ser un número entre 1 y 100.'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+        return;
+      }
+      edadFinal = _edadCtrl.text.trim();
     }
 
     String? fotoUrl;
@@ -1738,9 +1994,9 @@ class _AddMascotaSheetState extends State<_AddMascotaSheet> {
       especie: _especie,
       raza: _razaCtrl.text.trim(),
       genero: _genero,
-      edad: _edadCtrl.text.trim(),
+      edad: edadFinal,
       estado: _estado,
-      descripcion: _estado == 'para adoptar'
+      descripcion: (_estado == 'para adoptar' || _estado == 'perdido')
           ? _descripcionCtrl.text.trim()
           : null,
       fotoUrl: fotoUrl,
@@ -1807,19 +2063,25 @@ class _AddMascotaSheetState extends State<_AddMascotaSheet> {
               const SizedBox(height: 14),
               _inputField('Raza', _razaCtrl, Icons.category_outlined),
               const SizedBox(height: 14),
-              _inputField('Edad (ej. 3)', _edadCtrl, Icons.cake_outlined,
-                  keyboard: TextInputType.number),
+
+              // ── Edad con opción menor de 1 año ──
+              _edadField(),
               const SizedBox(height: 14),
+
               _dropdown('Género', _genero, ['Macho', 'Hembra'],
                   (v) => setState(() => _genero = v!)),
               const SizedBox(height: 14),
               _dropdown('Estado', _estado,
-                  ['propio', 'para adoptar', 'adoptado'],
+                  ['propio', 'para adoptar', 'perdido'],
                   (v) => setState(() => _estado = v!)),
               const SizedBox(height: 14),
 
-              if (_estado == 'para adoptar') ...[
-                _inputField('Descripción para adopción', _descripcionCtrl,
+              if (_estado == 'para adoptar' || _estado == 'perdido') ...[
+                _inputField(
+                    _estado == 'perdido'
+                        ? 'Descripción (ej. lugar donde se perdió)'
+                        : 'Descripción para adopción',
+                    _descripcionCtrl,
                     Icons.description_outlined),
                 const SizedBox(height: 14),
               ],
@@ -1884,6 +2146,64 @@ class _AddMascotaSheetState extends State<_AddMascotaSheet> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _edadField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Checkbox: Menor de 1 año
+        GestureDetector(
+          onTap: () => setState(() {
+            _menorDeUnAnio = !_menorDeUnAnio;
+            if (_menorDeUnAnio) _edadCtrl.clear();
+          }),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: _menorDeUnAnio
+                  ? _teal.withValues(alpha: 0.08)
+                  : const Color(0xFFF3FAFD),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: _menorDeUnAnio ? _teal : const Color(0xFFDCEEF0),
+                width: _menorDeUnAnio ? 1.8 : 1.2,
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  _menorDeUnAnio
+                      ? Icons.check_box_rounded
+                      : Icons.check_box_outline_blank_rounded,
+                  color: _menorDeUnAnio ? _teal : _grey,
+                  size: 22,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'Menor de 1 año',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    color: _menorDeUnAnio ? _teal : const Color(0xFF2D2D2D),
+                    fontWeight:
+                        _menorDeUnAnio ? FontWeight.w600 : FontWeight.w400,
+                  ),
+                ),
+                const Spacer(),
+                Icon(Icons.cake_outlined,
+                    color: _menorDeUnAnio ? _teal : _grey, size: 20),
+              ],
+            ),
+          ),
+        ),
+        // Campo numérico — solo si no es menor de 1 año
+        if (!_menorDeUnAnio) ...[
+          const SizedBox(height: 10),
+          _inputField('Edad en años (ej. 3)', _edadCtrl, Icons.cake_outlined,
+              keyboard: TextInputType.number),
+        ],
+      ],
     );
   }
 

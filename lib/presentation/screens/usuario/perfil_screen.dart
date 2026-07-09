@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../../domain/controllers/auth_controller.dart';
 import '../../../domain/controllers/cita_controller.dart';
 import '../../../domain/controllers/mascota_controller.dart';
+import '../../../domain/controllers/noticia_controller.dart';
 import '../../../data/services/solicitud_rol_service.dart';
 import '../shared/historial_citas_screen.dart';
 
@@ -48,6 +49,20 @@ class _PerfilScreenState extends State<PerfilScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => const _EditProfileSheet(),
+    );
+  }
+
+  void _showEnviarNoticiaSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => ChangeNotifierProvider.value(
+        value: context.read<NoticiaController>(),
+        child: _EnviarNoticiaSheet(
+          usuaId: context.read<AuthController>().currentUser?.id ?? '',
+        ),
+      ),
     );
   }
 
@@ -166,7 +181,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
                   child: Column(
                     children: [
                       const SizedBox(height: 12),
-                      // Fila de botones (Atrás y Cerrar Sesión)
+                      // Fila de botones (Atrás)
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 12),
                         child: Row(
@@ -175,17 +190,6 @@ class _PerfilScreenState extends State<PerfilScreen> {
                             IconButton(
                               icon: const Icon(Icons.arrow_back_ios_new_rounded, color: _dark, size: 20),
                               onPressed: () => Navigator.pop(context),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.logout_rounded, color: _dark, size: 22),
-                              onPressed: () async {
-                                context.read<MascotaController>().limpiarMascotas();
-                                await authController.logout();
-                                if (context.mounted) {
-                                  Navigator.pushReplacementNamed(context, '/login');
-                                }
-                              },
-                              tooltip: 'Cerrar sesión',
                             ),
                           ],
                         ),
@@ -304,6 +308,14 @@ class _PerfilScreenState extends State<PerfilScreen> {
                       iconColor: _teal,
                       iconBg: _teal.withValues(alpha: 0.1),
                       onTap: () => _showEditProfileDialog(context),
+                    ),
+                    _Separator(),
+                    _OptionTile(
+                      icon: Icons.newspaper_rounded,
+                      label: 'Enviar noticia',
+                      iconColor: const Color(0xFF7C6FCD),
+                      iconBg: const Color(0xFF7C6FCD).withValues(alpha: 0.1),
+                      onTap: () => _showEnviarNoticiaSheet(context),
                     ),
                     _Separator(),
                     _OptionTile(
@@ -1083,3 +1095,285 @@ class _HeaderWaveClipper extends CustomClipper<Path> {
 }
 
 
+
+// ═══════════════════════════════════════════════════
+// Sheet: Enviar Noticia
+// ═══════════════════════════════════════════════════
+class _EnviarNoticiaSheet extends StatefulWidget {
+  final String usuaId;
+  const _EnviarNoticiaSheet({required this.usuaId});
+
+  @override
+  State<_EnviarNoticiaSheet> createState() => _EnviarNoticiaSheetState();
+}
+
+class _EnviarNoticiaSheetState extends State<_EnviarNoticiaSheet> {
+  final _tituloCtrl   = TextEditingController();
+  final _contenidoCtrl = TextEditingController();
+  final _formKey      = GlobalKey<FormState>();
+  String _categoria   = 'general';
+  File? _imagen;
+  String? _extension;
+
+  static const _categorias = [
+    'general', 'salud', 'nutricion', 'bienestar',
+    'prevencion', 'adopcion', 'perdidos', 'emergencias',
+  ];
+
+  @override
+  void dispose() {
+    _tituloCtrl.dispose();
+    _contenidoCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickImagen() async {
+    final picked = await ImagePicker().pickImage(
+        source: ImageSource.gallery, imageQuality: 80);
+    if (picked == null) return;
+    setState(() {
+      _imagen = File(picked.path);
+      _extension = picked.path.split('.').last.toLowerCase();
+    });
+  }
+
+  void _enviar() async {
+    if (!_formKey.currentState!.validate()) return;
+    final ctrl = context.read<NoticiaController>();
+    final ok = await ctrl.enviarNoticia(
+      usuaId: widget.usuaId,
+      titulo: _tituloCtrl.text.trim(),
+      contenido: _contenidoCtrl.text.trim(),
+      categoria: _categoria,
+      imagen: _imagen,
+      extension: _extension,
+    );
+    if (!mounted) return;
+    if (ok) {
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Row(children: [
+          const Icon(Icons.check_circle_outline_rounded,
+              color: Colors.white, size: 18),
+          const SizedBox(width: 8),
+          const Expanded(
+            child: Text('Noticia enviada. El admin la revisará pronto.'),
+          ),
+        ]),
+        backgroundColor: const Color(0xFF7C6FCD),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        duration: const Duration(seconds: 4),
+      ));
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(ctrl.errorMessage ?? 'Error al enviar la noticia'),
+        backgroundColor: Colors.redAccent,
+      ));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 28),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Handle
+                Center(child: Container(
+                  width: 40, height: 4,
+                  decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2)),
+                )),
+                const SizedBox(height: 20),
+
+                // Título del sheet
+                Row(children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF7C6FCD).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.newspaper_rounded,
+                        color: Color(0xFF7C6FCD), size: 20),
+                  ),
+                  const SizedBox(width: 10),
+                  Column(crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                    Text('Enviar Noticia',
+                        style: GoogleFonts.poppins(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: _dark)),
+                    Text('El administrador la revisará antes de publicar',
+                        style: GoogleFonts.poppins(
+                            fontSize: 11, color: _grey)),
+                  ]),
+                ]),
+                const SizedBox(height: 20),
+
+                // Título
+                TextFormField(
+                  controller: _tituloCtrl,
+                  style: GoogleFonts.poppins(fontSize: 14, color: _dark),
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'El título es requerido' : null,
+                  decoration: _inputDeco('Título de la noticia',
+                      Icons.title_rounded),
+                ),
+                const SizedBox(height: 12),
+
+                // Contenido
+                TextFormField(
+                  controller: _contenidoCtrl,
+                  maxLines: 4,
+                  style: GoogleFonts.poppins(fontSize: 13, color: _dark),
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'El contenido es requerido' : null,
+                  decoration: _inputDeco('Descripción o contenido',
+                      Icons.article_outlined),
+                ),
+                const SizedBox(height: 12),
+
+                // Categoría
+                Text('Categoría',
+                    style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: _dark)),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8, runSpacing: 8,
+                  children: _categorias.map((cat) {
+                    final sel = _categoria == cat;
+                    return GestureDetector(
+                      onTap: () => setState(() => _categoria = cat),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 150),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 7),
+                        decoration: BoxDecoration(
+                          color: sel
+                              ? const Color(0xFF7C6FCD)
+                              : Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(cat,
+                            style: GoogleFonts.poppins(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: sel
+                                    ? Colors.white
+                                    : Colors.grey.shade600)),
+                      ),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 14),
+
+                // Imagen opcional
+                GestureDetector(
+                  onTap: _pickImagen,
+                  child: Container(
+                    width: double.infinity,
+                    height: _imagen != null ? 160 : 54,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF0F9FF),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                          color: _teal.withValues(alpha: 0.3), width: 1.2),
+                    ),
+                    child: _imagen != null
+                        ? ClipRRect(
+                            borderRadius: BorderRadius.circular(14),
+                            child: Image.file(_imagen!, fit: BoxFit.cover),
+                          )
+                        : Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.add_photo_alternate_outlined,
+                                  color: _teal, size: 20),
+                              const SizedBox(width: 8),
+                              Text('Agregar imagen (opcional)',
+                                  style: GoogleFonts.poppins(
+                                      fontSize: 13, color: _teal)),
+                            ],
+                          ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Botón enviar
+                Consumer<NoticiaController>(
+                  builder: (ctx, ctrl, _) => SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton.icon(
+                      onPressed: ctrl.isSubmitting ? null : _enviar,
+                      icon: ctrl.isSubmitting
+                          ? const SizedBox(
+                              width: 18, height: 18,
+                              child: CircularProgressIndicator(
+                                  color: Colors.white, strokeWidth: 2))
+                          : const Icon(Icons.send_rounded, size: 18),
+                      label: Text(
+                        ctrl.isSubmitting ? 'Enviando...' : 'Enviar para revisión',
+                        style: GoogleFonts.poppins(
+                            fontSize: 15, fontWeight: FontWeight.w600),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF7C6FCD),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14)),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  InputDecoration _inputDeco(String label, IconData icon) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle: GoogleFonts.poppins(color: _grey, fontSize: 13),
+      prefixIcon: Icon(icon, color: _teal, size: 20),
+      filled: true,
+      fillColor: const Color(0xFFF0F9FF),
+      border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide.none),
+      enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(
+              color: _teal.withValues(alpha: 0.25), width: 1.2)),
+      focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: _teal, width: 2)),
+      errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(
+              color: Color(0xFFE53935), width: 1.2)),
+    );
+  }
+}

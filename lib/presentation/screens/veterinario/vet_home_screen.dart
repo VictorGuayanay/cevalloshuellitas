@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../../data/models/mascota_model.dart';
@@ -7,10 +7,12 @@ import '../../../domain/controllers/cita_controller.dart';
 import '../../../domain/controllers/mascota_controller.dart';
 import '../../../domain/controllers/veterinario_controller.dart';
 import '../../../domain/controllers/solicitud_adopcion_controller.dart';
+import '../../../domain/controllers/noticia_controller.dart';
+import '../../../data/models/noticia_model.dart';
 import '../../../presentation/widgets/notificaciones_sheet.dart';
 import '../../../presentation/widgets/safe_network_image.dart';
 import 'detalle_cita_screen.dart';
-// ─── Paleta verde veterinario ─────────────────────────────────────────────────
+// â”€â”€â”€ Paleta verde veterinario â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const _vetGreen = Color(0xFF4A9B7F);       // Acento principal verde
 const _vetHeaderBg = Color(0xFFBAD1C2);    // Fondo de cabecera verde pastel
 const _vetOrange = Color(0xFFE58D57);      // Naranja para badges y citas urgentes
@@ -45,7 +47,8 @@ class _VetHomeScreenState extends State<VetHomeScreen>
       citaCtrl.cargarCitasHoy();
       citaCtrl.cargarTodasLasCitas();
       context.read<MascotaController>().cargarTodasLasMascotas();
-      context.read<MascotaController>().cargarMascotasRecientes();
+      context.read<MascotaController>().cargarMascotasPerdidas();
+      context.read<NoticiaController>().cargarNoticias();
 
       // Cargar citas del veterinario logueado
       if (uid != null) {
@@ -81,19 +84,19 @@ class _VetHomeScreenState extends State<VetHomeScreen>
       backgroundColor: _vetBg,
       body: Stack(
         children: [
-          // ── Cabecera verde con curva wave ──
+          // â”€â”€ Cabecera verde con curva wave â”€â”€
           Positioned(
             top: 0, left: 0, right: 0,
             child: ClipPath(
               clipper: _HeaderClipper(),
               child: Container(
-                height: 320,
+                height: 200,
                 color: _vetHeaderBg,
                 child: SafeArea(
                   child: Column(
                     children: [
                       const SizedBox(height: 12),
-                      // Fila Logo y Campana
+                      // Fila Logo, Urgencias y Campana
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 24),
                         child: Row(
@@ -109,89 +112,177 @@ class _VetHomeScreenState extends State<VetHomeScreen>
                                       fontWeight: FontWeight.w800,
                                       color: _vetDark)),
                             ]),
-                            // Campana de notificaciones de Citas Realtime
-                            Consumer<CitaController>(
-                              builder: (ctx, citaCtrl, _) {
-                                final badge = citaCtrl.totalNotificaciones;
-                                return Stack(
-                                  children: [
-                                    Container(
-                                      width: 42, height: 42,
-                                      decoration: BoxDecoration(
-                                        color: Colors.white.withValues(alpha: 0.4),
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: IconButton(
-                                        padding: EdgeInsets.zero,
-                                        icon: const Icon(
-                                            Icons.notifications_none_rounded,
-                                            color: _vetDark, size: 24),
-                                        onPressed: () => _mostrarNotificacionesSheet(context),
-                                      ),
+                            // Botones derechos: Urgencias + Campana
+                            Row(
+                              children: [
+                                // BotÃ³n Urgencias
+                                GestureDetector(
+                                  onTap: () => Navigator.pushNamed(
+                                      context, '/urgencias'),
+                                  child: Container(
+                                    width: 42, height: 42,
+                                    decoration: BoxDecoration(
+                                      color: _vetOrange.withValues(alpha: 0.18),
+                                      shape: BoxShape.circle,
                                     ),
-                                    if (badge > 0)
-                                      Positioned(
-                                        right: 0, top: 0,
-                                        child: Container(
-                                          padding: const EdgeInsets.all(4),
-                                          decoration: const BoxDecoration(
-                                              color: _vetOrange, shape: BoxShape.circle),
-                                          constraints: const BoxConstraints(
-                                              minWidth: 16, minHeight: 16),
-                                          child: Center(
-                                            child: Text('$badge',
-                                                style: const TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 8,
-                                                    fontWeight: FontWeight.bold)),
+                                    child: const Icon(
+                                        Icons.emergency_rounded,
+                                        color: _vetOrange, size: 22),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                // Campana de notificaciones
+                                Consumer<CitaController>(
+                                  builder: (ctx, citaCtrl, _) {
+                                    final badge = citaCtrl.totalNotificaciones;
+                                    return Stack(
+                                      children: [
+                                        Container(
+                                          width: 42, height: 42,
+                                          decoration: BoxDecoration(
+                                            color: Colors.white.withValues(alpha: 0.4),
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: IconButton(
+                                            padding: EdgeInsets.zero,
+                                            icon: const Icon(
+                                                Icons.notifications_none_rounded,
+                                                color: _vetDark, size: 24),
+                                            onPressed: () =>
+                                                _mostrarNotificacionesSheet(context),
                                           ),
                                         ),
+                                        if (badge > 0)
+                                          Positioned(
+                                            right: 0, top: 0,
+                                            child: Container(
+                                              padding: const EdgeInsets.all(4),
+                                              decoration: const BoxDecoration(
+                                                  color: _vetOrange,
+                                                  shape: BoxShape.circle),
+                                              constraints: const BoxConstraints(
+                                                  minWidth: 16, minHeight: 16),
+                                              child: Center(
+                                                child: Text('$badge',
+                                                    style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 8,
+                                                        fontWeight:
+                                                            FontWeight.bold)),
+                                              ),
+                                            ),
+                                          ),
+                                      ],
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      // Bienvenida + toggle disponibilidad
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Bienvenido ðŸ‘‹',
+                                      style: GoogleFonts.poppins(
+                                          fontSize: 13,
+                                          color: _vetDark.withValues(alpha: 0.7))),
+                                  Text('Dr. $nombre',
+                                      style: GoogleFonts.poppins(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.w800,
+                                          color: _vetDark)),
+                                ],
+                              ),
+                            ),
+                            Consumer<VeterinarioController>(
+                              builder: (ctx, vetCtrl, _) {
+                                final disponible = vetCtrl.perfil?.disponible ?? true;
+                                return GestureDetector(
+                                  onTap: () async {
+                                    final ok = await vetCtrl.toggleDisponible();
+                                    if (!ok && ctx.mounted) {
+                                      ScaffoldMessenger.of(ctx).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            'No se pudo actualizar la disponibilidad',
+                                            style: GoogleFonts.poppins(fontSize: 13),
+                                          ),
+                                          backgroundColor: const Color(0xFFE53935),
+                                          behavior: SnackBarBehavior.floating,
+                                          shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(12)),
+                                          duration: const Duration(seconds: 3),
+                                        ),
+                                      );
+                                    }
+                                  },
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 250),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 10, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      color: disponible
+                                          ? const Color(0xFF4A9B7F).withValues(alpha: 0.18)
+                                          : Colors.black.withValues(alpha: 0.12),
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(
+                                        color: disponible
+                                            ? const Color(0xFF4A9B7F).withValues(alpha: 0.5)
+                                            : Colors.white.withValues(alpha: 0.3),
+                                        width: 1,
                                       ),
-                                  ],
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        AnimatedContainer(
+                                          duration: const Duration(milliseconds: 250),
+                                          width: 8,
+                                          height: 8,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: disponible
+                                                ? const Color(0xFF6FE5B8)
+                                                : Colors.white.withValues(alpha: 0.5),
+                                            boxShadow: disponible
+                                                ? [BoxShadow(
+                                                    color: const Color(0xFF6FE5B8)
+                                                        .withValues(alpha: 0.6),
+                                                    blurRadius: 4)]
+                                                : null,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          disponible ? 'Disponible' : 'No disponible',
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w600,
+                                            color: disponible
+                                                ? _vetDark
+                                                : Colors.white.withValues(alpha: 0.7),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 );
                               },
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 10),
-                      // Bienvenida
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Bienvenido 👋',
-                                  style: GoogleFonts.poppins(
-                                      fontSize: 13,
-                                      color: _vetDark.withValues(alpha: 0.7))),
-                              Text('Dr. $nombre',
-                                  style: GoogleFonts.poppins(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.w800,
-                                      color: _vetDark)),
-                            ],
-                          ),
-                        ),
-                      ),
                       const SizedBox(height: 14),
-                      // Botones de acceso rápido
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                          children: [
-                            _categoryBtn(context, Icons.pets_rounded,
-                                'Pacientes', '/vet_mascotas'),
-                            _categoryBtn(context, Icons.calendar_month_rounded,
-                                'Citas', '/vet_citas'),
-                            _categoryBtn(context, Icons.favorite_rounded,
-                                'Urgencias', '/urgencias'),
-                          ],
-                        ),
-                      ),
                     ],
                   ),
                 ),
@@ -199,12 +290,12 @@ class _VetHomeScreenState extends State<VetHomeScreen>
             ),
           ),
 
-          // ── Contenido scrollable debajo de la cabecera ──
+          // â”€â”€ Contenido scrollable debajo de la cabecera â”€â”€
           Positioned.fill(
             child: SafeArea(
               child: Column(
                 children: [
-                  const SizedBox(height: 320), // Espacio para la cabecera
+                  const SizedBox(height: 170), // Espacio para la cabecera
 
                   // Contenido scrollable
                   Expanded(
@@ -215,7 +306,7 @@ class _VetHomeScreenState extends State<VetHomeScreen>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const SizedBox(height: 20),
-                          // Gestión de Citas — tabs Pendientes / Completadas
+                          // Gestión de Citas â€” tabs Pendientes / Completadas
                           Row(children: [
                             Icon(Icons.calendar_month_rounded,
                                 color: _vetGreen, size: 20),
@@ -253,8 +344,8 @@ class _VetHomeScreenState extends State<VetHomeScreen>
                               labelStyle: GoogleFonts.poppins(
                                   fontSize: 12, fontWeight: FontWeight.w600),
                               tabs: const [
-                                Tab(text: '⏳  Pendientes'),
-                                Tab(text: '✅  Completadas'),
+                                Tab(text: 'â³  Pendientes'),
+                                Tab(text: 'âœ…  Completadas'),
                               ],
                             ),
                           ),
@@ -303,9 +394,14 @@ class _VetHomeScreenState extends State<VetHomeScreen>
 
 
 
+
                           const SizedBox(height: 24),
-                          // ── Top 5 Mascotas Destacadas (recién ingresadas) ──
-                          _buildMascotasDestacadas(context),
+                          // â”€â”€ Mascotas Perdidas en tiempo real â”€â”€
+                          _buildMascotasPerdidas(context),
+
+                          const SizedBox(height: 24),
+                          // ── Noticias ──
+                          _buildSeccionNoticias(),
 
                           const SizedBox(height: 100),
                         ],
@@ -354,30 +450,135 @@ class _VetHomeScreenState extends State<VetHomeScreen>
     );
   }
 
-  // ── Top 5 Mascotas Destacadas ────────────────────────────────────────────────
-  Widget _buildMascotasDestacadas(BuildContext context) {
+
+  // â”€â”€ Mascotas Perdidas (Realtime) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+  // ── Noticias ──────────────────────────────────────────────────────────────
+  Widget _buildSeccionNoticias() {
+    return Consumer<NoticiaController>(
+      builder: (ctx, ctrl, _) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: _vetGreen.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.newspaper_rounded, color: _vetGreen, size: 18),
+              ),
+              const SizedBox(width: 8),
+              Text('Noticias', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w700, color: _vetDark)),
+              const Spacer(),
+              if (ctrl.isLoading)
+                const SizedBox(width: 14, height: 14,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: _vetGreen)),
+            ]),
+            const SizedBox(height: 12),
+            if (!ctrl.isLoading && ctrl.noticias.isEmpty)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 3))],
+                ),
+                child: Column(children: [
+                  Icon(Icons.newspaper_rounded, size: 36, color: Colors.grey.shade300),
+                  const SizedBox(height: 8),
+                  Text('No hay noticias publicadas', style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey.shade400)),
+                ]),
+              )
+            else
+              ...ctrl.noticias.map((n) => _noticiaVetCard(n)),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _noticiaVetCard(NoticiaModel n) {
+    final colores = {
+      'salud': const Color(0xFF4A9B7F), 'perdidos': const Color(0xFFE53935),
+      'adopcion': const Color(0xFFE58D57), 'nutricion': const Color(0xFFE58D57),
+      'bienestar': const Color(0xFF7C6FCD), 'prevencion': const Color(0xFF5BBFBF),
+      'emergencias': const Color(0xFFE53935),
+    };
+    final color = colores[n.categoria.toLowerCase()] ?? _vetGreen;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border(left: BorderSide(color: color, width: 4)),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 3))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (n.imagenUrl != null && n.imagenUrl!.isNotEmpty)
+            ClipRRect(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+              child: Image.network(n.imagenUrl!, height: 140, width: double.infinity, fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+            ),
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20)),
+                  child: Text(n.categoria, style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w700, color: color)),
+                ),
+                const Spacer(),
+                Text(n.tiempoRelativo, style: GoogleFonts.poppins(fontSize: 10, color: _vetGrey)),
+              ]),
+              const SizedBox(height: 6),
+              Text(n.titulo, style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w700, color: _vetDark, height: 1.3)),
+              const SizedBox(height: 4),
+              Text(n.contenido, maxLines: 2, overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.poppins(fontSize: 11, color: _vetGrey, height: 1.4)),
+              if (n.autorNombre != null) ...[
+                const SizedBox(height: 4),
+                Row(children: [
+                  const Icon(Icons.person_outline_rounded, size: 11, color: _vetGrey),
+                  const SizedBox(width: 3),
+                  Text(n.autorNombre!, style: GoogleFonts.poppins(fontSize: 10, color: _vetGrey)),
+                ]),
+              ],
+            ]),
+          ),
+        ],
+      ),
+    );
+  }
+  Widget _buildMascotasPerdidas(BuildContext context) {
     return Consumer<MascotaController>(
       builder: (ctx, ctrl, _) {
-        final recientes = ctrl.mascotasRecientes;
+        final perdidas = ctrl.mascotasPerdidas;
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Encabezado de sección
+            // Encabezado
             Row(
               children: [
                 Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: _vetGreen.withValues(alpha: 0.12),
+                    color: const Color(0xFFE53935).withValues(alpha: 0.10),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(Icons.star_rounded,
-                      color: _vetGreen, size: 18),
+                  child: const Icon(Icons.location_off_rounded,
+                      color: Color(0xFFE53935), size: 18),
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Mascotas Destacadas',
+                  'Mascotas Perdidas',
                   style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
@@ -385,23 +586,41 @@ class _VetHomeScreenState extends State<VetHomeScreen>
                   ),
                 ),
                 const Spacer(),
-                GestureDetector(
-                  onTap: () =>
-                      Navigator.pushNamed(context, '/vet_mascotas'),
-                  child: Text(
-                    'Ver todas',
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: _vetGreen,
-                    ),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE53935).withValues(alpha: 0.10),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 7,
+                        height: 7,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFE53935),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'En vivo',
+                        style: GoogleFonts.poppins(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFFE53935),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 4),
             Text(
-              'Las 5 últimas mascotas registradas',
+              'Se actualiza automÃ¡ticamente',
               style: GoogleFonts.poppins(
                 fontSize: 11,
                 color: _vetGrey,
@@ -409,8 +628,17 @@ class _VetHomeScreenState extends State<VetHomeScreen>
             ),
             const SizedBox(height: 12),
 
-            // Lista de mascotas o estado vacío
-            if (recientes.isEmpty)
+            // Estado cargando
+            if (ctrl.isLoadingPerdidas)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20),
+                  child: CircularProgressIndicator(
+                      color: Color(0xFFE53935)),
+                ),
+              )
+            // Estado vacÃ­o
+            else if (perdidas.isEmpty)
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(vertical: 28),
@@ -427,11 +655,11 @@ class _VetHomeScreenState extends State<VetHomeScreen>
                 ),
                 child: Column(
                   children: [
-                    Icon(Icons.pets_rounded,
+                    Icon(Icons.location_off_rounded,
                         size: 40, color: Colors.grey.shade300),
                     const SizedBox(height: 8),
                     Text(
-                      'Sin mascotas registradas aún',
+                      'No hay mascotas perdidas reportadas',
                       style: GoogleFonts.poppins(
                         fontSize: 13,
                         color: Colors.grey.shade400,
@@ -440,12 +668,12 @@ class _VetHomeScreenState extends State<VetHomeScreen>
                   ],
                 ),
               )
+            // Lista de mascotas perdidas
             else
               Column(
-                children: List.generate(recientes.length, (i) {
-                  final m = recientes[i];
-                  return _mascotaDestacadaCard(m, posicion: i + 1);
-                }),
+                children: perdidas
+                    .map((m) => _mascotaPerdidaVetCard(m))
+                    .toList(),
               ),
           ],
         );
@@ -453,37 +681,13 @@ class _VetHomeScreenState extends State<VetHomeScreen>
     );
   }
 
-  Widget _mascotaDestacadaCard(MascotaModel m, {required int posicion}) {
-    // Colores de posición (top 3 con color, resto neutros)
-    final posColors = [
-      const Color(0xFFFFD700), // oro
-      const Color(0xFFC0C0C0), // plata
-      const Color(0xFFCD7F32), // bronce
-    ];
-    final posColor =
-        posicion <= 3 ? posColors[posicion - 1] : Colors.grey.shade400;
-
-    // Etiqueta de estado con color
-    Color estadoColor;
-    switch (m.estado.toLowerCase()) {
-      case 'para adoptar':
-        estadoColor = _vetOrange;
-        break;
-      case 'adoptado':
-        estadoColor = const Color(0xFF43B89C);
-        break;
-      default:
-        estadoColor = _vetGreen;
-    }
-
-    // Tiempo relativo desde el registro
+  Widget _mascotaPerdidaVetCard(MascotaModel m) {
     String tiempoRelativo = '';
     if (m.createdAt != null) {
       final diff = DateTime.now().difference(m.createdAt!);
       if (diff.inDays == 0) {
-        tiempoRelativo = diff.inHours == 0
-            ? 'hace ${diff.inMinutes} min'
-            : 'hace ${diff.inHours}h';
+        tiempoRelativo =
+            diff.inHours == 0 ? 'hace ${diff.inMinutes} min' : 'hace ${diff.inHours}h';
       } else if (diff.inDays < 7) {
         tiempoRelativo = 'hace ${diff.inDays}d';
       } else {
@@ -499,6 +703,9 @@ class _VetHomeScreenState extends State<VetHomeScreen>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border(
+          left: BorderSide(color: const Color(0xFFE53935), width: 4),
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
@@ -509,27 +716,6 @@ class _VetHomeScreenState extends State<VetHomeScreen>
       ),
       child: Row(
         children: [
-          // Badge de posición
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: posColor.withValues(alpha: 0.15),
-              shape: BoxShape.circle,
-            ),
-            child: Center(
-              child: Text(
-                '#$posicion',
-                style: GoogleFonts.poppins(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  color: posColor,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-
           // Foto
           Container(
             width: 52,
@@ -547,7 +733,6 @@ class _VetHomeScreenState extends State<VetHomeScreen>
             ),
           ),
           const SizedBox(width: 12),
-
           // Info
           Expanded(
             child: Column(
@@ -562,79 +747,52 @@ class _VetHomeScreenState extends State<VetHomeScreen>
                   ),
                 ),
                 Text(
-                  '${m.especie} · ${m.raza}',
-                  style: GoogleFonts.poppins(
-                    fontSize: 11,
-                    color: _vetGrey,
-                  ),
+                  '${m.especie} Â· ${m.raza}',
+                  style: GoogleFonts.poppins(fontSize: 11, color: _vetGrey),
                 ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    // Chip de estado
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 7, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: estadoColor.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        m.estado,
-                        style: GoogleFonts.poppins(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w700,
-                          color: estadoColor,
-                        ),
-                      ),
+                if (m.descripcion != null && m.descripcion!.isNotEmpty) ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    m.descripcion!,
+                    style: GoogleFonts.poppins(
+                      fontSize: 10,
+                      color: const Color(0xFFE53935),
+                      height: 1.3,
                     ),
-                    if (tiempoRelativo.isNotEmpty) ...[
-                      const SizedBox(width: 6),
-                      Icon(Icons.access_time_rounded,
-                          size: 10, color: Colors.grey.shade400),
-                      const SizedBox(width: 2),
-                      Text(
-                        tiempoRelativo,
-                        style: GoogleFonts.poppins(
-                          fontSize: 10,
-                          color: Colors.grey.shade400,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ],
             ),
           ),
-
-          // Edad + género
+          // Tiempo + datos contacto
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: _vetGreen.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  '${m.edad} años',
-                  style: GoogleFonts.poppins(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    color: _vetGreen,
-                  ),
-                ),
-              ),
+              if (tiempoRelativo.isNotEmpty)
+                Row(mainAxisSize: MainAxisSize.min, children: [
+                  Icon(Icons.access_time_rounded,
+                      size: 10, color: Colors.grey.shade400),
+                  const SizedBox(width: 2),
+                  Text(tiempoRelativo,
+                      style: GoogleFonts.poppins(
+                          fontSize: 10, color: Colors.grey.shade400)),
+                ]),
               const SizedBox(height: 4),
-              Text(
-                m.genero,
-                style: GoogleFonts.poppins(
-                  fontSize: 10,
-                  color: _vetGrey,
-                ),
-              ),
+              if (m.propietarioTelefono != null)
+                Row(mainAxisSize: MainAxisSize.min, children: [
+                  const Icon(Icons.phone_rounded,
+                      size: 11, color: _vetGreen),
+                  const SizedBox(width: 3),
+                  Text(
+                    m.propietarioTelefono!,
+                    style: GoogleFonts.poppins(
+                        fontSize: 10,
+                        color: _vetGreen,
+                        fontWeight: FontWeight.w600),
+                  ),
+                ]),
             ],
           ),
         ],
@@ -642,7 +800,7 @@ class _VetHomeScreenState extends State<VetHomeScreen>
     );
   }
 
-  // ── Botón de categoría estilo imagen ────────────────────────────────────────
+  // â”€â”€ BotÃ³n de categorÃ­a estilo imagen â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   Widget _categoryBtn(BuildContext context, IconData icon, String label, String route) {
     return GestureDetector(
       onTap: () => Navigator.pushNamed(context, route),

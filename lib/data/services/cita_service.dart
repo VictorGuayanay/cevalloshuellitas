@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/cita_model.dart';
+import '../services/fcm_service.dart';
 
 class CitaService {
   final SupabaseClient _client = Supabase.instance.client;
@@ -74,6 +75,38 @@ class CitaService {
     }
   }
 
+  /// Retorna los horarios (HH:MM) ya ocupados para un veterinario en una fecha.
+  /// Considera citas en estado pendiente, confirmada o "en atención".
+  Future<Set<String>> obtenerHorasOcupadas({
+    required String veteId,
+    required String fecha, // formato YYYY-MM-DD
+  }) async {
+    try {
+      final inicio = '${fecha}T00:00:00';
+      final fin    = '${fecha}T23:59:59';
+      final response = await _client
+          .from('citas')
+          .select('cita_fecha')
+          .eq('vete_id', veteId)
+          .gte('cita_fecha', inicio)
+          .lte('cita_fecha', fin)
+          .inFilter('cita_estado', ['pendiente', 'confirmada', 'en atención']);
+      return (response as List).map((e) {
+        final raw = e['cita_fecha']?.toString() ?? '';
+        if (raw.isEmpty) return '';
+        try {
+          final dt = DateTime.parse(raw);
+          return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+        } catch (_) {
+          return '';
+        }
+      }).where((h) => h.isNotEmpty).toSet();
+    } catch (e) {
+      debugPrint('Error obtenerHorasOcupadas: $e');
+      return {};
+    }
+  }
+
   /// Crea una nueva cita usando toInsertJson()
   Future<CitaModel> crearCita(CitaModel cita) async {
     // 1. Validaciones
@@ -142,7 +175,29 @@ class CitaService {
           ''')
           .eq('cita_id', citaId)
           .single();
-      return CitaModel.fromJson(full);
+      final citaCreada = CitaModel.fromJson(full);
+
+      // ── Push FCM al veterinario: nueva solicitud ──────────────────────────
+      if (citaCreada.veteId != null && citaCreada.veteId!.isNotEmpty) {
+        // Obtener el usua_id del veterinario para buscar su token
+        final vetRow = await _client
+            .from('veterinarios')
+            .select('usua_id')
+            .eq('vete_id', citaCreada.veteId!)
+            .maybeSingle();
+        final vetUsuaId = vetRow?['usua_id']?.toString();
+        if (vetUsuaId != null && vetUsuaId.isNotEmpty) {
+          FcmService.instance.enviarNotificacion(
+            destinatarioUserId: vetUsuaId,
+            titulo: '📋 Nueva solicitud de cita',
+            cuerpo: '${citaCreada.propietarioNombre} solicita cita para ${citaCreada.mascotaNombre} el ${citaCreada.fecha.split('-').reversed.join('/')} a las ${citaCreada.hora}.',
+            tipo: 'nueva_cita',
+            citaId: citaCreada.id,
+            mascotaNombre: citaCreada.mascotaNombre,
+          );
+        }
+      }
+      return citaCreada;
     } catch (_) {
       // Si el join falla, devolvemos lo que tenemos con los datos locales
       return CitaModel(
@@ -213,6 +268,26 @@ class CitaService {
         .eq('cita_id', citaId)
         .select(_selectConJoin)
         .single();
-    return CitaModel.fromJson(response);
+    final cita = CitaModel.fromJson(response);
+
+    // ── Push FCM al usuario: confirmación o rechazo ───────────────────────
+    if (cita.usuarioId.isNotEmpty &&
+        (nuevoEstado == 'confirmada' || nuevoEstado == 'rechazada')) {
+      final esConfirmada = nuevoEstado == 'confirmada';
+      FcmService.instance.enviarNotificacion(
+        destinatarioUserId: cita.usuarioId,
+        titulo: esConfirmada
+            ? '✅ ¡Cita confirmada!'
+            : '❌ Cita no disponible',
+        cuerpo: esConfirmada
+            ? 'Tu cita para ${cita.mascotaNombre} el ${cita.fecha.split('-').reversed.join('/')} a las ${cita.hora} fue confirmada.'
+            : 'Tu cita para ${cita.mascotaNombre} el ${cita.fecha.split('-').reversed.join('/')} no pudo ser agendada.',
+        tipo: esConfirmada ? 'cita_confirmada' : 'cita_rechazada',
+        citaId: cita.id,
+        mascotaNombre: cita.mascotaNombre,
+        urgente: !esConfirmada,
+      );
+    }
+    return cita;
   }
 }

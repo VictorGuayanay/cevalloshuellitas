@@ -127,6 +127,77 @@ class FcmService {
     }
   }
 
+  /// Envía una notificación push genérica a un token FCM.
+  /// Úsalo para confirmaciones, rechazos, nuevas citas, adopciones, etc.
+  Future<void> enviarNotificacion({
+    required String destinatarioUserId,
+    required String titulo,
+    required String cuerpo,
+    required String tipo,       // 'cita_confirmada' | 'cita_rechazada' | 'nueva_cita' | 'adopcion' | 'urgencia'
+    String? citaId,
+    String? mascotaNombre,
+    bool urgente = false,
+  }) async {
+    try {
+      Firebase.app();
+    } on FirebaseException {
+      debugPrint('enviarNotificacion abortado — Firebase no disponible.');
+      return;
+    }
+    try {
+      final row = await Supabase.instance.client
+          .from('usuarios')
+          .select('fcm_token')
+          .eq('usua_id', destinatarioUserId)
+          .maybeSingle();
+
+      final token = row?['fcm_token'] as String?;
+      if (token == null || token.isEmpty) {
+        debugPrint('enviarNotificacion: usuario $destinatarioUserId sin fcm_token');
+        return;
+      }
+
+      // Payload de navegación: al tocar la push, la app sabe a dónde ir
+      String payload;
+      switch (tipo) {
+        case 'nueva_cita':
+          payload = 'vet_citas';
+          break;
+        case 'cita_confirmada':
+        case 'cita_rechazada':
+          payload = 'historial_citas';
+          break;
+        case 'adopcion':
+          payload = 'solicitudes_adopcion';
+          break;
+        case 'urgencia':
+          payload = 'vet_home';
+          break;
+        default:
+          payload = 'home';
+      }
+
+      await Supabase.instance.client.functions.invoke(
+        'send-push-notification',
+        body: {
+          'token': token,
+          'title': titulo,
+          'body': cuerpo,
+          'data': {
+            'tipo': tipo,
+            'citaId': citaId ?? '',
+            'mascota': mascotaNombre ?? '',
+            'urgente': urgente ? 'true' : 'false',
+            'payload': payload,
+          },
+        },
+      );
+      debugPrint('Push enviada a $destinatarioUserId — tipo: $tipo');
+    } catch (e) {
+      debugPrint('Error enviando notificación FCM: $e');
+    }
+  }
+
   /// Envía una notificación push de urgencia al veterinario seleccionado.
   /// Requiere que el veterinario tenga fcm_token guardado en la tabla usuarios.
   Future<void> enviarNotificacionUrgencia({

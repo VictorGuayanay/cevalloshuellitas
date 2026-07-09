@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/solicitud_adopcion_model.dart';
+import '../services/fcm_service.dart';
 
 class SolicitudAdopcionService {
   final SupabaseClient _client = Supabase.instance.client;
@@ -54,7 +55,19 @@ class SolicitudAdopcionService {
         .select(_selectJoin)
         .single();
 
-    return SolicitudAdopcionModel.fromJson(inserted);
+    final solicitud = SolicitudAdopcionModel.fromJson(inserted);
+
+    // ── Push FCM al dueño de la mascota: alguien quiere adoptar ──────────
+    if (duenioId.isNotEmpty) {
+      FcmService.instance.enviarNotificacion(
+        destinatarioUserId: duenioId,
+        titulo: '🐾 ¡Solicitud de adopción!',
+        cuerpo: 'Alguien está interesado en adoptar a ${solicitud.mascotaNombre}. Revisa tu panel de solicitudes.',
+        tipo: 'adopcion',
+        mascotaNombre: solicitud.mascotaNombre,
+      );
+    }
+    return solicitud;
   }
 
   /// Confirma la adopción: cambia el dueño de la mascota al solicitante
@@ -118,22 +131,6 @@ class SolicitudAdopcionService {
     }
   }
 
-  /// Todas las solicitudes (para admin/veterinario).
-  Future<List<SolicitudAdopcionModel>> obtenerTodas() async {
-    try {
-      final response = await _client
-          .from('solicitudes_adopcion')
-          .select(_selectJoin)
-          .order('soli_fecha', ascending: false);
-      return (response as List)
-          .map((e) => SolicitudAdopcionModel.fromJson(e))
-          .toList();
-    } catch (e) {
-      debugPrint('Error obtenerTodas: $e');
-      return [];
-    }
-  }
-
   /// Actualiza el estado de una solicitud (Aprobada / Rechazada).
   Future<SolicitudAdopcionModel> actualizarEstado(
       String soliId, String nuevoEstado) async {
@@ -143,7 +140,26 @@ class SolicitudAdopcionService {
         .eq('soli_id', soliId)
         .select(_selectJoin)
         .single();
-    return SolicitudAdopcionModel.fromJson(response);
+    final solicitud = SolicitudAdopcionModel.fromJson(response);
+
+    // ── Push FCM al solicitante: respuesta del dueño ──────────────────────
+    if (solicitud.usuaId.isNotEmpty &&
+        (nuevoEstado == 'Aprobada' || nuevoEstado == 'Rechazada')) {
+      final esAprobada = nuevoEstado == 'Aprobada';
+      FcmService.instance.enviarNotificacion(
+        destinatarioUserId: solicitud.usuaId,
+        titulo: esAprobada
+            ? '🎉 ¡Solicitud aprobada!'
+            : '❌ Solicitud rechazada',
+        cuerpo: esAprobada
+            ? 'Tu solicitud para adoptar a ${solicitud.mascotaNombre} fue aprobada. ¡Felicitaciones!'
+            : 'Lo sentimos, tu solicitud para adoptar a ${solicitud.mascotaNombre} fue rechazada.',
+        tipo: 'adopcion',
+        mascotaNombre: solicitud.mascotaNombre,
+        urgente: false,
+      );
+    }
+    return solicitud;
   }
 
   /// Cancela (elimina) una solicitud pendiente.

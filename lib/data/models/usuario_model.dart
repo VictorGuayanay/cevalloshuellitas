@@ -32,15 +32,4 @@ class UsuarioModel {
       fotoUrl: json['usua_foto_url'] as String?,
     );
   }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'usua_id': id,
-      'usua_nombre': nombre,
-      'usua_correo': correo,
-      'usua_telefono': telefono,
-      'usua_rol': rol,
-      if (fotoUrl != null) 'usua_foto_url': fotoUrl,
-    };
-  }
 }

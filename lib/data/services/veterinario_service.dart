@@ -61,6 +61,17 @@ class VeterinarioService {
     return VeterinarioModel.fromJson(response);
   }
 
+  /// Actualiza únicamente el campo vete_disponible del veterinario.
+  Future<void> actualizarDisponibilidad({
+    required String veteId,
+    required bool disponible,
+  }) async {
+    await _client
+        .from('veterinarios')
+        .update({'vete_disponible': disponible})
+        .eq('vete_id', veteId);
+  }
+
   /// Guarda la ubicación (latitud, longitud, dirección) del veterinario.
   Future<void> guardarUbicacion({
     required String veteId,

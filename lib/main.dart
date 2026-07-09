@@ -13,8 +13,7 @@ import 'domain/controllers/cita_controller.dart';
 import 'domain/controllers/veterinario_controller.dart';
 import 'domain/controllers/servicio_controller.dart';
 import 'domain/controllers/solicitud_adopcion_controller.dart';
-import 'domain/controllers/admin_controller.dart';
-import 'presentation/screens/admin/admin_home_screen.dart';
+import 'domain/controllers/noticia_controller.dart';
 import 'presentation/screens/login/login_screen.dart';
 import 'presentation/screens/login/register_screen.dart';
 import 'presentation/screens/usuario/home_screen.dart';
@@ -66,19 +65,59 @@ void main() async {
     debugPrint('FCM deshabilitado: Firebase no disponible.');
   }
 
-  // Registrar handler: al tocar una push notification abre el home
-  // (el usuario verá el badge y podrá abrir el panel de notificaciones)
+  // Registrar handler: al tocar una push navega a la pantalla correcta
   NotificacionLocalService.instance.setOnTap((payload) {
     debugPrint('Push tocada con payload: $payload');
-    // La app ya está abierta o se abre — el navigatorKey permite navegar
-    final ctx = MyApp.navigatorKey.currentContext;
-    if (ctx == null) return;
-    // Navegar según el tipo de notificación
-    if (payload != null && payload.startsWith('adopcion:')) {
-      Navigator.of(ctx).pushNamedAndRemoveUntil('/home', (r) => false);
-    } else if (payload != null && payload.startsWith('cita:')) {
-      Navigator.of(ctx).pushNamedAndRemoveUntil('/vet_home', (r) => false);
-    }
+
+    // Esperar un frame para asegurar que la app esté montada
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final nav = MyApp.navigatorKey.currentState;
+      if (nav == null) return;
+
+      if (payload == null) {
+        nav.pushNamedAndRemoveUntil('/home', (r) => false);
+        return;
+      }
+
+      switch (payload) {
+        case 'vet_citas':
+          // Nueva cita → vet ve su gestión de citas
+          nav.pushNamedAndRemoveUntil('/vet_home', (r) => false);
+          Future.delayed(const Duration(milliseconds: 400), () {
+            MyApp.navigatorKey.currentState?.pushNamed('/vet_citas');
+          });
+          break;
+
+        case 'historial_citas':
+          // Cita confirmada/rechazada → usuario va a perfil donde está el historial
+          nav.pushNamedAndRemoveUntil('/home', (r) => false);
+          Future.delayed(const Duration(milliseconds: 400), () {
+            MyApp.navigatorKey.currentState?.pushNamed('/perfil');
+          });
+          break;
+
+        case 'solicitudes_adopcion':
+          // Solicitud de adopción → panel de solicitudes recibidas
+          nav.pushNamedAndRemoveUntil('/home', (r) => false);
+          Future.delayed(const Duration(milliseconds: 400), () {
+            MyApp.navigatorKey.currentState?.pushNamed('/solicitudes_adopcion');
+          });
+          break;
+
+        case 'vet_home':
+          // Urgencia → home del vet
+          nav.pushNamedAndRemoveUntil('/vet_home', (r) => false);
+          break;
+
+        default:
+          // Payloads legacy ('adopcion:xxx', 'cita:xxx', 'urgencia:xxx')
+          if (payload.startsWith('vet') || payload.startsWith('urgencia')) {
+            nav.pushNamedAndRemoveUntil('/vet_home', (r) => false);
+          } else {
+            nav.pushNamedAndRemoveUntil('/home', (r) => false);
+          }
+      }
+    });
   });
 
   runApp(
@@ -90,7 +129,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => VeterinarioController()),
         ChangeNotifierProvider(create: (_) => ServicioController()),
         ChangeNotifierProvider(create: (_) => SolicitudAdopcionController()),
-        ChangeNotifierProvider(create: (_) => AdminController()),
+        ChangeNotifierProvider(create: (_) => NoticiaController()),
       ],
       child: const MyApp(),
     ),
@@ -123,8 +162,11 @@ class MyApp extends StatelessWidget {
             if (authController.currentUser?.rol == 'veterinario') {
               return const VetHomeScreen();
             }
+            // Los administradores no tienen acceso en la app móvil.
+            // El AuthController cerrará sesión si el login retornó 'administrador'.
+            // Por si acaso queda una sesión previa, redirigir a login.
             if (authController.currentUser?.rol == 'administrador') {
-              return const AdminHomeScreen();
+              return const LoginScreen();
             }
             return const HomeScreen();
           }
@@ -137,10 +179,6 @@ class MyApp extends StatelessWidget {
         '/home': (context) => _RouteGuard(
               rolesPermitidos: const ['usuario'],
               child: const HomeScreen(),
-            ),
-        '/admin_home': (context) => _RouteGuard(
-              rolesPermitidos: const ['administrador'],
-              child: const AdminHomeScreen(),
             ),
         '/vet_home': (context) => _RouteGuard(
               rolesPermitidos: const ['veterinario'],
@@ -221,9 +259,7 @@ class _RouteGuard extends StatelessWidget {
 
     // Rol incorrecto → redirigir a la pantalla correspondiente
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (rol == 'administrador') {
-        Navigator.pushReplacementNamed(context, '/admin_home');
-      } else if (rol == 'veterinario') {
+      if (rol == 'veterinario') {
         Navigator.pushReplacementNamed(context, '/vet_home');
       } else {
         Navigator.pushReplacementNamed(context, '/home');

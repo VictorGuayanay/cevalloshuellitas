@@ -10,6 +10,7 @@ import '../../../domain/controllers/cita_controller.dart';
 import '../../../domain/controllers/mascota_controller.dart';
 import '../../../domain/controllers/veterinario_controller.dart';
 import '../../../domain/controllers/servicio_controller.dart';
+import '../../../domain/controllers/noticia_controller.dart';
 import '../shared/historial_citas_screen.dart';
 import 'seleccionar_ubicacion_screen.dart';
 
@@ -18,8 +19,6 @@ const _primary = Color(0xFF2D8B6F);
 const _primaryDark = Color(0xFF1A5C47);
 const _primaryLight = Color(0xFF4CAF8E);
 const _accent = Color.fromARGB(255, 67, 184, 156);
-const _headerStart = Color.fromARGB(255, 26, 92, 71);
-const _headerEnd = Color.fromARGB(0, 15, 243, 216);
 const _dark = Color.fromARGB(255, 26, 46, 37);
 const _textSecondary = Color(0xFF6B7F8E);
 const _cardBg = Colors.white;
@@ -198,18 +197,7 @@ class _VetPerfilScreenState extends State<VetPerfilScreen>
                   color: Colors.white,
                   letterSpacing: 0.3)),
           const Spacer(),
-          IconButton(
-            icon: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(Icons.settings_outlined,
-                  color: Colors.white, size: 18),
-            ),
-            onPressed: () {},
-          ),
+          const SizedBox(width: 48),
         ],
       ),
     );
@@ -534,14 +522,20 @@ class _VetPerfilScreenState extends State<VetPerfilScreen>
           () => _showCambiarContrasena(context),
         ),
         _modernOptionRow(
+          Icons.newspaper_rounded,
+          'Enviar noticia',
+          'Propón una noticia para publicar',
+          const Color(0xFF7C6FCD),
+          () => _showEnviarNoticia(context),
+        ),
+        _modernOptionRow(
           Icons.swap_horiz_rounded,
           'Cambiar a rol Usuario',
           'Accede como usuario regular',
           const Color(0xFF5B8FB9),
           () => _cambiarRol(context),
           isLast: true,
-        ),
-      ],
+        ),      ],
     );
   }
 
@@ -780,6 +774,19 @@ class _VetPerfilScreenState extends State<VetPerfilScreen>
   // ═══════════════════════════════════════════════════════════════════════════
   // ACCIONES (sheets y diálogos - sin cambio de funcionalidad)
   // ═══════════════════════════════════════════════════════════════════════════
+
+  void _showEnviarNoticia(BuildContext context) {
+    final uid = context.read<AuthController>().currentUser?.id ?? '';
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => ChangeNotifierProvider.value(
+        value: context.read<NoticiaController>(),
+        child: _EnviarNoticiaVetSheet(usuaId: uid),
+      ),
+    );
+  }
 
   void _showEditSheet(BuildContext context, VeterinarioModel? vet) {
     showModalBottomSheet(
@@ -1516,6 +1523,278 @@ class _VetAvatarPickerState extends State<_VetAvatarPicker>
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Sheet: Enviar Noticia (Veterinario)
+// ═══════════════════════════════════════════════════════════════════════════════
+class _EnviarNoticiaVetSheet extends StatefulWidget {
+  final String usuaId;
+  const _EnviarNoticiaVetSheet({required this.usuaId});
+
+  @override
+  State<_EnviarNoticiaVetSheet> createState() => _EnviarNoticiaVetSheetState();
+}
+
+class _EnviarNoticiaVetSheetState extends State<_EnviarNoticiaVetSheet> {
+  final _tituloCtrl    = TextEditingController();
+  final _contenidoCtrl = TextEditingController();
+  final _formKey       = GlobalKey<FormState>();
+  String _categoria    = 'salud';
+  File? _imagen;
+  String? _extension;
+
+  static const _categorias = [
+    'salud', 'nutricion', 'bienestar', 'prevencion',
+    'general', 'adopcion', 'perdidos', 'emergencias',
+  ];
+
+  @override
+  void dispose() {
+    _tituloCtrl.dispose();
+    _contenidoCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickImagen() async {
+    final picked = await ImagePicker().pickImage(
+        source: ImageSource.gallery, imageQuality: 80);
+    if (picked == null) return;
+    setState(() {
+      _imagen = File(picked.path);
+      _extension = picked.path.split('.').last.toLowerCase();
+    });
+  }
+
+  void _enviar() async {
+    if (!_formKey.currentState!.validate()) return;
+    final ctrl = context.read<NoticiaController>();
+    final ok = await ctrl.enviarNoticia(
+      usuaId: widget.usuaId,
+      titulo: _tituloCtrl.text.trim(),
+      contenido: _contenidoCtrl.text.trim(),
+      categoria: _categoria,
+      imagen: _imagen,
+      extension: _extension,
+    );
+    if (!mounted) return;
+    if (ok) {
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Row(children: [
+          const Icon(Icons.check_circle_outline_rounded,
+              color: Colors.white, size: 18),
+          const SizedBox(width: 8),
+          const Expanded(
+            child: Text('Noticia enviada. El admin la revisará pronto.'),
+          ),
+        ]),
+        backgroundColor: const Color(0xFF7C6FCD),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        duration: const Duration(seconds: 4),
+      ));
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(ctrl.errorMessage ?? 'Error al enviar la noticia'),
+        backgroundColor: Colors.redAccent,
+      ));
+    }
+  }
+
+  InputDecoration _deco(String label, IconData icon) => InputDecoration(
+        labelText: label,
+        labelStyle: GoogleFonts.poppins(
+            color: _textSecondary, fontSize: 13),
+        prefixIcon: Icon(icon, color: _primary, size: 20),
+        filled: true,
+        fillColor: const Color(0xFFF2F7F5),
+        border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide.none),
+        enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(
+                color: _primary.withValues(alpha: 0.25), width: 1.2)),
+        focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(color: _primary, width: 2)),
+        errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(
+                color: Color(0xFFE53935), width: 1.2)),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 28),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(child: Container(
+                  width: 40, height: 4,
+                  decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2)),
+                )),
+                const SizedBox(height: 20),
+
+                Row(children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF7C6FCD).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.newspaper_rounded,
+                        color: Color(0xFF7C6FCD), size: 20),
+                  ),
+                  const SizedBox(width: 10),
+                  Column(crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                    Text('Enviar Noticia',
+                        style: GoogleFonts.poppins(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: _dark)),
+                    Text('El administrador la revisará antes de publicar',
+                        style: GoogleFonts.poppins(
+                            fontSize: 11, color: _textSecondary)),
+                  ]),
+                ]),
+                const SizedBox(height: 20),
+
+                TextFormField(
+                  controller: _tituloCtrl,
+                  style: GoogleFonts.poppins(fontSize: 14, color: _dark),
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'El título es requerido' : null,
+                  decoration: _deco('Título de la noticia', Icons.title_rounded),
+                ),
+                const SizedBox(height: 12),
+
+                TextFormField(
+                  controller: _contenidoCtrl,
+                  maxLines: 4,
+                  style: GoogleFonts.poppins(fontSize: 13, color: _dark),
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'El contenido es requerido' : null,
+                  decoration: _deco('Descripción o contenido',
+                      Icons.article_outlined),
+                ),
+                const SizedBox(height: 12),
+
+                Text('Categoría',
+                    style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: _dark)),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8, runSpacing: 8,
+                  children: _categorias.map((cat) {
+                    final sel = _categoria == cat;
+                    return GestureDetector(
+                      onTap: () => setState(() => _categoria = cat),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 150),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 7),
+                        decoration: BoxDecoration(
+                          color: sel ? _primary : Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(cat,
+                            style: GoogleFonts.poppins(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: sel
+                                    ? Colors.white
+                                    : Colors.grey.shade600)),
+                      ),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 14),
+
+                GestureDetector(
+                  onTap: _pickImagen,
+                  child: Container(
+                    width: double.infinity,
+                    height: _imagen != null ? 160 : 54,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF2F7F5),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                          color: _primary.withValues(alpha: 0.3), width: 1.2),
+                    ),
+                    child: _imagen != null
+                        ? ClipRRect(
+                            borderRadius: BorderRadius.circular(14),
+                            child: Image.file(_imagen!, fit: BoxFit.cover))
+                        : Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.add_photo_alternate_outlined,
+                                  color: _primary, size: 20),
+                              const SizedBox(width: 8),
+                              Text('Agregar imagen (opcional)',
+                                  style: GoogleFonts.poppins(
+                                      fontSize: 13, color: _primary)),
+                            ],
+                          ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                Consumer<NoticiaController>(
+                  builder: (ctx, ctrl, _) => SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton.icon(
+                      onPressed: ctrl.isSubmitting ? null : _enviar,
+                      icon: ctrl.isSubmitting
+                          ? const SizedBox(
+                              width: 18, height: 18,
+                              child: CircularProgressIndicator(
+                                  color: Colors.white, strokeWidth: 2))
+                          : const Icon(Icons.send_rounded, size: 18),
+                      label: Text(
+                        ctrl.isSubmitting
+                            ? 'Enviando...'
+                            : 'Enviar para revisión',
+                        style: GoogleFonts.poppins(
+                            fontSize: 15, fontWeight: FontWeight.w600),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF7C6FCD),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14)),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

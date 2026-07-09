@@ -69,6 +69,32 @@ class VeterinarioController extends ChangeNotifier {
     }
   }
 
+  /// Alterna la disponibilidad del veterinario y actualiza en BD.
+  /// Retorna true si tuvo éxito, false si falló (el estado se revierte).
+  Future<bool> toggleDisponible() async {
+    if (_perfil == null || _perfil!.id.isEmpty) return false;
+    final valorAnterior = _perfil!.disponible;
+    final nuevo = !valorAnterior;
+
+    // Actualizar optimistamente en UI primero
+    _perfil = _perfil!.copyWith(disponible: nuevo);
+    notifyListeners();
+
+    try {
+      await _service.actualizarDisponibilidad(
+        veteId: _perfil!.id,
+        disponible: nuevo,
+      );
+      return true;
+    } catch (e) {
+      // Revertir si falló
+      _perfil = _perfil!.copyWith(disponible: valorAnterior);
+      _errorMessage = 'No se pudo actualizar la disponibilidad';
+      notifyListeners();
+      return false;
+    }
+  }
+
   /// Guarda la ubicación del veterinario en el mapa.
   Future<bool> guardarUbicacion({
     required double latitud,

@@ -415,8 +415,8 @@ class _MisMascotasScreenState extends State<MisMascotasScreen> {
       case 'para adoptar':
         color = _orange;
         break;
-      case 'adoptado':
-        color = const Color(0xFF43B89C);
+      case 'perdido':
+        color = const Color(0xFFE53935);
         break;
       default:
         color = _teal;
@@ -461,6 +461,8 @@ class _AddMascotaSheetState extends State<_AddMascotaSheet> {
   File? _imagenFisica;
   final ImagePicker _picker = ImagePicker();
 
+  bool _menorDeUnAnio = false;
+
   @override
   void initState() {
     super.initState();
@@ -468,11 +470,18 @@ class _AddMascotaSheetState extends State<_AddMascotaSheet> {
       final m = widget.mascota!;
       _nombreController.text = m.nombre;
       _razaController.text = m.raza;
-      _edadController.text = m.edad;
       _descripcionController.text = m.descripcion ?? '';
       _especie = m.especie.isNotEmpty ? m.especie : 'Perro';
       _genero = m.genero.isNotEmpty ? m.genero : 'Macho';
       _estado = m.estado.isNotEmpty ? m.estado : 'propio';
+      // Detectar si la edad guardada es "Menor de 1 año"
+      if (m.edad.toLowerCase() == 'menor de 1 año' || m.edad == '0') {
+        _menorDeUnAnio = true;
+        _edadController.text = '';
+      } else {
+        _menorDeUnAnio = false;
+        _edadController.text = m.edad;
+      }
     }
   }
 
@@ -517,23 +526,35 @@ class _AddMascotaSheetState extends State<_AddMascotaSheet> {
     if (usuarioId == null) return;
 
     if (_nombreController.text.trim().isEmpty ||
-        _razaController.text.trim().isEmpty ||
-        _edadController.text.trim().isEmpty) {
+        _razaController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Por favor, completa los campos requeridos.')),
       );
       return;
     }
 
-    final edadVal = int.tryParse(_edadController.text.trim());
-    if (edadVal == null || edadVal < 0 || edadVal > 100) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('La edad debe ser un número entre 0 y 100.'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
-      return;
+    // Calcular la edad según si es menor de un año o no
+    final String edadFinal;
+    if (_menorDeUnAnio) {
+      edadFinal = 'Menor de 1 año';
+    } else {
+      if (_edadController.text.trim().isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Por favor, completa los campos requeridos.')),
+        );
+        return;
+      }
+      final edadVal = int.tryParse(_edadController.text.trim());
+      if (edadVal == null || edadVal < 0 || edadVal > 100) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('La edad debe ser un número entre 1 y 100.'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+        return;
+      }
+      edadFinal = _edadController.text.trim();
     }
 
     String? fotoUrl = widget.mascota?.fotoUrl;
@@ -562,9 +583,9 @@ class _AddMascotaSheetState extends State<_AddMascotaSheet> {
       especie: _especie,
       raza: _razaController.text.trim(),
       genero: _genero,
-      edad: _edadController.text.trim(),
+      edad: edadFinal,
       estado: _estado,
-      descripcion: _estado == 'para adoptar' ? _descripcionController.text.trim() : null,
+      descripcion: (_estado == 'para adoptar' || _estado == 'perdido') ? _descripcionController.text.trim() : null,
       fotoUrl: fotoUrl,
     );
 
@@ -647,25 +668,25 @@ class _AddMascotaSheetState extends State<_AddMascotaSheet> {
               _buildInputField('Raza', _razaController, Icons.category_outlined),
               const SizedBox(height: 14),
 
-              _buildInputField('Edad (ej. 3)', _edadController, Icons.cake_outlined,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [
-                    FilteringTextInputFormatter.digitsOnly,
-                    _MaxValueFormatter(100),
-                  ]),
+              // ── Campo Edad con opción "Menor de 1 año" ──
+              _buildEdadField(),
               const SizedBox(height: 14),
 
               _buildDropdown('Género', _genero, ['Macho', 'Hembra'],
                   (val) => setState(() => _genero = val!)),
               const SizedBox(height: 14),
 
-              _buildDropdown('Estado', _estado, ['propio', 'para adoptar', 'adoptado'],
+              _buildDropdown('Estado', _estado, ['propio', 'para adoptar', 'perdido'],
                   (val) => setState(() => _estado = val!)),
               const SizedBox(height: 14),
 
-              if (_estado == 'para adoptar') ...[
+              if (_estado == 'para adoptar' || _estado == 'perdido') ...[
                 _buildInputField(
-                    'Descripción para adopción', _descripcionController, Icons.description_outlined),
+                    _estado == 'perdido'
+                        ? 'Descripción (ej. lugar donde se perdió)'
+                        : 'Descripción para adopción',
+                    _descripcionController,
+                    Icons.description_outlined),
                 const SizedBox(height: 14),
               ],
 
@@ -741,6 +762,71 @@ class _AddMascotaSheetState extends State<_AddMascotaSheet> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildEdadField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Checkbox: Menor de 1 año
+        GestureDetector(
+          onTap: () => setState(() {
+            _menorDeUnAnio = !_menorDeUnAnio;
+            if (_menorDeUnAnio) _edadController.clear();
+          }),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: _menorDeUnAnio
+                  ? _teal.withValues(alpha: 0.08)
+                  : const Color(0xFFF3FAFD),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: _menorDeUnAnio ? _teal : const Color(0xFFDCEEF0),
+                width: _menorDeUnAnio ? 1.8 : 1.2,
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  _menorDeUnAnio
+                      ? Icons.check_box_rounded
+                      : Icons.check_box_outline_blank_rounded,
+                  color: _menorDeUnAnio ? _teal : _grey,
+                  size: 22,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'Menor de 1 año',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    color: _menorDeUnAnio ? _teal : const Color(0xFF2D2D2D),
+                    fontWeight: _menorDeUnAnio ? FontWeight.w600 : FontWeight.w400,
+                  ),
+                ),
+                const Spacer(),
+                Icon(Icons.cake_outlined,
+                    color: _menorDeUnAnio ? _teal : _grey, size: 20),
+              ],
+            ),
+          ),
+        ),
+        // Campo numérico — solo si no es menor de 1 año
+        if (!_menorDeUnAnio) ...[
+          const SizedBox(height: 10),
+          _buildInputField(
+            'Edad en años (ej. 3)',
+            _edadController,
+            Icons.cake_outlined,
+            keyboardType: TextInputType.number,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              _MaxValueFormatter(100),
+            ],
+          ),
+        ],
+      ],
     );
   }
 

@@ -143,6 +143,14 @@ class CitaController extends ChangeNotifier {
     }
   }
 
+  /// Obtiene los horarios ocupados para un veterinario en una fecha específica.
+  Future<Set<String>> obtenerHorasOcupadas({
+    required String veteId,
+    required String fecha,
+  }) async {
+    return _citaService.obtenerHorasOcupadas(veteId: veteId, fecha: fecha);
+  }
+
   Future<bool> crearCita(CitaModel cita) async {
     _isLoading = true;
     _errorMessage = null;
@@ -268,25 +276,18 @@ class CitaController extends ChangeNotifier {
                       // Notificación push urgente con canal de alta prioridad
                       final sintomas = model.motivo
                           .replaceAll(RegExp(r'\[URGENCIA:\w+\]\s*'), '');
-                      _agregarNotificacion(NotificacionModel(
-                        id: 'urgencia_${model.id}',
-                        tipo: TipoNotificacion.urgencia,
-                        titulo: '🚨 Urgencia crítica',
-                        cuerpo:
-                            '${model.propietarioNombre} reporta urgencia de ${model.mascotaNombre}: $sintomas',
+                      _agregarNotificacion(NotificacionModel.urgencia(
                         citaId: model.id,
+                        propietarioNombre: model.propietarioNombre,
                         mascotaNombre: model.mascotaNombre,
+                        sintomas: sintomas,
                         fecha: model.fecha,
                         hora: model.hora,
                       ));
                     } else {
-                      _agregarNotificacion(NotificacionModel(
-                        id: 'nueva_${model.id}',
-                        tipo: TipoNotificacion.nuevaCita,
-                        titulo: 'Nueva solicitud de cita',
-                        cuerpo:
-                            '${model.propietarioNombre} solicita cita para ${model.mascotaNombre}',
+                      _agregarNotificacion(NotificacionModel.nuevaCita(
                         citaId: model.id,
+                        propietarioNombre: model.propietarioNombre,
                         mascotaNombre: model.mascotaNombre,
                         fecha: model.fecha,
                         hora: model.hora,
@@ -351,24 +352,16 @@ class CitaController extends ChangeNotifier {
 
                       if (nuevoEstado == 'confirmada') {
                         if (esUrgencia) {
-                          _agregarNotificacion(NotificacionModel(
-                            id: 'urgencia_confirmada_${model.id}',
-                            tipo: TipoNotificacion.urgencia,
-                            titulo: '🚨 ¡Urgencia aceptada!',
-                            cuerpo:
-                                'El veterinario aceptó tu emergencia de ${model.mascotaNombre}. Está en camino.',
+                          _agregarNotificacion(NotificacionModel.citaConfirmada(
                             citaId: model.id,
                             mascotaNombre: model.mascotaNombre,
                             fecha: model.fecha,
                             hora: model.hora,
+                            esUrgencia: true,
+                            idPrefix: 'urgencia_confirmada',
                           ));
                         } else {
-                          _agregarNotificacion(NotificacionModel(
-                            id: 'confirmada_${model.id}',
-                            tipo: TipoNotificacion.citaConfirmada,
-                            titulo: '¡Cita confirmada! 🎉',
-                            cuerpo:
-                                'Tu cita para ${model.mascotaNombre} el ${model.fecha.split('-').reversed.join('/')} a las ${model.hora} fue confirmada.',
+                          _agregarNotificacion(NotificacionModel.citaConfirmada(
                             citaId: model.id,
                             mascotaNombre: model.mascotaNombre,
                             fecha: model.fecha,
@@ -379,24 +372,16 @@ class CitaController extends ChangeNotifier {
                         }
                       } else {
                         if (esUrgencia) {
-                          _agregarNotificacion(NotificacionModel(
-                            id: 'urgencia_rechazada_${model.id}',
-                            tipo: TipoNotificacion.citaRechazada,
-                            titulo: '❌ Urgencia rechazada',
-                            cuerpo:
-                                'El veterinario no puede atender la emergencia de ${model.mascotaNombre}. Intenta con otro veterinario.',
+                          _agregarNotificacion(NotificacionModel.citaRechazada(
                             citaId: model.id,
                             mascotaNombre: model.mascotaNombre,
                             fecha: model.fecha,
                             hora: model.hora,
+                            esUrgencia: true,
+                            idPrefix: 'urgencia_rechazada',
                           ));
                         } else {
-                          _agregarNotificacion(NotificacionModel(
-                            id: 'rechazada_${model.id}',
-                            tipo: TipoNotificacion.citaRechazada,
-                            titulo: 'Cita rechazada',
-                            cuerpo:
-                                'Tu cita para ${model.mascotaNombre} el ${model.fecha.split('-').reversed.join('/')} no pudo ser agendada.',
+                          _agregarNotificacion(NotificacionModel.citaRechazada(
                             citaId: model.id,
                             mascotaNombre: model.mascotaNombre,
                             fecha: model.fecha,
@@ -463,14 +448,10 @@ class CitaController extends ChangeNotifier {
       // Timer in-app: solo agrega al panel visual, SIN disparar otra push
       // (la notificación del sistema ya fue programada arriba)
       _timers['${cita.id}_30min'] = Timer(delay30, () {
-        _agregarNotificacionSilenciosa(NotificacionModel(
-          id: 'recuerdo30_${cita.id}',
-          tipo: TipoNotificacion.recordatorio30min,
-          titulo: '⏰ Cita en 30 minutos',
-          cuerpo:
-              '$prefix ${cita.mascotaNombre} tiene cita a las ${cita.hora}.',
+        _agregarNotificacionSilenciosa(NotificacionModel.recordatorio30min(
           citaId: cita.id,
           mascotaNombre: cita.mascotaNombre,
+          prefixRol: prefix,
           fecha: cita.fecha,
           hora: cita.hora,
         ));
@@ -495,14 +476,10 @@ class CitaController extends ChangeNotifier {
 
       // Timer in-app: solo agrega al panel visual, SIN disparar otra push
       _timers['${cita.id}_ahora'] = Timer(delayAhora, () {
-        _agregarNotificacionSilenciosa(NotificacionModel(
-          id: 'recuerdoAhora_${cita.id}',
-          tipo: TipoNotificacion.recordatorioAhora,
-          titulo: '🔔 ¡Es la hora de la cita!',
-          cuerpo:
-              '$prefix ${cita.mascotaNombre} — cita comenzando ahora (${cita.hora}).',
+        _agregarNotificacionSilenciosa(NotificacionModel.recordatorioAhora(
           citaId: cita.id,
           mascotaNombre: cita.mascotaNombre,
+          prefixRol: prefix,
           fecha: cita.fecha,
           hora: cita.hora,
         ));
@@ -641,8 +618,29 @@ class CitaController extends ChangeNotifier {
       cuerpo: n.cuerpo,
       urgente: urgente,
       subtext: n.mascotaNombre,
-      payload: 'cita:${n.citaId ?? n.id}',
+      payload: _payloadParaTipo(n.tipo),
     );
+  }
+
+  /// Devuelve el payload de navegación según el tipo de notificación.
+  /// Este payload lo usa main.dart para navegar a la pantalla correcta
+  /// cuando el usuario toca la notificación push.
+  String _payloadParaTipo(TipoNotificacion tipo) {
+    switch (tipo) {
+      case TipoNotificacion.nuevaCita:
+        return 'vet_citas';
+      case TipoNotificacion.citaConfirmada:
+      case TipoNotificacion.citaRechazada:
+      case TipoNotificacion.recordatorio30min:
+      case TipoNotificacion.recordatorioAhora:
+        return 'historial_citas';
+      case TipoNotificacion.urgencia:
+        return 'vet_home';
+      case TipoNotificacion.solicitudAdopcion:
+        return 'solicitudes_adopcion';
+      case TipoNotificacion.citaPendiente:
+        return 'historial_citas';
+    }
   }
 
   // ── Gestión de notificaciones ─────────────────────────────────────────────

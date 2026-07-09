@@ -1,4 +1,4 @@
-import 'dart:convert' as convert;
+﻿import 'dart:convert' as convert;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
@@ -8,6 +8,7 @@ import 'package:latlong2/latlong.dart' hide Path;
 import 'package:provider/provider.dart';
 import '../../../data/models/cita_model.dart';
 import '../../../data/models/mascota_model.dart';
+import '../../../presentation/widgets/header_wave_clipper.dart';
 import '../../../data/models/veterinario_model.dart';
 import '../../../data/services/fcm_service.dart';
 import '../../../domain/controllers/auth_controller.dart';
@@ -96,14 +97,18 @@ class _UrgenciasUsuarioScreenState extends State<UrgenciasUsuarioScreen> {
       backgroundColor: const Color(0xFFF5F6FA),
       body: Stack(
         children: [
-          Container(
-            height: 210,
-            width: double.infinity,
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFFB71C1C), Color(0xFFE53935)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+          // ── Cabecera roja con curva wave ──
+          ClipPath(
+            clipper: HeaderWaveClipper(),
+            child: Container(
+              height: 180,
+              width: double.infinity,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFFB71C1C), Color(0xFFE53935)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
               ),
             ),
           ),

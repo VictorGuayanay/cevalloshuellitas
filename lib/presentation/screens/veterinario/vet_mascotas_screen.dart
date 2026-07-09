@@ -455,9 +455,11 @@ class _VetAddMascotaSheetState extends State<_VetAddMascotaSheet> {
   final _nombreCtrl = TextEditingController();
   final _razaCtrl = TextEditingController();
   final _edadCtrl = TextEditingController();
+  final _descripcionCtrl = TextEditingController();
   String _especie = 'Perro';
   String _genero = 'Macho';
   String _estado = 'propio';
+  bool _menorDeUnAnio = false;
   File? _imagenFisica;
   final _picker = ImagePicker();
 
@@ -468,10 +470,17 @@ class _VetAddMascotaSheetState extends State<_VetAddMascotaSheet> {
       final m = widget.mascota!;
       _nombreCtrl.text = m.nombre;
       _razaCtrl.text = m.raza;
-      _edadCtrl.text = m.edad;
+      _descripcionCtrl.text = m.descripcion ?? '';
       _especie = m.especie.isNotEmpty ? m.especie : 'Perro';
       _genero = m.genero.isNotEmpty ? m.genero : 'Macho';
       _estado = m.estado.isNotEmpty ? m.estado : 'propio';
+      if (m.edad.toLowerCase() == 'menor de 1 año' || m.edad == '0') {
+        _menorDeUnAnio = true;
+        _edadCtrl.text = '';
+      } else {
+        _menorDeUnAnio = false;
+        _edadCtrl.text = m.edad;
+      }
     }
   }
 
@@ -480,6 +489,7 @@ class _VetAddMascotaSheetState extends State<_VetAddMascotaSheet> {
     _nombreCtrl.dispose();
     _razaCtrl.dispose();
     _edadCtrl.dispose();
+    _descripcionCtrl.dispose();
     super.dispose();
   }
 
@@ -499,6 +509,27 @@ class _VetAddMascotaSheetState extends State<_VetAddMascotaSheet> {
       return;
     }
 
+    // Calcular edad
+    final String edadFinal;
+    if (_menorDeUnAnio) {
+      edadFinal = 'Menor de 1 año';
+    } else {
+      if (_edadCtrl.text.trim().isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Ingresa la edad de la mascota.')));
+        return;
+      }
+      final edadVal = int.tryParse(_edadCtrl.text.trim());
+      if (edadVal == null || edadVal < 1 || edadVal > 100) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('La edad debe ser un número entre 1 y 100.'),
+          backgroundColor: Colors.redAccent,
+        ));
+        return;
+      }
+      edadFinal = _edadCtrl.text.trim();
+    }
+
     String? fotoUrl = widget.mascota?.fotoUrl;
     if (_imagenFisica != null) {
       final ext = _imagenFisica!.path.split('.').last;
@@ -512,8 +543,11 @@ class _VetAddMascotaSheetState extends State<_VetAddMascotaSheet> {
       especie: _especie,
       raza: _razaCtrl.text.trim(),
       genero: _genero,
-      edad: _edadCtrl.text.trim(),
+      edad: edadFinal,
       estado: _estado,
+      descripcion: (_estado == 'para adoptar' || _estado == 'perdido')
+          ? _descripcionCtrl.text.trim()
+          : null,
       fotoUrl: fotoUrl,
     );
 
@@ -572,19 +606,29 @@ class _VetAddMascotaSheetState extends State<_VetAddMascotaSheet> {
               const SizedBox(height: 12),
               _field('Raza *', _razaCtrl, Icons.category_outlined),
               const SizedBox(height: 12),
-              Row(children: [
-                Expanded(child: _field('Edad', _edadCtrl, Icons.cake_outlined,
-                    keyboard: TextInputType.number)),
-                const SizedBox(width: 12),
-                Expanded(child: _dropdown('Género', _genero,
-                    ['Macho', 'Hembra'],
-                    (v) => setState(() => _genero = v!))),
-              ]),
+              // ── Edad con opción menor de 1 año ──
+              _edadField(),
+              const SizedBox(height: 12),
+              _dropdown('Género', _genero,
+                  ['Macho', 'Hembra'],
+                  (v) => setState(() => _genero = v!)),
               const SizedBox(height: 12),
               _dropdown('Estado', _estado,
-                  ['propio', 'para adoptar', 'adoptado'],
+                  ['propio', 'para adoptar', 'perdido'],
                   (v) => setState(() => _estado = v!)),
               const SizedBox(height: 12),
+
+              // Descripción visible cuando es adopción o perdido
+              if (_estado == 'para adoptar' || _estado == 'perdido') ...[
+                _field(
+                  _estado == 'perdido'
+                      ? 'Descripción (ej. lugar donde se perdió)'
+                      : 'Descripción para adopción',
+                  _descripcionCtrl,
+                  Icons.description_outlined,
+                ),
+                const SizedBox(height: 12),
+              ],
               GestureDetector(
                 onTap: _pickImage,
                 child: Container(
@@ -646,6 +690,64 @@ class _VetAddMascotaSheetState extends State<_VetAddMascotaSheet> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _edadField() {
+    const teal = Color(0xFF1CB5C9);
+    const grey = Color(0xFF8A9BB0);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        GestureDetector(
+          onTap: () => setState(() {
+            _menorDeUnAnio = !_menorDeUnAnio;
+            if (_menorDeUnAnio) _edadCtrl.clear();
+          }),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: _menorDeUnAnio
+                  ? teal.withValues(alpha: 0.08)
+                  : const Color(0xFFF0FAFB),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: _menorDeUnAnio ? teal : const Color(0xFFBBEBF0),
+                width: _menorDeUnAnio ? 1.8 : 1.2,
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  _menorDeUnAnio
+                      ? Icons.check_box_rounded
+                      : Icons.check_box_outline_blank_rounded,
+                  color: _menorDeUnAnio ? teal : grey,
+                  size: 22,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'Menor de 1 año',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    color: _menorDeUnAnio ? teal : const Color(0xFF2D2D2D),
+                    fontWeight:
+                        _menorDeUnAnio ? FontWeight.w600 : FontWeight.w400,
+                  ),
+                ),
+                const Spacer(),
+                Icon(Icons.cake_outlined,
+                    color: _menorDeUnAnio ? teal : grey, size: 20),
+              ],
+            ),
+          ),
+        ),
+        if (!_menorDeUnAnio) ...[
+          const SizedBox(height: 10),
+          _field('Edad en años (ej. 3)', _edadCtrl, Icons.cake_outlined,
+              keyboard: TextInputType.number),
+        ],
+      ],
     );
   }
 

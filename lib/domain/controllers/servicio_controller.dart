@@ -10,8 +10,6 @@ class ServicioController extends ChangeNotifier {
   final Map<String, List<VeterinarioServicioModel>> _vetsPorServicio = {};
   // Servicios del vet logueado
   List<VeterinarioServicioModel> _misServicios = [];
-  // IDs de servicios seleccionados (para edición)
-  final Set<String> _seleccionados = {};
   bool _isLoading = false;
   bool _isLoadingVets = false;
   bool _isLoadingMisServicios = false;
@@ -19,7 +17,6 @@ class ServicioController extends ChangeNotifier {
 
   List<ServicioModel> get servicios => _servicios;
   List<VeterinarioServicioModel> get misServicios => _misServicios;
-  Set<String> get seleccionados => _seleccionados;
   bool get isLoading => _isLoading;
   bool get isLoadingVets => _isLoadingVets;
   bool get isLoadingMisServicios => _isLoadingMisServicios;

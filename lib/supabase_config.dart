@@ -1,5 +1,3 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
-
 /// URL del proyecto en Supabase
 const String supabaseUrl = 'https://sjdlannkcqdupfoxxbxt.supabase.co';
 
@@ -11,11 +9,3 @@ const String supabaseAnonKey = 'sb_publishable_BIk1beMqBJnTrqqsKW1jng_lixaeoEz';
 /// Debe ser el ID de tipo "Aplicación web" que Supabase genera automáticamente.
 const String googleWebClientId =
     '360932708925-2362al8ifnug7icag9saerk8netp085v.apps.googleusercontent.com';
-
-/// Acceso rápido al cliente de Supabase desde cualquier parte de la app.
-///
-/// Ejemplo de uso:
-/// ```dart
-/// final data = await supabase.from('mascotas').select();
-/// ```
-final supabase = Supabase.instance.client;

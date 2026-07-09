@@ -21,7 +21,6 @@ class SolicitudAdopcionController extends ChangeNotifier {
 
   RealtimeChannel? _realtimeChannel;
   Timer? _pollingTimer;
-  String? _duenioIdActivo;
 
   List<SolicitudAdopcionModel> get misSolicitudes => _misSolicitudes;
   List<SolicitudAdopcionModel> get solicitudesRecibidas => _solicitudesRecibidas;
@@ -40,8 +39,6 @@ class SolicitudAdopcionController extends ChangeNotifier {
   /// Arranca Realtime + polling periódico para el [duenioId].
   /// Llama esto en el initState del HomeScreen.
   Future<void> iniciarVigilancia(String duenioId) async {
-    _duenioIdActivo = duenioId;
-
     // 1. Carga inicial (sin push, sin vibración)
     await _sincronizarSolicitudesPendientes(duenioId, dispararPush: false);
 
@@ -61,7 +58,6 @@ class SolicitudAdopcionController extends ChangeNotifier {
     _realtimeChannel = null;
     _pollingTimer?.cancel();
     _pollingTimer = null;
-    _duenioIdActivo = null;
   }
 
   // ─── Realtime ─────────────────────────────────────────────────────────────
@@ -207,19 +203,9 @@ class SolicitudAdopcionController extends ChangeNotifier {
 
   // ─── Compatibilidad con código anterior ───────────────────────────────────
 
-  /// Alias para iniciarVigilancia (compatibilidad con HomeScreen).
+  /// Llama a iniciarVigilancia (compatibilidad con SolicitudesAdopcionScreen).
   void suscribirNotificaciones(String duenioId) {
     iniciarVigilancia(duenioId);
-  }
-
-  /// Alias para detenerVigilancia.
-  void desuscribirNotificaciones() {
-    detenerVigilancia();
-  }
-
-  /// Carga inicial explícita (sin push). Llamado desde HomeScreen.
-  Future<void> cargarNotificacionesExistentes(String duenioId) async {
-    await _sincronizarSolicitudesPendientes(duenioId, dispararPush: false);
   }
 
   // ─── Gestión de notificaciones ────────────────────────────────────────────

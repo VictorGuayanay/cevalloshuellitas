@@ -45,7 +45,7 @@ class MascotaModel {
       especie: json['masc_especie'] as String? ?? '',
       raza: json['masc_raza'] as String? ?? '',
       genero: json['masc_sexo'] as String? ?? '',
-      edad: json['masc_edad']?.toString() ?? '',
+      edad: _parseEdad(json['masc_edad']),
       estado: json['masc_estado'] as String? ?? 'Disponible',
       descripcion: json['masc_descripcion'] as String?,
       fotoUrl: json['masc_foto_url'] as String?,
@@ -60,12 +60,16 @@ class MascotaModel {
 
   /// Para INSERT — nunca incluye masc_id
   Map<String, dynamic> toInsertJson() {
+    // Si la edad es "Menor de 1 año" guardamos 0 en la DB
+    final edadInt = edad.toLowerCase() == 'menor de 1 año'
+        ? 0
+        : (int.tryParse(edad) ?? 0);
     return {
       if (usuarioId.isNotEmpty) 'usua_id': usuarioId,
       'masc_nombre': nombre,
       if (especie.isNotEmpty) 'masc_especie': especie,
       if (raza.isNotEmpty) 'masc_raza': raza,
-      'masc_edad': int.tryParse(edad) ?? 0,
+      'masc_edad': edadInt,
       if (genero.isNotEmpty) 'masc_sexo': genero,
       if (descripcion != null && descripcion!.isNotEmpty)
         'masc_descripcion': descripcion,
@@ -76,17 +80,30 @@ class MascotaModel {
 
   /// Para UPDATE
   Map<String, dynamic> toUpdateJson() {
+    final edadInt = edad.toLowerCase() == 'menor de 1 año'
+        ? 0
+        : (int.tryParse(edad) ?? 0);
     return {
       'masc_nombre': nombre,
       'masc_especie': especie.isNotEmpty ? especie : null,
       'masc_raza': raza.isNotEmpty ? raza : null,
-      'masc_edad': int.tryParse(edad) ?? 0,
+      'masc_edad': edadInt,
       'masc_sexo': genero.isNotEmpty ? genero : null,
       'masc_descripcion':
           descripcion?.isNotEmpty == true ? descripcion : null,
       'masc_foto_url': fotoUrl?.isNotEmpty == true ? fotoUrl : null,
       'masc_estado': estado,
     };
+  }
+
+  /// Convierte el valor numérico de edad de la DB a texto legible.
+  /// Si es 0, lo interpreta como "Menor de 1 año".
+  static String _parseEdad(dynamic raw) {
+    if (raw == null) return '';
+    final val = int.tryParse(raw.toString());
+    if (val == null) return raw.toString();
+    if (val == 0) return 'Menor de 1 año';
+    return val.toString();
   }
 
   IconData get icon {
