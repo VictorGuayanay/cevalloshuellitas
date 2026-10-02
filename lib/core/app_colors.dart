@@ -11,10 +11,10 @@ class AppColors {
   static const tealLight   = Color(0xFF5BBFBF);
   static const tealBg      = Color(0xFFBBE7EC);   // cabecera celeste pastel
 
-  // ── Verdes (veterinario) ─────────────────────────────────────────────────
+  // ── Verdes ───────────────────────────────────────────────────────────────
   static const vetGreen    = Color(0xFF4A9B7F);
   static const vetGreenDark= Color(0xFF2D8B6F);
-  static const vetGreenBg  = Color(0xFFBAD1C2);   // cabecera vet pastel
+  static const vetGreenBg  = Color(0xFFBAD1C2);
 
   // ── Naranja ───────────────────────────────────────────────────────────────
   static const orange      = Color(0xFFE58D57);

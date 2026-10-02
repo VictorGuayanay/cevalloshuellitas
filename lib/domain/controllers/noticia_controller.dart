@@ -1,3 +1,9 @@
+// noticia_controller.dart — Controlador de noticias de la comunidad.
+//
+// Gestiona la lista de noticias publicadas y el envío de nuevas noticias.
+// El canal Realtime de Supabase recarga la lista automáticamente cuando
+// el administrador aprueba o rechaza una noticia desde el panel.
+
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -7,20 +13,24 @@ import '../../data/services/noticia_service.dart';
 class NoticiaController extends ChangeNotifier {
   final NoticiaService _service = NoticiaService();
 
+  // ── Estado interno ─────────────────────────────────────────────────────────
   List<NoticiaModel> _noticias = [];
-  bool _isLoading = false;
-  bool _isSubmitting = false;
+  bool _isLoading    = false; // carga inicial de la lista
+  bool _isSubmitting = false; // envío de nueva noticia en curso
   String? _errorMessage;
 
-  // Canal Realtime
-  RealtimeChannel? _canal;
+  RealtimeChannel? _canal; // canal Realtime de Supabase
 
-  List<NoticiaModel> get noticias => _noticias;
-  bool get isLoading => _isLoading;
-  bool get isSubmitting => _isSubmitting;
-  String? get errorMessage => _errorMessage;
+  // ── Getters ────────────────────────────────────────────────────────────────
+  List<NoticiaModel> get noticias     => _noticias;
+  bool get isLoading                  => _isLoading;
+  bool get isSubmitting               => _isSubmitting;
+  String? get errorMessage            => _errorMessage;
 
-  // ── Cargar noticias aprobadas + Realtime ────────────────────────────────────
+  // ── Cargar + Realtime ──────────────────────────────────────────────────────
+
+  /// Carga las noticias publicadas y activa el canal Realtime para
+  /// refrescar automáticamente cuando el admin modere alguna.
   Future<void> cargarNoticias() async {
     _isLoading = true;
     _errorMessage = null;
@@ -39,20 +49,22 @@ class NoticiaController extends ChangeNotifier {
     _suscribirRealtime();
   }
 
-  /// Escucha cambios en la tabla noticias para refrescar automáticamente
-  /// cuando el admin aprueba una noticia desde el panel web.
+  /// Escucha cualquier cambio en la tabla `noticias` y recarga la lista.
+  /// Así, cuando el admin aprueba una noticia desde el panel web,
+  /// los usuarios la ven al instante sin recargar la app.
   void _suscribirRealtime() {
-    _canal?.unsubscribe();
+    _canal?.unsubscribe(); // cancelar suscripción anterior
 
     _canal = Supabase.instance.client
         .channel('noticias_aprobadas')
         .onPostgresChanges(
-          event: PostgresChangeEvent.all,
+          event: PostgresChangeEvent.all, // INSERT, UPDATE y DELETE
           schema: 'public',
           table: 'noticias',
           callback: (payload) async {
             debugPrint('Realtime noticias: ${payload.eventType}');
             try {
+              // Recargamos solo las publicadas para mostrar el estado actualizado.
               _noticias = await _service.obtenerNoticiasAprobadas();
               notifyListeners();
             } catch (e) {
@@ -65,12 +77,16 @@ class NoticiaController extends ChangeNotifier {
         });
   }
 
+  /// Cancela el canal Realtime. Se llama desde dispose() o al salir de la pantalla.
   void detenerRealtime() {
     _canal?.unsubscribe();
     _canal = null;
   }
 
-  // ── Enviar nueva noticia ────────────────────────────────────────────────────
+  // ── Enviar noticia ─────────────────────────────────────────────────────────
+
+  /// Crea una nueva noticia con estado 'pendiente'.
+  /// Si se adjunta imagen, la sube primero a Storage y luego guarda la URL.
   Future<bool> enviarNoticia({
     required String usuaId,
     required String titulo,
@@ -84,13 +100,15 @@ class NoticiaController extends ChangeNotifier {
     notifyListeners();
 
     try {
+      // Subir imagen si se seleccionó una.
       String? imagenUrl;
       if (imagen != null && extension != null) {
         imagenUrl = await _service.subirImagenNoticia(imagen, extension);
       }
 
+      // Construir el modelo y enviarlo a la BD.
       final noticia = NoticiaModel(
-        id: '',
+        id: '',          // Supabase asigna el ID automáticamente
         usuaId: usuaId,
         titulo: titulo,
         contenido: contenido,
@@ -114,6 +132,7 @@ class NoticiaController extends ChangeNotifier {
     }
   }
 
+  /// Limpia recursos al desmontar el provider.
   @override
   void dispose() {
     detenerRealtime();

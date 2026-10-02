@@ -1,3 +1,14 @@
+// auth_controller.dart — Controlador de autenticación.
+//
+// Actúa como puente entre la UI y el AuthService.
+// Extiende ChangeNotifier para que la UI escuche cambios de estado con Provider.
+//
+// Estado que maneja:
+//   - isLoading: hay una operación en curso (login, registro, etc.)
+//   - isInitializing: restaurando la sesión al arrancar la app
+//   - errorMessage: último error a mostrar en la UI
+//   - currentUser: perfil del usuario autenticado
+
 import 'dart:io' show File;
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -5,95 +16,78 @@ import '../../data/models/usuario_model.dart';
 import '../../data/services/auth_service.dart';
 import '../../data/services/fcm_service.dart';
 
-/// Controlador de autenticación que maneja el estado de login/registro.
-///
-/// Usa [ChangeNotifier] para notificar a la UI de cambios de estado.
 class AuthController extends ChangeNotifier {
   final AuthService _authService = AuthService();
 
-  bool _isLoading = false;
-  bool _isInitializing = true;
-  String? _errorMessage;
-  UsuarioModel? _currentUser;
+  // ── Estado interno ─────────────────────────────────────────────────────────
+  bool _isLoading      = false; // true mientras hay operación en curso
+  bool _isInitializing = true;  // true durante el splash inicial
+  String? _errorMessage;        // null si no hay error
+  UsuarioModel? _currentUser;   // null si no hay sesión
 
-  // Getters
-  bool get isLoading => _isLoading;
+  // ── Getters públicos ────────────────────────────────────────────────────────
+  bool get isLoading      => _isLoading;
   bool get isInitializing => _isInitializing;
   String? get errorMessage => _errorMessage;
   UsuarioModel? get currentUser => _currentUser;
   bool get isAuthenticated => _authService.isAuthenticated;
 
-  /// Intenta iniciar sesión con las credenciales proporcionadas.
-  ///
-  /// Retorna `true` si el login fue exitoso, `false` en caso contrario.
-  Future<bool> login(String correo, String password) async {
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
+  // ── Login ──────────────────────────────────────────────────────────────────
 
+  /// Inicia sesión con email y contraseña.
+  /// Retorna true si tuvo éxito, false si falló (el error queda en errorMessage).
+  Future<bool> login(String correo, String password) async {
+    _setLoading(true);
     try {
       _currentUser = await _authService.signIn(
         correo: correo.trim(),
         password: password,
       );
-      // Guardar token FCM para recibir push remotas
+      // Guardar token FCM para que el usuario reciba notificaciones push.
       await FcmService.instance.guardarToken(_currentUser!.id);
-      _isLoading = false;
-      notifyListeners();
+      _setLoading(false);
       return true;
     } on AuthException catch (e) {
+      // Errores de Supabase Auth (credenciales inválidas, email no confirmado, etc.)
       _errorMessage = _mapAuthError(e.message);
-      _isLoading = false;
-      notifyListeners();
+      _setLoading(false);
       return false;
     } catch (e) {
       debugPrint('Error en login: $e');
       _errorMessage = 'Error inesperado: $e';
-      _isLoading = false;
-      notifyListeners();
+      _setLoading(false);
       return false;
     }
   }
 
-  /// Intenta iniciar sesión con Google.
-  ///
-  /// Retorna `true` si el login fue exitoso, `false` en caso contrario.
+  /// Inicia sesión con Google.
+  /// Retorna true si tuvo éxito, false si el usuario canceló o hubo error.
   Future<bool> loginWithGoogle() async {
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
-
+    _setLoading(true);
     try {
       _currentUser = await _authService.signInWithGoogle();
-      // Guardar token FCM para recibir push remotas
       await FcmService.instance.guardarToken(_currentUser!.id);
-      _isLoading = false;
-      notifyListeners();
+      _setLoading(false);
       return true;
     } on AuthException catch (e) {
       _errorMessage = _mapAuthError(e.message);
-      _isLoading = false;
-      notifyListeners();
+      _setLoading(false);
       return false;
     } catch (e) {
       final msg = e.toString();
-      if (msg.contains('cancelado')) {
-        _errorMessage = null;
-      } else {
-        // Mostramos el mensaje completo para poder diagnosticar
-        _errorMessage = msg
-            .replaceAll('Exception: ', '')
-            .replaceAll('exception: ', '');
-      }
-      _isLoading = false;
-      notifyListeners();
+      // Si el usuario canceló el selector, no mostramos error.
+      _errorMessage = msg.contains('cancelado')
+          ? null
+          : msg.replaceAll('Exception: ', '').replaceAll('exception: ', '');
+      _setLoading(false);
       return false;
     }
   }
 
-  /// Registra un nuevo usuario con los datos proporcionados.
-  ///
-  /// Retorna `true` si el registro fue exitoso, `false` en caso contrario.
+  // ── Registro ───────────────────────────────────────────────────────────────
+
+  /// Registra un nuevo usuario con los datos del formulario.
+  /// Retorna true si se creó la cuenta, false en caso contrario.
   Future<bool> register({
     required String nombre,
     required String correo,
@@ -101,10 +95,7 @@ class AuthController extends ChangeNotifier {
     String? telefono,
     String rol = 'usuario',
   }) async {
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
-
+    _setLoading(true);
     try {
       _currentUser = await _authService.signUp(
         nombre: nombre.trim(),
@@ -113,29 +104,28 @@ class AuthController extends ChangeNotifier {
         telefono: telefono?.trim(),
         rol: rol,
       );
-      // Guardar token FCM para recibir push remotas
       await FcmService.instance.guardarToken(_currentUser!.id);
-      _isLoading = false;
-      notifyListeners();
+      _setLoading(false);
       return true;
     } on AuthException catch (e) {
       _errorMessage = _mapAuthError(e.message);
-      _isLoading = false;
-      notifyListeners();
+      _setLoading(false);
       return false;
     } catch (e) {
       debugPrint('Error en registro: $e');
       _errorMessage = 'Error al crear la cuenta: $e';
-      _isLoading = false;
-      notifyListeners();
+      _setLoading(false);
       return false;
     }
   }
 
-  /// Cierra la sesión actual y limpia el estado.
+  // ── Logout ─────────────────────────────────────────────────────────────────
+
+  /// Cierra la sesión: limpia el token FCM, cierra sesión en Supabase
+  /// y resetea el estado local.
   Future<void> logout() async {
-    // Limpiar token FCM antes de cerrar sesión
     if (_currentUser != null) {
+      // Quitar el token FCM para que el usuario no reciba más notificaciones.
       await FcmService.instance.limpiarToken(_currentUser!.id);
     }
     await _authService.signOut();
@@ -144,7 +134,10 @@ class AuthController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Intenta restaurar la sesión anterior al abrir la app.
+  // ── Restaurar sesión ───────────────────────────────────────────────────────
+
+  /// Se llama al arrancar la app para recuperar la sesión anterior.
+  /// Mientras corre, isInitializing = true → el splash se mantiene visible.
   Future<void> tryRestoreSession() async {
     _isInitializing = true;
     notifyListeners();
@@ -153,80 +146,81 @@ class AuthController extends ChangeNotifier {
     if (userId != null) {
       try {
         _currentUser = await _authService.getUserProfile(userId);
-        // Actualizar token FCM (puede haber cambiado desde el último login)
+        // Actualizar token FCM (puede haber cambiado desde la última vez).
         await FcmService.instance.guardarToken(userId);
       } catch (e) {
         debugPrint('Error al restaurar sesión: $e');
+        // No abortamos: si falla, el usuario verá el login.
       }
     }
 
-    // Espera un pequeño tiempo mínimo para reproducir el GIF (1.2 segundos)
+    // Tiempo mínimo para reproducir la animación del splash.
     await Future.delayed(const Duration(milliseconds: 1200));
 
     _isInitializing = false;
     notifyListeners();
   }
 
-  /// Sube la foto de perfil del usuario y actualiza el estado local.
+  // ── Foto de perfil ─────────────────────────────────────────────────────────
+
+  /// Sube una foto de perfil y actualiza el estado local con la nueva URL.
   Future<bool> subirFotoUsuario(File imagen, String extension) async {
     if (_currentUser == null) return false;
-
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
-
+    _setLoading(true);
     try {
       final url = await _authService.subirFotoUsuario(
-        _currentUser!.id,
-        imagen,
-        extension,
+        _currentUser!.id, imagen, extension,
       );
-      _currentUser = UsuarioModel(
-        id: _currentUser!.id,
-        nombre: _currentUser!.nombre,
-        correo: _currentUser!.correo,
-        telefono: _currentUser!.telefono,
-        rol: _currentUser!.rol,
-        fechaRegistro: _currentUser!.fechaRegistro,
-        fotoUrl: url,
-      );
-      _isLoading = false;
-      notifyListeners();
+      // Actualizar el modelo local con la nueva URL sin recargar desde BD.
+      _currentUser = _currentUser!.copyWith(fotoUrl: url);
+      _setLoading(false);
       return true;
     } catch (e) {
       _errorMessage = 'Error al subir la foto: $e';
-      _isLoading = false;
-      notifyListeners();
+      _setLoading(false);
       return false;
     }
   }
 
-  /// Actualiza el perfil del usuario actual (nombre y teléfono).
-  Future<bool> updateProfile(String nombre, String telefono) async {
-    if (_currentUser == null) return false;
+  // ── Actualizar perfil ──────────────────────────────────────────────────────
 
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
+  /// Guarda los cambios del perfil en Supabase y actualiza el estado local.
+  Future<bool> updateProfile(
+    String nombre,
+    String telefono, {
+    String? cedula,
+    String? direccionGps,
+    bool? esProductor,
+    String? tipoAnimales,
+  }) async {
+    if (_currentUser == null) return false;
+    _setLoading(true);
+
+    // Si no se pasa esProductor, conservamos el valor actual.
+    final productorFinal = esProductor ?? _currentUser!.esProductor;
 
     try {
-      await _authService.updateUserProfile(_currentUser!.id, nombre, telefono);
-      _currentUser = UsuarioModel(
-        id: _currentUser!.id,
-        nombre: nombre,
-        correo: _currentUser!.correo,
-        telefono: telefono,
-        rol: _currentUser!.rol,
-        fechaRegistro: _currentUser!.fechaRegistro,
-        fotoUrl: _currentUser!.fotoUrl,
+      await _authService.updateUserProfile(
+        _currentUser!.id, nombre, telefono,
+        cedula: cedula,
+        direccionGps: direccionGps,
+        esProductor: productorFinal,
+        tipoAnimales: productorFinal ? tipoAnimales : null,
       );
-      _isLoading = false;
-      notifyListeners();
+      // Actualizar el modelo local (sin ir a la BD de nuevo).
+      _currentUser = _currentUser!.copyWith(
+        nombre: nombre,
+        telefono: telefono,
+        cedula: cedula,
+        direccionGps: direccionGps,
+        esProductor: productorFinal,
+        tipoAnimales: productorFinal ? tipoAnimales : null,
+      );
+      _setLoading(false);
       return true;
     } catch (e) {
       _errorMessage = 'Error al actualizar el perfil: $e';
-      _isLoading = false;
-      notifyListeners();
+      _setLoading(false);
       return false;
     }
   }
@@ -234,109 +228,89 @@ class AuthController extends ChangeNotifier {
   /// Cambia el rol del usuario y actualiza el estado local.
   Future<bool> updateRol(String nuevoRol) async {
     if (_currentUser == null) return false;
-
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
-
+    _setLoading(true);
     try {
       await _authService.updateUserRol(_currentUser!.id, nuevoRol);
-      _currentUser = UsuarioModel(
-        id: _currentUser!.id,
-        nombre: _currentUser!.nombre,
-        correo: _currentUser!.correo,
-        telefono: _currentUser!.telefono,
-        rol: nuevoRol,
-        fechaRegistro: _currentUser!.fechaRegistro,
-        fotoUrl: _currentUser!.fotoUrl,
-      );
-      _isLoading = false;
-      notifyListeners();
+      _currentUser = _currentUser!.copyWith(rol: nuevoRol);
+      _setLoading(false);
       return true;
     } catch (e) {
       _errorMessage = 'Error al cambiar el rol: $e';
-      _isLoading = false;
-      notifyListeners();
+      _setLoading(false);
       return false;
     }
   }
 
-  /// Envía un OTP de recuperación de contraseña.
+  // ── Recuperación de contraseña ─────────────────────────────────────────────
+
+  /// Envía el OTP de recuperación al correo indicado.
   Future<bool> recuperarContrasena(String correo) async {
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
+    _setLoading(true);
     try {
       await _authService.enviarRecuperacionContrasena(correo.trim());
-      _isLoading = false;
-      notifyListeners();
+      _setLoading(false);
       return true;
     } catch (e) {
       _errorMessage = 'No se pudo enviar el correo. Verifica la dirección.';
-      _isLoading = false;
-      notifyListeners();
+      _setLoading(false);
       return false;
     }
   }
 
-  /// Verifica el código OTP y cambia la contraseña.
+  /// Verifica el OTP y cambia la contraseña al nuevo valor.
   Future<bool> verificarOtpYCambiarContrasena({
     required String correo,
     required String otp,
     required String nuevaContrasena,
   }) async {
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
+    _setLoading(true);
     try {
       await _authService.verificarOtpYCambiarContrasena(
-        correo: correo,
-        otp: otp,
-        nuevaContrasena: nuevaContrasena,
+        correo: correo, otp: otp, nuevaContrasena: nuevaContrasena,
       );
-      _isLoading = false;
-      notifyListeners();
+      _setLoading(false);
       return true;
     } on AuthException catch (e) {
       _errorMessage = _mapAuthError(e.message);
-      _isLoading = false;
-      notifyListeners();
+      _setLoading(false);
       return false;
     } catch (e) {
       _errorMessage = e.toString().replaceAll('Exception: ', '');
-      _isLoading = false;
-      notifyListeners();
+      _setLoading(false);
       return false;
     }
   }
 
-  /// Cambia la contraseña del usuario autenticado.
+  /// Cambia la contraseña del usuario ya autenticado (desde perfil).
   Future<bool> cambiarContrasena(String nuevaContrasena) async {
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
-
+    _setLoading(true);
     try {
       await Supabase.instance.client.auth.updateUser(
         UserAttributes(password: nuevaContrasena),
       );
-      _isLoading = false;
-      notifyListeners();
+      _setLoading(false);
       return true;
     } on AuthException catch (e) {
       _errorMessage = _mapAuthError(e.message);
-      _isLoading = false;
-      notifyListeners();
+      _setLoading(false);
       return false;
     } catch (e) {
       _errorMessage = 'Error al cambiar la contraseña.';
-      _isLoading = false;
-      notifyListeners();
+      _setLoading(false);
       return false;
     }
   }
 
-  /// Mapea mensajes de error de Supabase Auth a mensajes en español.
+  // ── Utilidades privadas ────────────────────────────────────────────────────
+
+  /// Centraliza el cambio de isLoading para no repetir notifyListeners().
+  void _setLoading(bool value) {
+    _isLoading = value;
+    if (!value) _errorMessage = _errorMessage; // conserva el error si lo hay
+    notifyListeners();
+  }
+
+  /// Traduce los mensajes de error de Supabase Auth al español.
   String _mapAuthError(String message) {
     if (message.contains('Invalid login credentials')) {
       return 'Correo o contraseña incorrectos.';

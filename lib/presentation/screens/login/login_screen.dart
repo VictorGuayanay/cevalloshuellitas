@@ -75,53 +75,6 @@ class _LoginScreenState extends State<LoginScreen>
     }
   }
 
-  void _mostrarMensajeAdminSoloWeb(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            const Icon(Icons.web_rounded, color: Color(0xFF5BBFBF), size: 26),
-            const SizedBox(width: 10),
-            Text(
-              'Acceso solo web',
-              style: GoogleFonts.poppins(
-                fontWeight: FontWeight.w700,
-                fontSize: 17,
-                color: const Color(0xFF1A1A2E),
-              ),
-            ),
-          ],
-        ),
-        content: Text(
-          'El modo administrador está disponible únicamente desde la versión web de la aplicación.',
-          style: GoogleFonts.poppins(
-            fontSize: 13,
-            color: const Color(0xFF555555),
-            height: 1.5,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              // Cerrar sesión para no quedar autenticado como admin en móvil
-              context.read<AuthController>().logout();
-            },
-            child: Text(
-              'Entendido',
-              style: GoogleFonts.poppins(
-                color: const Color(0xFF5BBFBF),
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
     final authController = context.read<AuthController>();
@@ -132,9 +85,7 @@ class _LoginScreenState extends State<LoginScreen>
     if (success && mounted) {
       final rol = authController.currentUser?.rol;
       if (rol == 'administrador') {
-        _mostrarMensajeAdminSoloWeb(context);
-      } else if (rol == 'veterinario') {
-        Navigator.pushReplacementNamed(context, '/vet_home');
+        Navigator.pushReplacementNamed(context, '/admin');
       } else {
         Navigator.pushReplacementNamed(context, '/home');
       }
@@ -147,9 +98,7 @@ class _LoginScreenState extends State<LoginScreen>
     if (success && mounted) {
       final rol = authController.currentUser?.rol;
       if (rol == 'administrador') {
-        _mostrarMensajeAdminSoloWeb(context);
-      } else if (rol == 'veterinario') {
-        Navigator.pushReplacementNamed(context, '/vet_home');
+        Navigator.pushReplacementNamed(context, '/admin');
       } else {
         Navigator.pushReplacementNamed(context, '/home');
       }
@@ -208,10 +157,10 @@ class _LoginScreenState extends State<LoginScreen>
                         ),
                         const SizedBox(height: 44),
 
-                        // Botón: Correos con email
+                        // Botón: Iniciar con correo
                         _MethodButton(
                           icon: Icons.email_outlined,
-                          label: 'Correos con email',
+                          label: 'Iniciar sesión con correo',
                           onTap: _toggleEmailForm,
                           isActive: _showEmailForm,
                         ),

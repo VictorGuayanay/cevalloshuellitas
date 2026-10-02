@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
+import '../../core/app_colors.dart';
 
 /// Widget de imagen de red con manejo de errores y loading integrados.
 ///

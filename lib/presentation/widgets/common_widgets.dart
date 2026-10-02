@@ -139,7 +139,7 @@ class EmptyCard extends StatelessWidget {
 // FILA DE RESUMEN (label + value)
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Fila de resumen con etiqueta y valor. Usada en cards de confirmación de citas.
+/// Fila de resumen con etiqueta y valor.
 class ResumenRow extends StatelessWidget {
   final String label;
   final String value;
@@ -187,7 +187,6 @@ class ResumenRow extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// Tarjeta de resumen con encabezado coloreado y lista de filas.
-/// Usada en confirmación de citas y urgencias.
 class ResumenCard extends StatelessWidget {
   final IconData icon;
   final Color color;
@@ -256,7 +255,7 @@ class ResumenCard extends StatelessWidget {
 InputDecoration appInputDeco(
   String label,
   IconData icon, {
-  Color accentColor = AppColors.tealLight,
+  Color accentColor = const Color(0xFF5BBFBF),
 }) {
   return InputDecoration(
     labelText: label,

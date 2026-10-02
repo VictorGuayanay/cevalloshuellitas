@@ -127,14 +127,47 @@ class FcmService {
     }
   }
 
+  /// Envía un push broadcast a TODOS los usuarios registrados (excepto el dueño)
+  /// cuando una mascota cambia su estado a 'perdido'.
+  ///
+  /// Delega el trabajo pesado a la Edge Function `notify-mascota-perdida`,
+  /// que consulta los tokens y hace el multicast en el servidor.
+  /// La llamada es best-effort: si falla, la mascota ya fue guardada.
+  Future<void> notificarMascotaPerdidaBroadcast({
+    required String mascotaId,
+    required String mascotaNombre,
+    required String duenioId,
+  }) async {
+    try {
+      Firebase.app(); // guard: abortar si Firebase no está inicializado
+    } on FirebaseException {
+      debugPrint('notificarMascotaPerdidaBroadcast abortado — Firebase no disponible.');
+      return;
+    }
+    try {
+      debugPrint('Disparando broadcast mascota perdida: $mascotaNombre');
+      final response = await Supabase.instance.client.functions.invoke(
+        'notify-mascota-perdida',
+        body: {
+          'mascotaId':     mascotaId,
+          'mascotaNombre': mascotaNombre,
+          'duenioId':      duenioId,
+        },
+      );
+      debugPrint('Broadcast mascota perdida — respuesta: ${response.data}');
+    } catch (e) {
+      // No propagamos el error: el push es best-effort,
+      // la mascota ya fue guardada correctamente en Supabase.
+      debugPrint('Error en broadcast mascota perdida (ignorado): $e');
+    }
+  }
+
   /// Envía una notificación push genérica a un token FCM.
-  /// Úsalo para confirmaciones, rechazos, nuevas citas, adopciones, etc.
   Future<void> enviarNotificacion({
     required String destinatarioUserId,
     required String titulo,
     required String cuerpo,
-    required String tipo,       // 'cita_confirmada' | 'cita_rechazada' | 'nueva_cita' | 'adopcion' | 'urgencia'
-    String? citaId,
+    required String tipo,
     String? mascotaNombre,
     bool urgente = false,
   }) async {
@@ -157,26 +190,6 @@ class FcmService {
         return;
       }
 
-      // Payload de navegación: al tocar la push, la app sabe a dónde ir
-      String payload;
-      switch (tipo) {
-        case 'nueva_cita':
-          payload = 'vet_citas';
-          break;
-        case 'cita_confirmada':
-        case 'cita_rechazada':
-          payload = 'historial_citas';
-          break;
-        case 'adopcion':
-          payload = 'solicitudes_adopcion';
-          break;
-        case 'urgencia':
-          payload = 'vet_home';
-          break;
-        default:
-          payload = 'home';
-      }
-
       await Supabase.instance.client.functions.invoke(
         'send-push-notification',
         body: {
@@ -185,76 +198,15 @@ class FcmService {
           'body': cuerpo,
           'data': {
             'tipo': tipo,
-            'citaId': citaId ?? '',
             'mascota': mascotaNombre ?? '',
             'urgente': urgente ? 'true' : 'false',
-            'payload': payload,
+            'payload': 'home',
           },
         },
       );
       debugPrint('Push enviada a $destinatarioUserId — tipo: $tipo');
     } catch (e) {
       debugPrint('Error enviando notificación FCM: $e');
-    }
-  }
-
-  /// Envía una notificación push de urgencia al veterinario seleccionado.
-  /// Requiere que el veterinario tenga fcm_token guardado en la tabla usuarios.
-  Future<void> enviarNotificacionUrgencia({
-    required String veteUserId,
-    required String mascotaNombre,
-    required String propietarioNombre,
-    required String sintomas,
-    required String modalidad,
-    required String citaId,
-    String? direccion,
-  }) async {
-    try {
-      Firebase.app();
-    } on FirebaseException {
-      debugPrint('enviarNotificacionUrgencia abortado — Firebase no disponible.');
-      return;
-    }
-    try {
-      // Obtener el fcm_token del veterinario desde Supabase
-      final row = await Supabase.instance.client
-          .from('usuarios')
-          .select('fcm_token')
-          .eq('usua_id', veteUserId)
-          .maybeSingle();
-
-      final token = row?['fcm_token'] as String?;
-      if (token == null || token.isEmpty) {
-        debugPrint('enviarNotificacionUrgencia: veterinario sin fcm_token');
-        return;
-      }
-
-      final lugar = modalidad == 'domicilio' ? 'A domicilio' : 'En el local';
-      final cuerpo = '$propietarioNombre • $mascotaNombre • $lugar';
-
-      // Llamar a la Edge Function de Supabase para enviar via FCM
-      await Supabase.instance.client.functions.invoke(
-        'send-push-notification',
-        body: {
-          'token': token,
-          'title': '🚨 Urgencia Crítica',
-          'body': cuerpo,
-          'data': {
-            'tipo': 'urgencia',
-            'citaId': citaId,
-            'mascota': mascotaNombre,
-            'propietario': propietarioNombre,
-            'modalidad': modalidad,
-            'sintomas': sintomas,
-            'direccion': direccion ?? '',
-            'urgente': 'true',
-            'payload': 'urgencia:$citaId',
-          },
-        },
-      );
-      debugPrint('Notificación push de urgencia enviada al token: $token');
-    } catch (e) {
-      debugPrint('Error enviando notificación push de urgencia: $e');
     }
   }
 
@@ -294,8 +246,7 @@ class FcmService {
     final cuerpo = notif?.body  ?? message.data['cuerpo'] ?? message.data['body'] ?? '';
     if (cuerpo.isEmpty && notif == null) return;
 
-    final esAdopcion = message.data['tipo'] == 'adopcion';
-    final urgente   = message.data['urgente'] == 'true';
+    final urgente = message.data['urgente'] == 'true';
 
     await NotificacionLocalService.instance.mostrarInmediata(
       id: NotificacionLocalService.idDesde(message.messageId ?? titulo),
@@ -306,8 +257,8 @@ class FcmService {
       payload: message.data['payload'],
     );
 
-    // Vibración según tipo
-    await NotificacionLocalService.instance.feedbackInApp(urgente: !esAdopcion && urgente);
+    // Vibración según urgencia
+    await NotificacionLocalService.instance.feedbackInApp(urgente: urgente);
   }
 
   /// Cuando el usuario toca la notificación desde background/terminado.

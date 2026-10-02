@@ -1,16 +1,26 @@
-﻿import 'dart:io';
+// mascota_service.dart — Servicio de acceso a datos para mascotas.
+//
+// Todas las operaciones usan Supabase como base de datos.
+// El Storage de Supabase se usa para las imágenes de las mascotas.
+
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/mascota_model.dart';
 
 class MascotaService {
+  // Cliente de Supabase singleton.
   final SupabaseClient _client = Supabase.instance.client;
 
-  /// Obtiene todas las mascotas registradas para un usuario específico.
-  Future<List<MascotaModel>> obtenerMascotasPorUsuario(String usuarioId) async {
+  // ── Consultas ─────────────────────────────────────────────────────────────
+
+  /// Obtiene todas las mascotas de un usuario específico.
+  /// Incluye join con usuarios para mostrar datos del propietario.
+  Future<List<MascotaModel>> obtenerMascotasPorUsuario(
+      String usuarioId) async {
     final response = await _client
         .from('mascotas')
-        .select()
+        .select('*, usuarios(usua_nombre, usua_telefono, usua_foto_url)')
         .eq('usua_id', usuarioId);
 
     return (response as List<dynamic>)
@@ -18,16 +28,19 @@ class MascotaService {
         .toList();
   }
 
-  /// Obtiene todas las mascotas (para el veterinario).
+  /// Obtiene todas las mascotas de la plataforma (para la vista del veterinario).
   Future<List<MascotaModel>> obtenerTodasLasMascotas() async {
-    final response = await _client.from('mascotas').select().order('masc_nombre');
+    final response = await _client
+        .from('mascotas')
+        .select()
+        .order('masc_nombre');
     return (response as List<dynamic>)
         .map((e) => MascotaModel.fromJson(e as Map<String, dynamic>))
         .toList();
   }
 
-  /// Obtiene todas las mascotas que están en estado "para adoptar" en la plataforma.
-  /// Incluye join con usuarios para mostrar nombre, teléfono y foto del propietario.
+  /// Obtiene las mascotas en estado "para adoptar".
+  /// Incluye datos del propietario para que el interesado pueda contactarlo.
   Future<List<MascotaModel>> obtenerMascotasParaAdopcion() async {
     final response = await _client
         .from('mascotas')
@@ -39,8 +52,8 @@ class MascotaService {
         .toList();
   }
 
-  /// Obtiene todas las mascotas con estado "perdido".
-  /// Incluye join con usuarios para mostrar nombre, teléfono y foto del propietario.
+  /// Obtiene las mascotas en estado "perdido".
+  /// Incluye datos del propietario para facilitar el contacto.
   Future<List<MascotaModel>> obtenerMascotasPerdidas() async {
     final response = await _client
         .from('mascotas')
@@ -52,17 +65,20 @@ class MascotaService {
         .toList();
   }
 
-  /// Crea una nueva mascota en la base de datos y retorna el modelo con su ID asignado.
+  // ── CRUD ──────────────────────────────────────────────────────────────────
+
+  /// Inserta una nueva mascota en la BD y retorna el modelo con el ID asignado.
   Future<MascotaModel> crearMascota(MascotaModel mascota) async {
     final response = await _client
         .from('mascotas')
         .insert(mascota.toInsertJson())
-        .select()
+        .select() // retorna la fila insertada
         .single();
     return MascotaModel.fromJson(response);
   }
 
   /// Actualiza los datos de una mascota existente.
+  /// Retorna el modelo actualizado con join de usuarios incluido.
   Future<MascotaModel> actualizarMascota(MascotaModel mascota) async {
     final response = await _client
         .from('mascotas')
@@ -78,8 +94,12 @@ class MascotaService {
     await _client.from('mascotas').delete().eq('masc_id', mascotaId);
   }
 
-  /// Sube una imagen a Supabase Storage y retorna la URL pública.
+  // ── Storage de imágenes ───────────────────────────────────────────────────
+
+  /// Sube una imagen al bucket 'mascotas_imagenes' de Supabase Storage
+  /// y retorna la URL pública para guardarla en la BD.
   Future<String?> subirImagenMascota(File imagen, String extension) async {
+    // Nombre de archivo único usando el timestamp para evitar colisiones.
     final fileName = '${DateTime.now().millisecondsSinceEpoch}.$extension';
     final ruta = 'mascotas/$fileName';
 
@@ -87,17 +107,16 @@ class MascotaService {
       await _client.storage.from('mascotas_imagenes').upload(
             ruta,
             imagen,
-            fileOptions: const FileOptions(cacheControl: '3600', upsert: false),
+            fileOptions:
+                const FileOptions(cacheControl: '3600', upsert: false),
           );
     } catch (e) {
       debugPrint('Error al subir imagen a Supabase Storage: $e');
-      // Re-lanzamos para que el controller lo capture y notifique a la UI
+      // Re-lanzamos para que el controller lo capture y muestre el error en la UI.
       rethrow;
     }
 
-    final String publicUrl =
-        _client.storage.from('mascotas_imagenes').getPublicUrl(ruta);
-
-    return publicUrl;
+    // getPublicUrl construye la URL pública sin hacer otra request.
+    return _client.storage.from('mascotas_imagenes').getPublicUrl(ruta);
   }
 }

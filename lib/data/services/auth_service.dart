@@ -1,3 +1,13 @@
+// auth_service.dart — Servicio de autenticación con Supabase.
+//
+// Gestiona:
+//   - Registro con email/password
+//   - Login con email/password
+//   - Login con Google (OAuth)
+//   - Recuperación y cambio de contraseña
+//   - Subida de foto de perfil a Supabase Storage
+//   - Lectura y actualización del perfil en la tabla `usuarios`
+
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -5,15 +15,14 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/usuario_model.dart';
 import '../../supabase_config.dart';
 
-/// Servicio de autenticación que conecta con Supabase Auth
-/// y la tabla `usuarios` para gestionar perfiles.
 class AuthService {
+  // Cliente de Supabase, disponible como singleton desde Supabase.initialize().
   final SupabaseClient _client = Supabase.instance.client;
 
-  /// Registra un nuevo usuario con Supabase Auth y crea su perfil
-  /// en la tabla `usuarios`.
-  ///
-  /// Retorna el [UsuarioModel] creado o lanza una excepción.
+  // ── Registro ──────────────────────────────────────────────────────────────
+
+  /// Registra un nuevo usuario en Supabase Auth y crea su perfil en `usuarios`.
+  /// Retorna el UsuarioModel creado o lanza excepción si algo falla.
   Future<UsuarioModel> signUp({
     required String nombre,
     required String correo,
@@ -21,7 +30,7 @@ class AuthService {
     String? telefono,
     String rol = 'usuario',
   }) async {
-    // 1. Registrar en Supabase Auth
+    // 1. Crear cuenta en Supabase Auth (tabla auth.users, gestionada por Supabase).
     final authResponse = await _client.auth.signUp(
       email: correo,
       password: password,
@@ -33,18 +42,16 @@ class AuthService {
 
     final userId = authResponse.user!.id;
 
-    // 2. Crear perfil en la tabla usuarios
-    final userData = {
-      'usua_id': userId,
-      'usua_nombre': nombre,
-      'usua_correo': correo,
+    // 2. Crear el perfil en nuestra tabla pública `usuarios`.
+    await _client.from('usuarios').insert({
+      'usua_id':      userId,
+      'usua_nombre':  nombre,
+      'usua_correo':  correo,
       'usua_telefono': telefono,
-      'usua_rol': rol,
-    };
+      'usua_rol':     rol,
+    });
 
-    await _client.from('usuarios').insert(userData);
-
-    // Si se registra como veterinario, crear perfil en tabla veterinarios
+    // 3. Si se registra como veterinario, crear registro en tabla veterinarios.
     if (rol == 'veterinario') {
       await _crearPerfilVeterinarioSiNoExiste(userId);
     }
@@ -58,9 +65,10 @@ class AuthService {
     );
   }
 
-  /// Inicia sesión con email y contraseña vía Supabase Auth.
-  ///
-  /// Retorna el [UsuarioModel] del usuario autenticado.
+  // ── Login ─────────────────────────────────────────────────────────────────
+
+  /// Inicia sesión con email y contraseña.
+  /// Retorna el UsuarioModel con los datos del perfil.
   Future<UsuarioModel> signIn({
     required String correo,
     required String password,
@@ -74,25 +82,27 @@ class AuthService {
       throw Exception('Credenciales inválidas.');
     }
 
-    // Obtener el perfil desde la tabla usuarios
-    final profile = await getUserProfile(authResponse.user!.id);
-    return profile;
+    // Obtener el perfil completo desde la tabla `usuarios`.
+    return getUserProfile(authResponse.user!.id);
   }
 
-  /// Inicia sesión con Google usando el ID Token de Google y Supabase.
+  /// Inicia sesión con Google usando el ID Token.
   ///
-  /// Retorna el [UsuarioModel] del usuario autenticado.
-  /// Si es la primera vez que el usuario inicia con Google, crea su perfil
-  /// automáticamente en la tabla `usuarios`.
+  /// Flujo:
+  ///   1. Obtener cuenta Google del dispositivo
+  ///   2. Obtener el ID Token de Google
+  ///   3. Autenticar en Supabase con ese token
+  ///   4. Si es la primera vez, crear el perfil en `usuarios`
   Future<UsuarioModel> signInWithGoogle() async {
     final GoogleSignIn googleSignIn = GoogleSignIn(
-      serverClientId: googleWebClientId,
+      serverClientId: googleWebClientId, // Web Client ID de Google Console
       scopes: ['email', 'profile'],
     );
 
-    // Forzar selección de cuenta siempre (evita tokens cacheados corruptos)
+    // Forzar selección de cuenta para evitar tokens cacheados corruptos.
     await googleSignIn.signOut();
 
+    // Abrir el selector de cuenta de Google.
     GoogleSignInAccount? googleUser;
     try {
       googleUser = await googleSignIn.signIn();
@@ -104,6 +114,7 @@ class AuthService {
       throw Exception('Inicio de sesión con Google cancelado.');
     }
 
+    // Obtener las credenciales (idToken + accessToken).
     GoogleSignInAuthentication googleAuth;
     try {
       googleAuth = await googleUser.authentication;
@@ -119,7 +130,7 @@ class AuthService {
           'sea el OAuth de tipo "Aplicación web".');
     }
 
-    // Autenticar en Supabase
+    // Autenticar en Supabase usando el ID Token de Google.
     AuthResponse authResponse;
     try {
       authResponse = await _client.auth.signInWithIdToken(
@@ -132,15 +143,15 @@ class AuthService {
     }
 
     if (authResponse.user == null) {
-      throw Exception('Supabase no devolvió un usuario tras el login con Google.');
+      throw Exception(
+          'Supabase no devolvió un usuario tras el login con Google.');
     }
 
     final userId = authResponse.user!.id;
-    final nombre =
-        googleUser.displayName ?? googleUser.email.split('@').first;
+    final nombre = googleUser.displayName ?? googleUser.email.split('@').first;
     final correo = googleUser.email;
 
-    // Verificar si el perfil ya existe
+    // Verificar si ya existe el perfil en nuestra tabla `usuarios`.
     Map<String, dynamic>? existing;
     try {
       existing = await _client
@@ -149,23 +160,23 @@ class AuthService {
           .eq('usua_id', userId)
           .maybeSingle();
     } catch (e) {
-      debugPrint('Error verificando perfil: $e');
+      debugPrint('Error verificando perfil Google: $e');
       existing = null;
     }
 
     if (existing == null) {
-      // Primera vez — crear perfil
+      // Primera vez con Google → creamos el perfil.
       try {
         await _client.from('usuarios').insert({
-          'usua_id': userId,
-          'usua_nombre': nombre,
-          'usua_correo': correo,
+          'usua_id':      userId,
+          'usua_nombre':  nombre,
+          'usua_correo':  correo,
           'usua_telefono': null,
-          'usua_rol': 'usuario',
+          'usua_rol':     'usuario',
         });
       } catch (e) {
         throw Exception(
-            'No se pudo crear el perfil del usuario en la base de datos: $e. '
+            'No se pudo crear el perfil en la base de datos: $e. '
             'Verifica las políticas RLS de la tabla "usuarios" en Supabase.');
       }
 
@@ -173,52 +184,68 @@ class AuthService {
         id: userId,
         nombre: nombre,
         correo: correo,
-        telefono: null,
         rol: 'usuario',
       );
     }
 
+    // Perfil ya existe → construirlo desde la BD.
     return UsuarioModel.fromJson(existing);
   }
 
-  /// Cierra la sesión actual del usuario.
+  // ── Cierre de sesión ──────────────────────────────────────────────────────
+
+  /// Cierra la sesión activa en Supabase Auth.
   Future<void> signOut() async {
     await _client.auth.signOut();
   }
 
-  /// Obtiene el perfil del usuario desde la tabla `usuarios`.
+  // ── Perfil ────────────────────────────────────────────────────────────────
+
+  /// Lee el perfil completo del usuario desde la tabla `usuarios`.
   Future<UsuarioModel> getUserProfile(String userId) async {
     final response = await _client
         .from('usuarios')
         .select()
         .eq('usua_id', userId)
-        .single();
-
+        .single(); // lanza excepción si no existe
     return UsuarioModel.fromJson(response);
   }
 
-  /// Actualiza el rol del usuario en la tabla `usuarios`.
-  Future<void> updateUserProfile(String userId, String nombre, String telefono) async {
+  /// Actualiza los campos editables del perfil en la tabla `usuarios`.
+  Future<void> updateUserProfile(
+    String userId,
+    String nombre,
+    String telefono, {
+    String? cedula,
+    String? direccionGps,
+    bool esProductor = false,
+    String? tipoAnimales,
+  }) async {
     await _client.from('usuarios').update({
-      'usua_nombre': nombre,
-      'usua_telefono': telefono,
+      'usua_nombre':       nombre,
+      'usua_telefono':     telefono,
+      'usua_cedula':       cedula,
+      'usua_direccion_gps': direccionGps,
+      'usua_es_productor': esProductor,
+      // Si no es productor, guardamos null para limpiar el tipo de animales.
+      'usua_tipo_animales': esProductor ? tipoAnimales : null,
     }).eq('usua_id', userId);
   }
 
-  /// Actualiza el rol del usuario en la tabla `usuarios`.
+  /// Cambia el rol del usuario. Si es 'veterinario', crea su registro
+  /// en la tabla veterinarios si aún no existe.
   Future<void> updateUserRol(String userId, String nuevoRol) async {
     await _client.from('usuarios').update({
       'usua_rol': nuevoRol,
     }).eq('usua_id', userId);
 
-    // Si el nuevo rol es veterinario, crear registro en tabla veterinarios
-    // solo si no existe ya uno
     if (nuevoRol == 'veterinario') {
       await _crearPerfilVeterinarioSiNoExiste(userId);
     }
   }
 
-  /// Crea un registro básico en la tabla `veterinarios` si no existe ya.
+  /// Crea un registro básico en `veterinarios` si todavía no existe.
+  /// Es privado porque solo lo llaman signUp y updateUserRol.
   Future<void> _crearPerfilVeterinarioSiNoExiste(String userId) async {
     try {
       final existing = await _client
@@ -228,28 +255,31 @@ class AuthService {
           .maybeSingle();
       if (existing == null) {
         await _client.from('veterinarios').insert({
-          'usua_id': userId,
+          'usua_id':       userId,
           'vete_disponible': true,
         });
       }
     } catch (e) {
+      // No abortamos el flujo si esto falla; el admin puede crearlo manualmente.
       debugPrint('Error al crear perfil veterinario: $e');
     }
   }
 
-  /// Envía un OTP de recuperación de contraseña al email indicado.
+  // ── Recuperación de contraseña ────────────────────────────────────────────
+
+  /// Envía un código OTP al correo para recuperar la contraseña.
   Future<void> enviarRecuperacionContrasena(String correo) async {
     await _client.auth.resetPasswordForEmail(correo.trim());
   }
 
-  /// Verifica el OTP de recuperación y actualiza la contraseña.
-  /// Lanza excepción si el código es incorrecto o expiró.
+  /// Verifica el OTP recibido por email y luego actualiza la contraseña.
+  /// Lanza excepción si el código es inválido o expiró.
   Future<void> verificarOtpYCambiarContrasena({
     required String correo,
     required String otp,
     required String nuevaContrasena,
   }) async {
-    // 1. Verificar el OTP — esto crea una sesión temporal
+    // 1. Verificar el OTP — esto crea una sesión temporal.
     final response = await _client.auth.verifyOTP(
       email: correo.trim(),
       token: otp.trim(),
@@ -260,29 +290,35 @@ class AuthService {
       throw Exception('Código inválido o expirado. Solicita uno nuevo.');
     }
 
-    // 2. Con la sesión activa, actualizar la contraseña
+    // 2. Con la sesión activa, actualizar la contraseña.
     await _client.auth.updateUser(
       UserAttributes(password: nuevaContrasena),
     );
   }
 
-  /// Sube la foto de perfil del usuario a Supabase Storage
-  /// y actualiza el campo `usua_foto_url` en la tabla `usuarios`.
-  /// Lanza excepción si algo falla.
-  Future<String> subirFotoUsuario(String userId, File imagen, String extension) async {
+  // ── Foto de perfil ────────────────────────────────────────────────────────
+
+  /// Sube la foto de perfil al bucket 'usuarios_imagenes' de Supabase Storage.
+  /// Actualiza el campo usua_foto_url en la tabla usuarios.
+  /// Retorna la URL pública de la imagen.
+  Future<String> subirFotoUsuario(
+      String userId, File imagen, String extension) async {
+    // Nombre de archivo único usando el ID del usuario y el timestamp actual.
     final fileName = '${userId}_${DateTime.now().millisecondsSinceEpoch}.$extension';
     final ruta = 'perfiles/$fileName';
 
+    // Subir el archivo al bucket.
     await _client.storage.from('usuarios_imagenes').upload(
           ruta,
           imagen,
           fileOptions: const FileOptions(cacheControl: '3600', upsert: true),
         );
 
+    // Obtener la URL pública para mostrar la imagen en la UI.
     final String publicUrl =
         _client.storage.from('usuarios_imagenes').getPublicUrl(ruta);
 
-    // Guardar la URL en la tabla usuarios
+    // Guardar la URL en la tabla usuarios para que persista entre sesiones.
     await _client
         .from('usuarios')
         .update({'usua_foto_url': publicUrl})
@@ -291,11 +327,11 @@ class AuthService {
     return publicUrl;
   }
 
-  /// Retorna el usuario autenticado actualmente, o null si no hay sesión.
-  String? getCurrentUserId() {
-    return _client.auth.currentUser?.id;
-  }
+  // ── Utilidades ────────────────────────────────────────────────────────────
 
-  /// Verifica si hay una sesión activa.
+  /// Retorna el ID del usuario autenticado actualmente, o null si no hay sesión.
+  String? getCurrentUserId() => _client.auth.currentUser?.id;
+
+  /// True si hay una sesión activa en Supabase Auth.
   bool get isAuthenticated => _client.auth.currentSession != null;
 }

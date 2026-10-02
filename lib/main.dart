@@ -1,144 +1,117 @@
+// main.dart — Punto de entrada de la aplicación Huellitas.
+// Aquí inicializamos los servicios externos (Firebase y Supabase),
+// configuramos los providers globales y definimos las rutas de navegación.
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
+
 import 'supabase_config.dart';
 import 'data/services/notificacion_local_service.dart';
 import 'data/services/fcm_service.dart';
 import 'domain/controllers/auth_controller.dart';
 import 'domain/controllers/mascota_controller.dart';
-import 'domain/controllers/cita_controller.dart';
+import 'domain/controllers/notificacion_controller.dart';
 import 'domain/controllers/veterinario_controller.dart';
-import 'domain/controllers/servicio_controller.dart';
-import 'domain/controllers/solicitud_adopcion_controller.dart';
 import 'domain/controllers/noticia_controller.dart';
+import 'domain/controllers/admin_controller.dart';
+import 'domain/controllers/productor_controller.dart';
 import 'presentation/screens/login/login_screen.dart';
 import 'presentation/screens/login/register_screen.dart';
 import 'presentation/screens/usuario/home_screen.dart';
-import 'presentation/screens/veterinario/vet_home_screen.dart';
-import 'presentation/screens/veterinario/vet_citas_screen.dart';
-import 'presentation/screens/veterinario/vet_mascotas_screen.dart';
-import 'presentation/screens/veterinario/vet_perfil_screen.dart';
 import 'presentation/screens/usuario/mis_mascotas_screen.dart';
-import 'presentation/screens/usuario/adopciones_screen.dart';
 import 'presentation/screens/usuario/servicios_screen.dart';
-import 'presentation/screens/usuario/solicitudes_adopcion_screen.dart';
-import 'presentation/screens/veterinario/urgencias_screen.dart';
-import 'presentation/screens/usuario/urgencias_usuario_screen.dart';
 import 'presentation/screens/usuario/perfil_screen.dart';
 import 'presentation/screens/splash_screen.dart';
 import 'presentation/screens/usuario/mapa_veterinarios_screen.dart';
+import 'presentation/screens/admin/admin_screen.dart';
 
+/// main() es la función que Flutter llama cuando arranca la app.
+/// Usamos async porque necesitamos esperar varias inicializaciones.
 void main() async {
+  // Asegura que los bindings de Flutter estén listos antes de usar plugins.
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Inicializar Firebase (necesario para FCM)
-  // Se captura PlatformException y FirebaseException por si los archivos de
-  // configuración nativos no están presentes o el canal de plataforma falla,
-  // evitando que la app crashee; FCM quedará deshabilitado en ese caso.
+  // ── 1. Firebase (usado solo para notificaciones push FCM) ───────────────────
+  // El módulo SENSO fue migrado a Supabase, por lo que Firebase solo se usa
+  // para FCM. Si falla, la app funciona pero sin notificaciones push remotas.
   bool firebaseDisponible = false;
   try {
     await Firebase.initializeApp();
     firebaseDisponible = true;
+    debugPrint('Firebase inicializado correctamente.');
   } on PlatformException catch (e) {
     debugPrint('Firebase no pudo inicializarse (PlatformException): $e');
+    debugPrint('→ Verifica que google-services.json esté en android/app/');
   } on FirebaseException catch (e) {
-    debugPrint('Firebase no pudo inicializarse (FirebaseException): $e');
+    debugPrint('Firebase no pudo inicializarse (FirebaseException): ${e.code} — ${e.message}');
   } catch (e) {
     debugPrint('Firebase error inesperado: $e');
   }
 
+  // ── 2. Supabase (base de datos principal: usuarios, mascotas, etc.) ──────────
   await Supabase.initialize(
     url: supabaseUrl,
     anonKey: supabaseAnonKey,
   );
 
-  // Inicializar notificaciones locales (vibración, recordatorios)
+  // ── 3. Notificaciones locales (banners, sonidos, vibración) ──────────────────
   await NotificacionLocalService.instance.init();
 
-  // Inicializar FCM solo si Firebase se inicializó correctamente
+  // ── 4. FCM (solo si Firebase arrancó correctamente) ──────────────────────────
   if (firebaseDisponible) {
     await FcmService.instance.init();
   } else {
     debugPrint('FCM deshabilitado: Firebase no disponible.');
   }
 
-  // Registrar handler: al tocar una push navega a la pantalla correcta
+  // ── 5. Callback al tocar una notificación push ────────────────────────────────
+  // Cuando el usuario toca la notificación, lo llevamos a la pantalla /home.
   NotificacionLocalService.instance.setOnTap((payload) {
     debugPrint('Push tocada con payload: $payload');
-
-    // Esperar un frame para asegurar que la app esté montada
+    // addPostFrameCallback garantiza que el Navigator ya esté montado.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final nav = MyApp.navigatorKey.currentState;
       if (nav == null) return;
-
-      if (payload == null) {
-        nav.pushNamedAndRemoveUntil('/home', (r) => false);
-        return;
-      }
-
-      switch (payload) {
-        case 'vet_citas':
-          // Nueva cita → vet ve su gestión de citas
-          nav.pushNamedAndRemoveUntil('/vet_home', (r) => false);
-          Future.delayed(const Duration(milliseconds: 400), () {
-            MyApp.navigatorKey.currentState?.pushNamed('/vet_citas');
-          });
-          break;
-
-        case 'historial_citas':
-          // Cita confirmada/rechazada → usuario va a perfil donde está el historial
-          nav.pushNamedAndRemoveUntil('/home', (r) => false);
-          Future.delayed(const Duration(milliseconds: 400), () {
-            MyApp.navigatorKey.currentState?.pushNamed('/perfil');
-          });
-          break;
-
-        case 'solicitudes_adopcion':
-          // Solicitud de adopción → panel de solicitudes recibidas
-          nav.pushNamedAndRemoveUntil('/home', (r) => false);
-          Future.delayed(const Duration(milliseconds: 400), () {
-            MyApp.navigatorKey.currentState?.pushNamed('/solicitudes_adopcion');
-          });
-          break;
-
-        case 'vet_home':
-          // Urgencia → home del vet
-          nav.pushNamedAndRemoveUntil('/vet_home', (r) => false);
-          break;
-
-        default:
-          // Payloads legacy ('adopcion:xxx', 'cita:xxx', 'urgencia:xxx')
-          if (payload.startsWith('vet') || payload.startsWith('urgencia')) {
-            nav.pushNamedAndRemoveUntil('/vet_home', (r) => false);
-          } else {
-            nav.pushNamedAndRemoveUntil('/home', (r) => false);
-          }
-      }
+      nav.pushNamedAndRemoveUntil('/home', (r) => false);
     });
   });
 
+  // ── 6. Levantar la app con todos los providers ────────────────────────────────
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => AuthController()..tryRestoreSession()),
+        // AuthController gestiona login, registro y sesión activa.
+        ChangeNotifierProvider(
+            create: (_) => AuthController()..tryRestoreSession()),
+        // MascotaController gestiona la lista de mascotas del usuario.
         ChangeNotifierProvider(create: (_) => MascotaController()),
-        ChangeNotifierProvider(create: (_) => CitaController()),
+        // NotificacionController maneja las alertas in-app (mascotas perdidas).
+        ChangeNotifierProvider(create: (_) => NotificacionController()),
+        // VeterinarioController gestiona el perfil y lista de veterinarios.
         ChangeNotifierProvider(create: (_) => VeterinarioController()),
-        ChangeNotifierProvider(create: (_) => ServicioController()),
-        ChangeNotifierProvider(create: (_) => SolicitudAdopcionController()),
+        // NoticiaController gestiona las noticias de la comunidad.
         ChangeNotifierProvider(create: (_) => NoticiaController()),
+        // AdminController gestiona el panel de administración.
+        ChangeNotifierProvider(create: (_) => AdminController()),
+        // ProductorController gestiona los productores pecuarios con animales en venta.
+        ChangeNotifierProvider(create: (_) => ProductorController()),
       ],
       child: const MyApp(),
     ),
   );
 }
 
+/// Widget raíz de la aplicación.
+/// Define el tema, las rutas y la pantalla inicial según el estado de sesión.
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
+  /// Key global del Navigator para navegar sin BuildContext
+  /// (necesario para el tap en notificaciones push en background).
   static final GlobalKey<NavigatorState> navigatorKey =
       GlobalKey<NavigatorState>();
 
@@ -149,122 +122,58 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       navigatorKey: MyApp.navigatorKey,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFFF6B35)),
-        textTheme: GoogleFonts.poppinsTextTheme(Theme.of(context).textTheme),
+        colorScheme:
+            ColorScheme.fromSeed(seedColor: const Color(0xFFFF6B35)),
+        // Poppins como tipografía global de la app.
+        textTheme:
+            GoogleFonts.poppinsTextTheme(Theme.of(context).textTheme),
         useMaterial3: true,
       ),
+      // Pantalla inicial: decidida dinámicamente según el estado de auth.
       home: Consumer<AuthController>(
         builder: (context, authController, _) {
-          if (authController.isInitializing) {
-            return const SplashScreen();
-          }
+          // Mientras restauramos la sesión, mostramos el splash.
+          if (authController.isInitializing) return const SplashScreen();
+
           if (authController.isAuthenticated) {
-            if (authController.currentUser?.rol == 'veterinario') {
-              return const VetHomeScreen();
-            }
-            // Los administradores no tienen acceso en la app móvil.
-            // El AuthController cerrará sesión si el login retornó 'administrador'.
-            // Por si acaso queda una sesión previa, redirigir a login.
-            if (authController.currentUser?.rol == 'administrador') {
-              return const LoginScreen();
-            }
-            return const HomeScreen();
+            final user = authController.currentUser;
+            final rol  = user?.rol ?? '';
+            final uid  = user?.id  ?? '';
+
+            // Suscripciones en tiempo real: se activan una vez montada la UI.
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              final notifCtrl  = context.read<NotificacionController>();
+              final mascotaCtrl = context.read<MascotaController>();
+
+              // Todos los roles reciben alertas de mascotas perdidas.
+              notifCtrl.suscribirMascotasPerdidas();
+
+              // Cargar las mascotas del usuario autenticado.
+              if (uid.isNotEmpty) {
+                mascotaCtrl.cargarMascotas(uid);
+              }
+            });
+
+            // Redirigir según rol.
+            if (rol == 'administrador') return const AdminScreen();
+            return const HomeScreen(); // usuario y veterinario
           }
+
+          // Sin sesión → pantalla de login.
           return const LoginScreen();
         },
       ),
+      // Rutas nombradas para navegación con pushNamed.
       routes: {
-        '/login': (context) => const LoginScreen(),
-        '/register': (context) => const RegisterScreen(),
-        '/home': (context) => _RouteGuard(
-              rolesPermitidos: const ['usuario'],
-              child: const HomeScreen(),
-            ),
-        '/vet_home': (context) => _RouteGuard(
-              rolesPermitidos: const ['veterinario'],
-              child: const VetHomeScreen(),
-            ),
-        '/mis_mascotas': (context) => _RouteGuard(
-              rolesPermitidos: const ['usuario'],
-              child: const MisMascotasScreen(),
-            ),
-        '/adopciones': (context) => const AdopcionesScreen(),
-        '/solicitudes_adopcion': (context) => _RouteGuard(
-              rolesPermitidos: const ['usuario'],
-              child: const SolicitudesAdopcionScreen(),
-            ),
-        '/servicios': (context) => const ServiciosScreen(),
-        '/urgencias': (context) => _RouteGuard(
-              rolesPermitidos: const ['veterinario'],
-              child: const UrgenciasScreen(),
-            ),
-        '/urgencias_usuario': (context) => _RouteGuard(
-              rolesPermitidos: const ['usuario'],
-              child: const UrgenciasUsuarioScreen(),
-            ),
-        '/perfil': (context) => _RouteGuard(
-              rolesPermitidos: const ['usuario'],
-              child: const PerfilScreen(),
-            ),
-        '/vet_citas': (context) => _RouteGuard(
-              rolesPermitidos: const ['veterinario'],
-              child: const VetCitasScreen(),
-            ),
-        '/vet_mascotas': (context) => _RouteGuard(
-              rolesPermitidos: const ['veterinario'],
-              child: const VetMascotasScreen(),
-            ),
-        '/vet_perfil': (context) => _RouteGuard(
-              rolesPermitidos: const ['veterinario'],
-              child: const VetPerfilScreen(),
-            ),
+        '/login':             (context) => const LoginScreen(),
+        '/register':          (context) => const RegisterScreen(),
+        '/home':              (context) => const HomeScreen(),
+        '/admin':             (context) => const AdminScreen(),
+        '/mis_mascotas':      (context) => const MisMascotasScreen(),
+        '/servicios':         (context) => const ServiciosScreen(),
+        '/perfil':            (context) => const PerfilScreen(),
         '/mapa_veterinarios': (context) => const MapaVeterinariosScreen(),
       },
     );
-  }
-}
-
-/// Guard de rutas en cliente.
-/// Verifica que el usuario autenticado tenga uno de los [rolesPermitidos]
-/// antes de renderizar el [child]. Si no está autenticado redirige a /login;
-/// si tiene un rol diferente redirige a la pantalla correcta para su rol.
-class _RouteGuard extends StatelessWidget {
-  final List<String> rolesPermitidos;
-  final Widget child;
-
-  const _RouteGuard({
-    required this.rolesPermitidos,
-    required this.child,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final auth = context.watch<AuthController>();
-
-    // Mientras se restaura la sesión, mostrar splash
-    if (auth.isInitializing) return const SplashScreen();
-
-    // Sin sesión → login
-    if (!auth.isAuthenticated || auth.currentUser == null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        Navigator.pushReplacementNamed(context, '/login');
-      });
-      return const SplashScreen();
-    }
-
-    final rol = auth.currentUser!.rol;
-
-    // Rol permitido → renderizar pantalla
-    if (rolesPermitidos.contains(rol)) return child;
-
-    // Rol incorrecto → redirigir a la pantalla correspondiente
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (rol == 'veterinario') {
-        Navigator.pushReplacementNamed(context, '/vet_home');
-      } else {
-        Navigator.pushReplacementNamed(context, '/home');
-      }
-    });
-    return const SplashScreen();
   }
 }

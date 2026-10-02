@@ -34,15 +34,15 @@ class NotificacionLocalService {
   }
 
   // ── Canales Android ────────────────────────────────────────────────────────
-  // Canal de alta prioridad: recordatorios a la hora exacta y citas rechazadas
+  // Canal de alta prioridad: alertas críticas
   static const _channelUrgente    = 'huellitas_urgente';
   static const _channelUrgenteNom = 'Alertas Urgentes';
   static const _channelUrgenteDesc= 'Recordatorios inmediatos y alertas críticas';
 
-  // Canal normal: solicitudes nuevas, confirmaciones, recordatorio 30 min
-  static const _channelNormal    = 'huellitas_citas';
-  static const _channelNormalNom = 'Citas y Recordatorios';
-  static const _channelNormalDesc= 'Notificaciones de citas y adopciones';
+  // Canal normal: notificaciones generales
+  static const _channelNormal    = 'huellitas_normal';
+  static const _channelNormalNom = 'Notificaciones';
+  static const _channelNormalDesc= 'Notificaciones generales de la app';
 
   // ── Init ───────────────────────────────────────────────────────────────────
   Future<void> init() async {
@@ -234,16 +234,15 @@ class NotificacionLocalService {
   }
 
   /// Vibración + feedback háptico in-app cuando la app está abierta.
-  /// Llama esto al agregar una notificación mientras el usuario usa la app.
   Future<void> feedbackInApp({bool urgente = false}) async {
     try {
       if (urgente) {
-        // Vibración pesada para recordatorio a la hora / cita rechazada
+        // Vibración pesada para alertas urgentes
         await HapticFeedback.heavyImpact();
         await Future.delayed(const Duration(milliseconds: 150));
         await HapticFeedback.heavyImpact();
       } else {
-        // Vibración media para solicitudes y confirmaciones
+        // Vibración media para notificaciones normales
         await HapticFeedback.mediumImpact();
       }
     } catch (_) {

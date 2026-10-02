@@ -70,11 +70,7 @@ class _RegisterScreenState extends State<RegisterScreen>
     );
 
     if (success && mounted) {
-      if (_selectedRol == 'veterinario') {
-        Navigator.pushReplacementNamed(context, '/vet_home');
-      } else {
-        Navigator.pushReplacementNamed(context, '/home');
-      }
+      Navigator.pushReplacementNamed(context, '/home');
     }
   }
 
@@ -270,10 +266,6 @@ class _RegisterScreenState extends State<RegisterScreen>
                                       DropdownMenuItem(
                                         value: 'usuario',
                                         child: Text('Usuario'),
-                                      ),
-                                      DropdownMenuItem(
-                                        value: 'veterinario',
-                                        child: Text('Veterinario'),
                                       ),
                                     ],
                                     onChanged: (value) {

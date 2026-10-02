@@ -1,3 +1,9 @@
+// veterinario_controller.dart — Controlador del perfil y lista de veterinarios.
+//
+// Gestiona dos contextos:
+//   1. Perfil del veterinario autenticado (edición de datos, disponibilidad, ubicación)
+//   2. Lista de todos los veterinarios (para la pantalla de servicios del usuario)
+
 import 'package:flutter/material.dart';
 import '../../data/models/veterinario_model.dart';
 import '../../data/services/veterinario_service.dart';
@@ -5,17 +11,22 @@ import '../../data/services/veterinario_service.dart';
 class VeterinarioController extends ChangeNotifier {
   final VeterinarioService _service = VeterinarioService();
 
-  VeterinarioModel? _perfil;
-  List<VeterinarioModel> _todos = [];
-  bool _isLoading = false;
+  // ── Estado interno ─────────────────────────────────────────────────────────
+  VeterinarioModel? _perfil;       // perfil del veterinario autenticado
+  List<VeterinarioModel> _todos = []; // todos los veterinarios de la plataforma
+  bool _isLoading   = false;
   String? _errorMessage;
 
-  VeterinarioModel? get perfil => _perfil;
+  // ── Getters ────────────────────────────────────────────────────────────────
+  VeterinarioModel? get perfil    => _perfil;
   List<VeterinarioModel> get todos => _todos;
-  bool get isLoading => _isLoading;
-  String? get errorMessage => _errorMessage;
+  bool get isLoading               => _isLoading;
+  String? get errorMessage         => _errorMessage;
 
-  /// Carga el perfil del veterinario desde la tabla `veterinarios`.
+  // ── Perfil del veterinario ─────────────────────────────────────────────────
+
+  /// Carga el perfil del veterinario desde la BD usando su usua_id.
+  /// Si no tiene registro en la tabla veterinarios, _perfil queda null.
   Future<void> cargarPerfil(String usuarioId) async {
     _isLoading = true;
     _errorMessage = null;
@@ -31,29 +42,31 @@ class VeterinarioController extends ChangeNotifier {
   }
 
   /// Guarda o actualiza el perfil del veterinario.
-  /// Si no existe registro en veterinarios, lo crea.
-  /// Si ya existe, lo actualiza usando el vete_id real.
+  ///
+  /// Si no existe registro (perfil == null o sin ID), hace INSERT.
+  /// Si ya existe, hace UPDATE usando el vete_id del perfil cargado.
   Future<bool> guardarPerfil(VeterinarioModel vet) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
     try {
       if (_perfil == null || _perfil!.id.isEmpty) {
-        // No existe → INSERT
+        // Primera vez → crear registro en la tabla veterinarios.
         _perfil = await _service.crearVeterinario(vet);
       } else {
-        // Existe → UPDATE con el vete_id real del perfil cargado
+        // Ya existe → actualizar conservando el ID y los datos de ubicación.
         final vetConId = VeterinarioModel(
-          id: _perfil!.id,
-          usuarioId: _perfil!.usuarioId,
-          nombre: _perfil!.nombre,
+          id:           _perfil!.id,
+          usuarioId:    _perfil!.usuarioId,
+          nombre:       _perfil!.nombre,
           especialidad: vet.especialidad,
-          experiencia: vet.experiencia,
-          tarifa: vet.tarifa,
-          fotoUrl: vet.fotoUrl,
-          disponible: vet.disponible,
-          latitud: _perfil!.latitud,
-          longitud: _perfil!.longitud,
+          experiencia:  vet.experiencia,
+          tarifa:       vet.tarifa,
+          fotoUrl:      vet.fotoUrl,
+          disponible:   vet.disponible,
+          // Conservamos la ubicación anterior (no se edita desde este formulario).
+          latitud:   _perfil!.latitud,
+          longitud:  _perfil!.longitud,
           direccion: _perfil!.direccion,
         );
         _perfil = await _service.actualizarVeterinario(vetConId);
@@ -69,25 +82,28 @@ class VeterinarioController extends ChangeNotifier {
     }
   }
 
-  /// Alterna la disponibilidad del veterinario y actualiza en BD.
-  /// Retorna true si tuvo éxito, false si falló (el estado se revierte).
+  /// Alterna la disponibilidad del veterinario (disponible ↔ no disponible).
+  ///
+  /// Usa actualización optimista: cambia el estado en la UI primero y
+  /// luego confirma con la BD. Si falla, revierte el cambio.
   Future<bool> toggleDisponible() async {
     if (_perfil == null || _perfil!.id.isEmpty) return false;
-    final valorAnterior = _perfil!.disponible;
-    final nuevo = !valorAnterior;
 
-    // Actualizar optimistamente en UI primero
-    _perfil = _perfil!.copyWith(disponible: nuevo);
+    final valorAnterior = _perfil!.disponible;
+    final nuevoValor    = !valorAnterior;
+
+    // Actualizar en la UI de inmediato para que la respuesta sea fluida.
+    _perfil = _perfil!.copyWith(disponible: nuevoValor);
     notifyListeners();
 
     try {
       await _service.actualizarDisponibilidad(
         veteId: _perfil!.id,
-        disponible: nuevo,
+        disponible: nuevoValor,
       );
       return true;
     } catch (e) {
-      // Revertir si falló
+      // Si falló, revertir al valor anterior.
       _perfil = _perfil!.copyWith(disponible: valorAnterior);
       _errorMessage = 'No se pudo actualizar la disponibilidad';
       notifyListeners();
@@ -95,7 +111,7 @@ class VeterinarioController extends ChangeNotifier {
     }
   }
 
-  /// Guarda la ubicación del veterinario en el mapa.
+  /// Guarda la ubicación GPS del veterinario en la BD y actualiza el estado local.
   Future<bool> guardarUbicacion({
     required double latitud,
     required double longitud,
@@ -107,22 +123,15 @@ class VeterinarioController extends ChangeNotifier {
     notifyListeners();
     try {
       await _service.guardarUbicacion(
-        veteId: _perfil!.id,
-        latitud: latitud,
+        veteId:   _perfil!.id,
+        latitud:  latitud,
         longitud: longitud,
         direccion: direccion,
       );
-      _perfil = VeterinarioModel(
-        id: _perfil!.id,
-        usuarioId: _perfil!.usuarioId,
-        nombre: _perfil!.nombre,
-        especialidad: _perfil!.especialidad,
-        experiencia: _perfil!.experiencia,
-        tarifa: _perfil!.tarifa,
-        fotoUrl: _perfil!.fotoUrl,
-        disponible: _perfil!.disponible,
-        latitud: latitud,
-        longitud: longitud,
+      // Actualizar el modelo local con la nueva ubicación.
+      _perfil = _perfil!.copyWith(
+        latitud:   latitud,
+        longitud:  longitud,
         direccion: direccion,
       );
       _isLoading = false;
@@ -136,14 +145,9 @@ class VeterinarioController extends ChangeNotifier {
     }
   }
 
-  void limpiar() {
-    _perfil = null;
-    _todos = [];
-    _errorMessage = null;
-    notifyListeners();
-  }
+  // ── Lista de veterinarios ──────────────────────────────────────────────────
 
-  /// Carga todos los veterinarios (para la pantalla de servicios del usuario).
+  /// Carga todos los veterinarios para la pantalla de servicios del usuario.
   Future<void> cargarTodosLosVeterinarios() async {
     _isLoading = true;
     _errorMessage = null;
@@ -156,5 +160,13 @@ class VeterinarioController extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  /// Limpia el estado del controlador. Se llama al cerrar sesión.
+  void limpiar() {
+    _perfil = null;
+    _todos  = [];
+    _errorMessage = null;
+    notifyListeners();
   }
 }
