@@ -12,21 +12,32 @@
 import 'dart:io' show File;
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../core/token_push_port.dart';
 import '../../data/models/usuario_model.dart';
 import '../../data/services/auth_service.dart';
-import '../../data/services/fcm_service.dart';
 
 class AuthController extends ChangeNotifier {
-  final AuthService _authService = AuthService();
+  // Seam de inyección (TDD-02): en producción se usa AuthService() con el
+  // singleton de Supabase; los tests inyectan un doble sin tocar la red.
+  final AuthService _authService;
+
+  // Seam del puerto FCM (TDD-06 / DES-DP-1(a)): en producción delega en
+  // FcmService.instance vía FcmTokenPushAdapter; los tests inyectan un
+  // FakeTokenPushPort y el controlador NO toca Firebase.
+  final TokenPushPort _tokenPush;
+
+  AuthController({AuthService? authService, TokenPushPort? tokenPush})
+    : _authService = authService ?? AuthService(),
+      _tokenPush = tokenPush ?? const FcmTokenPushAdapter();
 
   // ── Estado interno ─────────────────────────────────────────────────────────
-  bool _isLoading      = false; // true mientras hay operación en curso
-  bool _isInitializing = true;  // true durante el splash inicial
-  String? _errorMessage;        // null si no hay error
-  UsuarioModel? _currentUser;   // null si no hay sesión
+  bool _isLoading = false; // true mientras hay operación en curso
+  bool _isInitializing = true; // true durante el splash inicial
+  String? _errorMessage; // null si no hay error
+  UsuarioModel? _currentUser; // null si no hay sesión
 
   // ── Getters públicos ────────────────────────────────────────────────────────
-  bool get isLoading      => _isLoading;
+  bool get isLoading => _isLoading;
   bool get isInitializing => _isInitializing;
   String? get errorMessage => _errorMessage;
   UsuarioModel? get currentUser => _currentUser;
@@ -44,7 +55,7 @@ class AuthController extends ChangeNotifier {
         password: password,
       );
       // Guardar token FCM para que el usuario reciba notificaciones push.
-      await FcmService.instance.guardarToken(_currentUser!.id);
+      await _tokenPush.guardarToken(_currentUser!.id);
       _setLoading(false);
       return true;
     } on AuthException catch (e) {
@@ -66,7 +77,7 @@ class AuthController extends ChangeNotifier {
     _setLoading(true);
     try {
       _currentUser = await _authService.signInWithGoogle();
-      await FcmService.instance.guardarToken(_currentUser!.id);
+      await _tokenPush.guardarToken(_currentUser!.id);
       _setLoading(false);
       return true;
     } on AuthException catch (e) {
@@ -104,7 +115,7 @@ class AuthController extends ChangeNotifier {
         telefono: telefono?.trim(),
         rol: rol,
       );
-      await FcmService.instance.guardarToken(_currentUser!.id);
+      await _tokenPush.guardarToken(_currentUser!.id);
       _setLoading(false);
       return true;
     } on AuthException catch (e) {
@@ -126,7 +137,7 @@ class AuthController extends ChangeNotifier {
   Future<void> logout() async {
     if (_currentUser != null) {
       // Quitar el token FCM para que el usuario no reciba más notificaciones.
-      await FcmService.instance.limpiarToken(_currentUser!.id);
+      await _tokenPush.limpiarToken(_currentUser!.id);
     }
     await _authService.signOut();
     _currentUser = null;
@@ -147,7 +158,7 @@ class AuthController extends ChangeNotifier {
       try {
         _currentUser = await _authService.getUserProfile(userId);
         // Actualizar token FCM (puede haber cambiado desde la última vez).
-        await FcmService.instance.guardarToken(userId);
+        await _tokenPush.guardarToken(userId);
       } catch (e) {
         debugPrint('Error al restaurar sesión: $e');
         // No abortamos: si falla, el usuario verá el login.
@@ -169,7 +180,9 @@ class AuthController extends ChangeNotifier {
     _setLoading(true);
     try {
       final url = await _authService.subirFotoUsuario(
-        _currentUser!.id, imagen, extension,
+        _currentUser!.id,
+        imagen,
+        extension,
       );
       // Actualizar el modelo local con la nueva URL sin recargar desde BD.
       _currentUser = _currentUser!.copyWith(fotoUrl: url);
@@ -201,7 +214,9 @@ class AuthController extends ChangeNotifier {
 
     try {
       await _authService.updateUserProfile(
-        _currentUser!.id, nombre, telefono,
+        _currentUser!.id,
+        nombre,
+        telefono,
         cedula: cedula,
         direccionGps: direccionGps,
         esProductor: productorFinal,
@@ -266,7 +281,9 @@ class AuthController extends ChangeNotifier {
     _setLoading(true);
     try {
       await _authService.verificarOtpYCambiarContrasena(
-        correo: correo, otp: otp, nuevaContrasena: nuevaContrasena,
+        correo: correo,
+        otp: otp,
+        nuevaContrasena: nuevaContrasena,
       );
       _setLoading(false);
       return true;

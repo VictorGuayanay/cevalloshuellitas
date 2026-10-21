@@ -16,8 +16,13 @@ import '../models/usuario_model.dart';
 import '../../supabase_config.dart';
 
 class AuthService {
-  // Cliente de Supabase, disponible como singleton desde Supabase.initialize().
-  final SupabaseClient _client = Supabase.instance.client;
+  // Cliente de Supabase: seam de inyección (TDD-03). El default evalúa el
+  // singleton solo cuando NO se inyecta cliente — los tests que inyectan
+  // uno jamás tocan Supabase.instance (escenario "Singleton default").
+  final SupabaseClient _client;
+
+  AuthService({SupabaseClient? client})
+    : _client = client ?? Supabase.instance.client;
 
   // ── Registro ──────────────────────────────────────────────────────────────
 
@@ -44,11 +49,11 @@ class AuthService {
 
     // 2. Crear el perfil en nuestra tabla pública `usuarios`.
     await _client.from('usuarios').insert({
-      'usua_id':      userId,
-      'usua_nombre':  nombre,
-      'usua_correo':  correo,
+      'usua_id': userId,
+      'usua_nombre': nombre,
+      'usua_correo': correo,
       'usua_telefono': telefono,
-      'usua_rol':     rol,
+      'usua_rol': rol,
     });
 
     // 3. Si se registra como veterinario, crear registro en tabla veterinarios.
@@ -125,9 +130,10 @@ class AuthService {
     final idToken = googleAuth.idToken;
     if (idToken == null) {
       throw Exception(
-          'No se pudo obtener el token de Google. '
-          'Verifica que el Web Client ID en supabase_config.dart '
-          'sea el OAuth de tipo "Aplicación web".');
+        'No se pudo obtener el token de Google. '
+        'Verifica que el Web Client ID en supabase_config.dart '
+        'sea el OAuth de tipo "Aplicación web".',
+      );
     }
 
     // Autenticar en Supabase usando el ID Token de Google.
@@ -144,7 +150,8 @@ class AuthService {
 
     if (authResponse.user == null) {
       throw Exception(
-          'Supabase no devolvió un usuario tras el login con Google.');
+        'Supabase no devolvió un usuario tras el login con Google.',
+      );
     }
 
     final userId = authResponse.user!.id;
@@ -168,16 +175,17 @@ class AuthService {
       // Primera vez con Google → creamos el perfil.
       try {
         await _client.from('usuarios').insert({
-          'usua_id':      userId,
-          'usua_nombre':  nombre,
-          'usua_correo':  correo,
+          'usua_id': userId,
+          'usua_nombre': nombre,
+          'usua_correo': correo,
           'usua_telefono': null,
-          'usua_rol':     'usuario',
+          'usua_rol': 'usuario',
         });
       } catch (e) {
         throw Exception(
-            'No se pudo crear el perfil en la base de datos: $e. '
-            'Verifica las políticas RLS de la tabla "usuarios" en Supabase.');
+          'No se pudo crear el perfil en la base de datos: $e. '
+          'Verifica las políticas RLS de la tabla "usuarios" en Supabase.',
+        );
       }
 
       return UsuarioModel(
@@ -221,23 +229,27 @@ class AuthService {
     bool esProductor = false,
     String? tipoAnimales,
   }) async {
-    await _client.from('usuarios').update({
-      'usua_nombre':       nombre,
-      'usua_telefono':     telefono,
-      'usua_cedula':       cedula,
-      'usua_direccion_gps': direccionGps,
-      'usua_es_productor': esProductor,
-      // Si no es productor, guardamos null para limpiar el tipo de animales.
-      'usua_tipo_animales': esProductor ? tipoAnimales : null,
-    }).eq('usua_id', userId);
+    await _client
+        .from('usuarios')
+        .update({
+          'usua_nombre': nombre,
+          'usua_telefono': telefono,
+          'usua_cedula': cedula,
+          'usua_direccion_gps': direccionGps,
+          'usua_es_productor': esProductor,
+          // Si no es productor, guardamos null para limpiar el tipo de animales.
+          'usua_tipo_animales': esProductor ? tipoAnimales : null,
+        })
+        .eq('usua_id', userId);
   }
 
   /// Cambia el rol del usuario. Si es 'veterinario', crea su registro
   /// en la tabla veterinarios si aún no existe.
   Future<void> updateUserRol(String userId, String nuevoRol) async {
-    await _client.from('usuarios').update({
-      'usua_rol': nuevoRol,
-    }).eq('usua_id', userId);
+    await _client
+        .from('usuarios')
+        .update({'usua_rol': nuevoRol})
+        .eq('usua_id', userId);
 
     if (nuevoRol == 'veterinario') {
       await _crearPerfilVeterinarioSiNoExiste(userId);
@@ -255,7 +267,7 @@ class AuthService {
           .maybeSingle();
       if (existing == null) {
         await _client.from('veterinarios').insert({
-          'usua_id':       userId,
+          'usua_id': userId,
           'vete_disponible': true,
         });
       }
@@ -291,9 +303,7 @@ class AuthService {
     }
 
     // 2. Con la sesión activa, actualizar la contraseña.
-    await _client.auth.updateUser(
-      UserAttributes(password: nuevaContrasena),
-    );
+    await _client.auth.updateUser(UserAttributes(password: nuevaContrasena));
   }
 
   // ── Foto de perfil ────────────────────────────────────────────────────────
@@ -302,21 +312,28 @@ class AuthService {
   /// Actualiza el campo usua_foto_url en la tabla usuarios.
   /// Retorna la URL pública de la imagen.
   Future<String> subirFotoUsuario(
-      String userId, File imagen, String extension) async {
+    String userId,
+    File imagen,
+    String extension,
+  ) async {
     // Nombre de archivo único usando el ID del usuario y el timestamp actual.
-    final fileName = '${userId}_${DateTime.now().millisecondsSinceEpoch}.$extension';
+    final fileName =
+        '${userId}_${DateTime.now().millisecondsSinceEpoch}.$extension';
     final ruta = 'perfiles/$fileName';
 
     // Subir el archivo al bucket.
-    await _client.storage.from('usuarios_imagenes').upload(
+    await _client.storage
+        .from('usuarios_imagenes')
+        .upload(
           ruta,
           imagen,
           fileOptions: const FileOptions(cacheControl: '3600', upsert: true),
         );
 
     // Obtener la URL pública para mostrar la imagen en la UI.
-    final String publicUrl =
-        _client.storage.from('usuarios_imagenes').getPublicUrl(ruta);
+    final String publicUrl = _client.storage
+        .from('usuarios_imagenes')
+        .getPublicUrl(ruta);
 
     // Guardar la URL en la tabla usuarios para que persista entre sesiones.
     await _client
