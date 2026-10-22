@@ -36,7 +36,12 @@ void main() {
           password: any(named: 'password'),
         ),
       ).thenAnswer((_) async => perfil);
-      controller = AuthController(authService: mockAuthService);
+      // Higiene (sancionada): fake inyectado — el default FcmTokenPushAdapter
+      // tocaba FcmService.instance offline y dejaba ruido [core/no-app].
+      controller = AuthController(
+        authService: mockAuthService,
+        tokenPush: FakeTokenPushPort(),
+      );
 
       await controller!.login('ana@test.local', 'secreto123');
 

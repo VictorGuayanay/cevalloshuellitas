@@ -24,6 +24,13 @@ class AuthService {
   AuthService({SupabaseClient? client})
     : _client = client ?? Supabase.instance.client;
 
+  // ── Estados de autenticación (S2 / SES-01) ────────────────────────────────
+
+  /// Seam de eventos: stream `onAuthStateChange` de Supabase Auth.
+  /// `AuthController.initAuthListener()` lo consume; los tests inyectan un
+  /// doble y jamás tocan el singleton (TDD-06 offline).
+  Stream<AuthState> get authStates => _client.auth.onAuthStateChange;
+
   // ── Registro ──────────────────────────────────────────────────────────────
 
   /// Registra un nuevo usuario en Supabase Auth y crea su perfil en `usuarios`.

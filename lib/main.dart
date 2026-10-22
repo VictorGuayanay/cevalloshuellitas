@@ -47,16 +47,15 @@ void main() async {
     debugPrint('Firebase no pudo inicializarse (PlatformException): $e');
     debugPrint('→ Verifica que google-services.json esté en android/app/');
   } on FirebaseException catch (e) {
-    debugPrint('Firebase no pudo inicializarse (FirebaseException): ${e.code} — ${e.message}');
+    debugPrint(
+      'Firebase no pudo inicializarse (FirebaseException): ${e.code} — ${e.message}',
+    );
   } catch (e) {
     debugPrint('Firebase error inesperado: $e');
   }
 
   // ── 2. Supabase (base de datos principal: usuarios, mascotas, etc.) ──────────
-  await Supabase.initialize(
-    url: supabaseUrl,
-    anonKey: supabaseAnonKey,
-  );
+  await Supabase.initialize(url: supabaseUrl, anonKey: supabaseAnonKey);
 
   // ── 3. Notificaciones locales (banners, sonidos, vibración) ──────────────────
   await NotificacionLocalService.instance.init();
@@ -85,8 +84,13 @@ void main() async {
     MultiProvider(
       providers: [
         // AuthController gestiona login, registro y sesión activa.
+        // initAuthListener(): el listener global (SES-01…SES-07) se registra
+        // ANTES de restaurar para no perderte eventos durante el splash.
         ChangeNotifierProvider(
-            create: (_) => AuthController()..tryRestoreSession()),
+          create: (_) => AuthController()
+            ..initAuthListener()
+            ..tryRestoreSession(),
+        ),
         // MascotaController gestiona la lista de mascotas del usuario.
         ChangeNotifierProvider(create: (_) => MascotaController()),
         // NotificacionController maneja las alertas in-app (mascotas perdidas).
@@ -115,6 +119,19 @@ class MyApp extends StatelessWidget {
   static final GlobalKey<NavigatorState> navigatorKey =
       GlobalKey<NavigatorState>();
 
+  /// Programa (post-frame) el reset de la pila de navegación a `/login`
+  /// tras un cierre de sesión (SES-02). Sólo navega si la pila puede
+  /// poppear (`canPop()`): en la raíz no hay nada que desapilar y el
+  /// `Consumer` raíz ya renderiza `LoginScreen` desde el estado.
+  static void programarResetDePila() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final nav = navigatorKey.currentState;
+      if (nav != null && nav.canPop()) {
+        nav.pushNamedAndRemoveUntil('/login', (route) => false);
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -122,27 +139,31 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       navigatorKey: MyApp.navigatorKey,
       theme: ThemeData(
-        colorScheme:
-            ColorScheme.fromSeed(seedColor: const Color(0xFFFF6B35)),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFFF6B35)),
         // Poppins como tipografía global de la app.
-        textTheme:
-            GoogleFonts.poppinsTextTheme(Theme.of(context).textTheme),
+        textTheme: GoogleFonts.poppinsTextTheme(Theme.of(context).textTheme),
         useMaterial3: true,
       ),
       // Pantalla inicial: decidida dinámicamente según el estado de auth.
       home: Consumer<AuthController>(
         builder: (context, authController, _) {
+          // SES-02 (DP-P2-1): consume-once — tras un `signedOut`, programar
+          // el reset de pila (post-frame, sólo si hay profundidad que poppear).
+          if (authController.consumirAvisoDeCierre()) {
+            MyApp.programarResetDePila();
+          }
+
           // Mientras restauramos la sesión, mostramos el splash.
           if (authController.isInitializing) return const SplashScreen();
 
           if (authController.isAuthenticated) {
             final user = authController.currentUser;
-            final rol  = user?.rol ?? '';
-            final uid  = user?.id  ?? '';
+            final rol = user?.rol ?? '';
+            final uid = user?.id ?? '';
 
             // Suscripciones en tiempo real: se activan una vez montada la UI.
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              final notifCtrl  = context.read<NotificacionController>();
+              final notifCtrl = context.read<NotificacionController>();
               final mascotaCtrl = context.read<MascotaController>();
 
               // Todos los roles reciben alertas de mascotas perdidas.
@@ -165,13 +186,13 @@ class MyApp extends StatelessWidget {
       ),
       // Rutas nombradas para navegación con pushNamed.
       routes: {
-        '/login':             (context) => const LoginScreen(),
-        '/register':          (context) => const RegisterScreen(),
-        '/home':              (context) => const HomeScreen(),
-        '/admin':             (context) => const AdminScreen(),
-        '/mis_mascotas':      (context) => const MisMascotasScreen(),
-        '/servicios':         (context) => const ServiciosScreen(),
-        '/perfil':            (context) => const PerfilScreen(),
+        '/login': (context) => const LoginScreen(),
+        '/register': (context) => const RegisterScreen(),
+        '/home': (context) => const HomeScreen(),
+        '/admin': (context) => const AdminScreen(),
+        '/mis_mascotas': (context) => const MisMascotasScreen(),
+        '/servicios': (context) => const ServiciosScreen(),
+        '/perfil': (context) => const PerfilScreen(),
         '/mapa_veterinarios': (context) => const MapaVeterinariosScreen(),
       },
     );

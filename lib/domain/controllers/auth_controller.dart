@@ -9,6 +9,7 @@
 //   - errorMessage: último error a mostrar en la UI
 //   - currentUser: perfil del usuario autenticado
 
+import 'dart:async';
 import 'dart:io' show File;
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -29,6 +30,135 @@ class AuthController extends ChangeNotifier {
   AuthController({AuthService? authService, TokenPushPort? tokenPush})
     : _authService = authService ?? AuthService(),
       _tokenPush = tokenPush ?? const FcmTokenPushAdapter();
+
+  // ── Listener global de sesión (S2 / SES-01) ────────────────────────────────
+  // Suscripción única a AuthService.authStates (onAuthStateChange de Supabase);
+  // se registra una sola vez y se cancela en dispose() (sin fugas).
+  StreamSubscription<AuthState>? _authSub;
+
+  // true mientras `logout()` está pidiendo el cierre: el signedOut resultante
+  // se trata en silencio (sin mensaje de expiración). One-shot: se consume al
+  // procesar el evento (diseño, matriz de eventos).
+  bool _cerrandoSesion = false;
+
+  // Aviso one-shot para el Consumer raíz: queda en true tras cada `signedOut`
+  // (silencioso o remoto) hasta que `consumirAvisoDeCierre()` lo lee y resetea.
+  // Lector único por diseño (DP-P2-1, opción a).
+  bool _avisoDeCierrePendiente = false;
+
+  /// Suscribe el listener de eventos de autenticación de forma idempotente:
+  /// las llamadas repetidas NO registran suscripciones adicionales (SES-01).
+  void initAuthListener() {
+    if (_authSub != null) return;
+    _authSub = _authService.authStates.listen(
+      (state) => unawaited(_procesarEvento(state)),
+      // Errores del stream (p. ej. refresh con red caída): sólo traza —
+      // NUNCA mutan estado: una transitoria no debe simular un logout;
+      // el fallo definitivo de sesión llega como `signedOut` (diseño,
+      // matriz de eventos; un error de stream sin onError crashea la app).
+      onError: (Object error) =>
+          debugPrint('Stream de sesión (onAuthStateChange): $error'),
+    );
+  }
+
+  /// Devuelve true UNA sola vez tras cada `signedOut` (consume-once): el
+  /// Consumer raíz de `lib/main.dart` lo lee como primera línea para programar
+  /// el reset de pila a `/login` (post-frame y sólo si `canPop()`).
+  bool consumirAvisoDeCierre() {
+    final pendiente = _avisoDeCierrePendiente;
+    _avisoDeCierrePendiente = false;
+    return pendiente;
+  }
+
+  /// Procesa un evento de `onAuthStateChange` según la matriz del diseño.
+  ///
+  /// `signedOut` (SES-02): si el cierre lo pidió `logout()` se limpia el
+  /// estado en silencio; si llega del servidor (expiración/revocación) se
+  /// limpia además dejando el mensaje de sesión. En ambos casos se marca
+  /// `_avisoDeCierrePendiente` para que la UI resetee la pila de navegación.
+  ///
+  /// `signedIn` (SES-03): carga el perfil de `session.user.id` para que el
+  /// Consumer raíz enrute por rol.
+  Future<void> _procesarEvento(AuthState state) async {
+    switch (state.event) {
+      case AuthChangeEvent.signedOut:
+        final silencioso = _cerrandoSesion;
+        _cerrandoSesion = false; // one-shot: el próximo signedOut es remoto
+        _currentUser = null;
+        if (!silencioso) {
+          _errorMessage = 'Tu sesión ha expirado. Inicia sesión de nuevo.';
+        }
+        _avisoDeCierrePendiente = true;
+        notifyListeners();
+      case AuthChangeEvent.signedIn:
+        final uid = state.session?.user.id;
+        if (uid != null) await _cargarPerfil(uid);
+      case AuthChangeEvent.tokenRefreshed:
+        // SES-04: refresh silencioso — sin navegación, splash ni re-fetch
+        // de perfil; sólo mantiene viva la sesión. No-op explícito.
+        return;
+      case AuthChangeEvent.userUpdated:
+        // SES-05: el perfil se editó (p. ej. en otro dispositivo) →
+        // recargar `currentUser` desde la fuente para que la UI refleje
+        // los cambios sin re-login.
+        final uid = state.session?.user.id;
+        if (uid != null) await _cargarPerfil(uid);
+      case AuthChangeEvent.passwordRecovery:
+        // SES-06: con sesión activa, reflejarla cargando el perfil.
+        // Nunca fuerza navegación — la pantalla de recuperación maneja su
+        // propio flujo (evita carrera con el updateUser en vuelo).
+        final uidRecuperacion = state.session?.user.id;
+        if (uidRecuperacion != null) {
+          await _cargarPerfil(uidRecuperacion);
+        } else {
+          // Sesión nula/expirada: quedarse en login con mensaje recuperable.
+          // Copy interim: el mapeo fino de recuperación llega con el
+          // AuthErrorMapper en la Fase 3; por ahora, el fallback fijo de
+          // ERR-06 (string acotado en el spec).
+          _errorMessage = 'Ocurrió un error. Intenta de nuevo.';
+          notifyListeners();
+        }
+      case AuthChangeEvent.initialSession:
+        // SES-07: en frío, `tryRestoreSession()` es dueña del arranque —
+        // el replay de GoTrue no debe duplicar la carga (exactamente UNA
+        // vía: sin doble carga de perfil ni doble save de token FCM).
+        if (_isInitializing) return;
+        // En caliente: si hay sesión y aún no hay perfil cargado, cargarlo.
+        final uidInicial = state.session?.user.id;
+        if (_currentUser == null && uidInicial != null) {
+          await _cargarPerfil(uidInicial);
+        }
+      default:
+        // Resto de eventos: tareas 2.8 (tokenRefreshed), 2.10 (userUpdated),
+        // 2.11 (passwordRecovery / initialSession).
+        break;
+    }
+  }
+
+  /// Carga el perfil de [uid] en `currentUser` y notifica (SES-03).
+  /// Si la fila no existe (PGRST116) u otro fallo ocurre, se deja un estado
+  /// recuperable: `currentUser` limpio + mensaje genérico — sin crash ni loop
+  /// silencioso (orfanato residual detectable, SGN-06). Copy interim: el
+  /// `AuthErrorMapper` con el mensaje exacto de perfil inexistente llega en
+  /// la Fase 3 (tarea 3.6); por ahora se usa el fallback fijo de ERR-06.
+  Future<void> _cargarPerfil(String uid) async {
+    try {
+      _currentUser = await _authService.getUserProfile(uid);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error cargando perfil desde evento de sesión: $e');
+      _currentUser = null;
+      _errorMessage = 'Ocurrió un error. Intenta de nuevo.';
+      notifyListeners();
+    }
+  }
+
+  @override
+  void dispose() {
+    _authSub?.cancel();
+    _authSub = null;
+    super.dispose();
+  }
 
   // ── Estado interno ─────────────────────────────────────────────────────────
   bool _isLoading = false; // true mientras hay operación en curso
@@ -135,6 +265,9 @@ class AuthController extends ChangeNotifier {
   /// Cierra la sesión: limpia el token FCM, cierra sesión en Supabase
   /// y resetea el estado local.
   Future<void> logout() async {
+    // El `signedOut` que dispare Supabase es propio → tratarlo en silencio
+    // (sin mensaje de "sesión expirada") — diseño, matriz de eventos.
+    _cerrandoSesion = true;
     if (_currentUser != null) {
       // Quitar el token FCM para que el usuario no reciba más notificaciones.
       await _tokenPush.limpiarToken(_currentUser!.id);
