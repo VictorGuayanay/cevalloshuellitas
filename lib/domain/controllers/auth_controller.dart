@@ -13,6 +13,7 @@ import 'dart:async';
 import 'dart:io' show File;
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../core/auth_error_mapper.dart';
 import '../../core/token_push_port.dart';
 import '../../data/models/usuario_model.dart';
 import '../../data/services/auth_service.dart';
@@ -148,13 +149,52 @@ class AuthController extends ChangeNotifier {
     } catch (e) {
       debugPrint('Error cargando perfil desde evento de sesión: $e');
       _currentUser = null;
-      _errorMessage = 'Ocurrió un error. Intenta de nuevo.';
+      // ERR-06/SES-03: PGRST116 → mensaje exacto de perfil no encontrado
+      // (rama 4 del mapa; reemplaza el interim genérico de la Fase 2).
+      _errorMessage = AuthErrorMapper.map(e);
       notifyListeners();
     }
   }
 
+  // ── Cooldown de reenvío de código (ERR-07 / SP-DP-1) ───────────────────────
+
+  /// Duración del cooldown de reenvío tras enviar el código de recuperación.
+  /// Configurable vía constante estática (SP-DP-1); default 60 s.
+  static const Duration cooldownReenvio = Duration(seconds: 60);
+
+  Timer? _timerCooldown;
+  Duration _cooldownRestante = Duration.zero;
+
+  /// Restante del cooldown (Duration.zero cuando no hay cooldown).
+  Duration get cooldownRestante => _cooldownRestante;
+
+  /// true cuando ya se puede reenviar el código (sin cooldown activo).
+  bool get puedeReenviarCodigo => _timerCooldown == null;
+
+  /// Arranca (o reinicia) el cooldown de reenvío: decrece 1 s por tick,
+  /// notifica cada segundo y detiene el timer al llegar a cero — así no
+  /// queda ningún timer vivo más allá de la ventana de cooldown.
+  void iniciarCooldownReenvio() {
+    _timerCooldown?.cancel();
+    _cooldownRestante = cooldownReenvio;
+    _timerCooldown = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (_cooldownRestante.inSeconds <= 1) {
+        _cooldownRestante = Duration.zero;
+        _timerCooldown?.cancel();
+        _timerCooldown = null;
+        notifyListeners();
+      } else {
+        _cooldownRestante -= const Duration(seconds: 1);
+        notifyListeners();
+      }
+    });
+  }
+
   @override
   void dispose() {
+    // Regla de duración (ERR-07): sin timers activos tras dispose().
+    _timerCooldown?.cancel();
+    _timerCooldown = null;
     _authSub?.cancel();
     _authSub = null;
     super.dispose();
@@ -178,6 +218,9 @@ class AuthController extends ChangeNotifier {
   /// Inicia sesión con email y contraseña.
   /// Retorna true si tuvo éxito, false si falló (el error queda en errorMessage).
   Future<bool> login(String correo, String password) async {
+    // ERR-01: el error anterior no sobrevive al nuevo intento (silencioso,
+    // sin notify: el banner se limpia en el notify que sigue).
+    _errorMessage = null;
     _setLoading(true);
     try {
       _currentUser = await _authService.signIn(
@@ -190,12 +233,13 @@ class AuthController extends ChangeNotifier {
       return true;
     } on AuthException catch (e) {
       // Errores de Supabase Auth (credenciales inválidas, email no confirmado, etc.)
-      _errorMessage = _mapAuthError(e.message);
+      _errorMessage = AuthErrorMapper.map(e);
       _setLoading(false);
       return false;
     } catch (e) {
+      // ERR-06: el texto crudo jamás llega a la UI — el mapa fija el copy.
       debugPrint('Error en login: $e');
-      _errorMessage = 'Error inesperado: $e';
+      _errorMessage = AuthErrorMapper.map(e);
       _setLoading(false);
       return false;
     }
@@ -204,6 +248,8 @@ class AuthController extends ChangeNotifier {
   /// Inicia sesión con Google.
   /// Retorna true si tuvo éxito, false si el usuario canceló o hubo error.
   Future<bool> loginWithGoogle() async {
+    // ERR-01: limpiar al entrar (la cancelación de Google queda silenciosa).
+    _errorMessage = null;
     _setLoading(true);
     try {
       _currentUser = await _authService.signInWithGoogle();
@@ -211,15 +257,13 @@ class AuthController extends ChangeNotifier {
       _setLoading(false);
       return true;
     } on AuthException catch (e) {
-      _errorMessage = _mapAuthError(e.message);
+      _errorMessage = AuthErrorMapper.map(e);
       _setLoading(false);
       return false;
     } catch (e) {
-      final msg = e.toString();
-      // Si el usuario canceló el selector, no mostramos error.
-      _errorMessage = msg.contains('cancelado')
-          ? null
-          : msg.replaceAll('Exception: ', '').replaceAll('exception: ', '');
+      // ERR-05/ERR-01: cancelación de Google → map devuelve null (silencio);
+      // cualquier otro fallo → copy permitido, jamás el wrapper crudo.
+      _errorMessage = AuthErrorMapper.map(e);
       _setLoading(false);
       return false;
     }
@@ -236,6 +280,8 @@ class AuthController extends ChangeNotifier {
     String? telefono,
     String rol = 'usuario',
   }) async {
+    // ERR-01: el error anterior no sobrevive al nuevo intento.
+    _errorMessage = null;
     _setLoading(true);
     try {
       _currentUser = await _authService.signUp(
@@ -249,12 +295,12 @@ class AuthController extends ChangeNotifier {
       _setLoading(false);
       return true;
     } on AuthException catch (e) {
-      _errorMessage = _mapAuthError(e.message);
+      _errorMessage = AuthErrorMapper.map(e);
       _setLoading(false);
       return false;
     } catch (e) {
       debugPrint('Error en registro: $e');
-      _errorMessage = 'Error al crear la cuenta: $e';
+      _errorMessage = AuthErrorMapper.map(e);
       _setLoading(false);
       return false;
     }
@@ -265,6 +311,8 @@ class AuthController extends ChangeNotifier {
   /// Cierra la sesión: limpia el token FCM, cierra sesión en Supabase
   /// y resetea el estado local.
   Future<void> logout() async {
+    // ERR-01: cualquier banner previo se limpia al entrar.
+    _errorMessage = null;
     // El `signedOut` que dispare Supabase es propio → tratarlo en silencio
     // (sin mensaje de "sesión expirada") — diseño, matriz de eventos.
     _cerrandoSesion = true;
@@ -322,7 +370,8 @@ class AuthController extends ChangeNotifier {
       _setLoading(false);
       return true;
     } catch (e) {
-      _errorMessage = 'Error al subir la foto: $e';
+      // ERR-06: sin `$e` crudo en la UI — copy fijo vía el mapa.
+      _errorMessage = AuthErrorMapper.map(e);
       _setLoading(false);
       return false;
     }
@@ -339,6 +388,8 @@ class AuthController extends ChangeNotifier {
     bool? esProductor,
     String? tipoAnimales,
   }) async {
+    // ERR-01: el error anterior no sobrevive a la nueva operación.
+    _errorMessage = null;
     if (_currentUser == null) return false;
     _setLoading(true);
 
@@ -367,7 +418,7 @@ class AuthController extends ChangeNotifier {
       _setLoading(false);
       return true;
     } catch (e) {
-      _errorMessage = 'Error al actualizar el perfil: $e';
+      _errorMessage = AuthErrorMapper.map(e);
       _setLoading(false);
       return false;
     }
@@ -375,6 +426,9 @@ class AuthController extends ChangeNotifier {
 
   /// Cambia el rol del usuario y actualiza el estado local.
   Future<bool> updateRol(String nuevoRol) async {
+    // ERR-01: el error anterior no sobrevive a la nueva operación.
+    // (updateRol sigue presente hasta la Fase 8 / DES-DP-3.)
+    _errorMessage = null;
     if (_currentUser == null) return false;
     _setLoading(true);
     try {
@@ -383,7 +437,7 @@ class AuthController extends ChangeNotifier {
       _setLoading(false);
       return true;
     } catch (e) {
-      _errorMessage = 'Error al cambiar el rol: $e';
+      _errorMessage = AuthErrorMapper.map(e);
       _setLoading(false);
       return false;
     }
@@ -393,13 +447,25 @@ class AuthController extends ChangeNotifier {
 
   /// Envía el OTP de recuperación al correo indicado.
   Future<bool> recuperarContrasena(String correo) async {
+    // ERR-01: el error anterior no sobrevive a la nueva operación.
+    _errorMessage = null;
     _setLoading(true);
     try {
       await _authService.enviarRecuperacionContrasena(correo.trim());
+      // ERR-07: el envío exitoso arranca el cooldown de reenvío
+      // (la UI se re-dibuja en el notify de _setLoading(false)).
+      iniciarCooldownReenvio();
       _setLoading(false);
       return true;
     } catch (e) {
-      _errorMessage = 'No se pudo enviar el correo. Verifica la dirección.';
+      // ERR-02 + ERR-07 esc. 2: el rate-limit del servidor muestra el copy
+      // de espera Y arranca el cooldown (server-driven). Sólo en este caso:
+      // un fallo de conexión (ERR-04) invita a "vuelve a intentarlo" y no
+      // debe bloquear el reenvío 60 s.
+      _errorMessage = AuthErrorMapper.map(e);
+      if (e.toString().contains('over_email_send_rate_limit')) {
+        iniciarCooldownReenvio();
+      }
       _setLoading(false);
       return false;
     }
@@ -411,6 +477,8 @@ class AuthController extends ChangeNotifier {
     required String otp,
     required String nuevaContrasena,
   }) async {
+    // ERR-01: el error anterior no sobrevive a la nueva operación.
+    _errorMessage = null;
     _setLoading(true);
     try {
       await _authService.verificarOtpYCambiarContrasena(
@@ -421,11 +489,11 @@ class AuthController extends ChangeNotifier {
       _setLoading(false);
       return true;
     } on AuthException catch (e) {
-      _errorMessage = _mapAuthError(e.message);
+      _errorMessage = AuthErrorMapper.map(e);
       _setLoading(false);
       return false;
     } catch (e) {
-      _errorMessage = e.toString().replaceAll('Exception: ', '');
+      _errorMessage = AuthErrorMapper.map(e);
       _setLoading(false);
       return false;
     }
@@ -433,6 +501,8 @@ class AuthController extends ChangeNotifier {
 
   /// Cambia la contraseña del usuario ya autenticado (desde perfil).
   Future<bool> cambiarContrasena(String nuevaContrasena) async {
+    // ERR-01: el error anterior no sobrevive a la nueva operación.
+    _errorMessage = null;
     _setLoading(true);
     try {
       await Supabase.instance.client.auth.updateUser(
@@ -441,11 +511,11 @@ class AuthController extends ChangeNotifier {
       _setLoading(false);
       return true;
     } on AuthException catch (e) {
-      _errorMessage = _mapAuthError(e.message);
+      _errorMessage = AuthErrorMapper.map(e);
       _setLoading(false);
       return false;
     } catch (e) {
-      _errorMessage = 'Error al cambiar la contraseña.';
+      _errorMessage = AuthErrorMapper.map(e);
       _setLoading(false);
       return false;
     }
@@ -458,22 +528,5 @@ class AuthController extends ChangeNotifier {
     _isLoading = value;
     if (!value) _errorMessage = _errorMessage; // conserva el error si lo hay
     notifyListeners();
-  }
-
-  /// Traduce los mensajes de error de Supabase Auth al español.
-  String _mapAuthError(String message) {
-    if (message.contains('Invalid login credentials')) {
-      return 'Correo o contraseña incorrectos.';
-    }
-    if (message.contains('User already registered')) {
-      return 'Este correo ya está registrado.';
-    }
-    if (message.contains('Password should be at least')) {
-      return 'La contraseña debe tener al menos 6 caracteres.';
-    }
-    if (message.contains('Email not confirmed')) {
-      return 'Debes confirmar tu correo electrónico.';
-    }
-    return 'Error de autenticación: $message';
   }
 }

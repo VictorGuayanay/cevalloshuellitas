@@ -4,6 +4,8 @@
 // El controlador se construye con un AuthService doble; ninguna llamada
 // real a Supabase/Firebase debe ocurrir (TDD-06 se completa en 1.7/1.8).
 
+import 'dart:io';
+
 import 'package:aplicacion/domain/controllers/auth_controller.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -168,8 +170,9 @@ void main() {
       await controller!.login('ana@test.local', 'mala');
       expect(controller!.errorMessage, isNotNull);
 
-      // …y luego iniciar sesión con éxito: currentUser activo y, en la Fase 1,
-      // el error persiste (el clear-on-start llega en una tarea posterior).
+      // …y luego iniciar sesión con éxito: currentUser activo y, desde la
+      // Fase 3 (ERR-01, tarea 3.7), el banner anterior queda limpio al
+      // entrar — el error no sobrevive al nuevo intento.
       when(
         () => mockAuthService.signIn(
           correo: any(named: 'correo'),
@@ -178,7 +181,7 @@ void main() {
       ).thenAnswer((_) async => perfil);
       await controller!.login('ana@test.local', 'secreto123');
       expect(controller!.currentUser, same(perfil));
-      expect(controller!.errorMessage, isNotNull);
+      expect(controller!.errorMessage, isNull);
 
       when(() => mockAuthService.signOut()).thenAnswer((_) async {});
       var notificaciones = 0;
@@ -228,5 +231,160 @@ void main() {
         expect(controller!.isInitializing, isFalse);
       },
     );
+  });
+
+  group('ERR-01 — el error obsoleto se limpia al iniciar la operación', () {
+    // ERR-01 escenario "Error does not survive a new attempt" +
+    // escenario "Google cancel leaves no residue": el banner anterior debe
+    // estar en null de FORMA SÍNCRONA al entrar a cualquier operación.
+    // RED: hoy nada limpia al inicio → el error viejo persiste en la entrada.
+    test(
+      'el error previo no sobrevive a un intento nuevo ni a Google',
+      () async {
+        controller = AuthController(
+          authService: mockAuthService,
+          tokenPush: FakeTokenPushPort(),
+        );
+
+        // GIVEN un login fallido dejó errorMessage visible.
+        when(
+          () => mockAuthService.signIn(
+            correo: any(named: 'correo'),
+            password: any(named: 'password'),
+          ),
+        ).thenAnswer(
+          (_) async => throw AuthException('Invalid login credentials'),
+        );
+        expect(await controller!.login('ana@test.local', 'mala'), isFalse);
+        expect(controller!.errorMessage, isNotNull); // precondición ERR-01
+
+        // WHEN se invoca de nuevo (cualquier outcome) —
+        // THEN en el MOMENTO de la entrada el banner ya está limpio.
+        when(
+          () => mockAuthService.signIn(
+            correo: any(named: 'correo'),
+            password: any(named: 'password'),
+          ),
+        ).thenAnswer((_) async => throw AuthException('Email not confirmed'));
+        final reintento = controller!.login('ana@test.local', 'secreto123');
+        expect(controller!.errorMessage, isNull); // ← assert de entrada (RED)
+        expect(await reintento, isFalse);
+        // THEN después: el MENSAJE NUEVO mapeado (o null si hubo éxito).
+        expect(
+          controller!.errorMessage,
+          'Debes confirmar tu correo electrónico.',
+        );
+
+        // GIVEN el banner muestra el error del reintento…
+        expect(controller!.errorMessage, isNotNull);
+        // WHEN el usuario prueba Google y cancela el selector.
+        when(() => mockAuthService.signInWithGoogle()).thenAnswer(
+          (_) async => throw Exception(
+            'Inicio de sesión con Google cancelado por el usuario',
+          ),
+        );
+        final google = controller!.loginWithGoogle();
+        expect(controller!.errorMessage, isNull); // ← entrada limpia (RED)
+        expect(await google, isFalse);
+        // THEN sin residuo: la cancelación sigue siendo silenciosa.
+        expect(controller!.errorMessage, isNull);
+      },
+    );
+  });
+
+  group('ERR-06 — lint de seguridad sobre el pipeline del controlador', () {
+    // ERR-06 escenario "Security lint on the mapping": fallos crudos
+    // representativos (red, SQL, wrappers que interpolan $e) pasados por las
+    // operaciones DEL CONTROLADOR deben producir mensajes de la allowlist
+    // en español — jamás texto crudo.
+    // RED: hoy los catch() del controlador interpolan $e (denylist hit).
+    test('ningún fallo crudo produce texto prohibido en errorMessage', () async {
+      controller = AuthController(
+        authService: mockAuthService,
+        tokenPush: FakeTokenPushPort(),
+      );
+
+      // Allowlist: el conjunto FINJO de mensajes que la UI puede mostrar
+      // (espejo de las ramas de AuthErrorMapper).
+      final permitido = RegExp(
+        r'^(Ocurrió un error\. Intenta de nuevo\.|'
+        r'Correo o contraseña incorrectos\.|'
+        r'Este correo ya está registrado\.|'
+        r'La contraseña debe tener al menos 6 caracteres\.|'
+        r'Debes confirmar tu correo electrónico\.|'
+        r'Espera un momento antes de solicitar otro correo\.|'
+        r'Quedan \d+ intentos antes de bloquear la cuenta\.|'
+        r'Sin conexión a internet\. Revisa tu conexión y vuelve a intentarlo\.|'
+        r'No se pudo iniciar sesión con Google\. '
+        r'Verifica el Web Client ID \(tipo Aplicación web\)\.|'
+        r'No encontramos tu perfil\. Contacta al administrador\.)$',
+      );
+      final denylist = RegExp(
+        r'Exception|SocketException|Postgrest|Error inesperado|attempt\(|'
+        r'rate limit|over_email_send',
+      );
+
+      final tabla = <String, Future<bool> Function()>{
+        'login con fallo de red crudo': () {
+          when(
+            () => mockAuthService.signIn(
+              correo: any(named: 'correo'),
+              password: any(named: 'password'),
+            ),
+          ).thenAnswer(
+            (_) async => throw const SocketException(
+              "Failed host lookup: 'xxxx.supabase.co' (errno = -2)",
+            ),
+          );
+          return controller!.login('ana@test.local', 'secreto123');
+        },
+        'register con error SQL crudo': () {
+          when(
+            () => mockAuthService.signUp(
+              nombre: 'Ana Torres',
+              correo: 'ana@test.local',
+              password: 'secreto123',
+              telefono: null,
+              rol: 'usuario',
+            ),
+          ).thenAnswer(
+            (_) async => throw const PostgrestException(
+              message: 'relation "usuarios" does not exist',
+              code: '42P01',
+            ),
+          );
+          return controller!.register(
+            nombre: 'Ana Torres',
+            correo: 'ana@test.local',
+            password: 'secreto123',
+          );
+        },
+        r'loginWithGoogle con wrapper que interpola \$e': () {
+          when(() => mockAuthService.signInWithGoogle()).thenAnswer(
+            (_) async => throw Exception(
+              'Error autenticando en Supabase con Google: '
+              'AuthException(message: SQLSTATE 23505, statusCode: 409)',
+            ),
+          );
+          return controller!.loginWithGoogle();
+        },
+      };
+
+      for (final caso in tabla.entries) {
+        expect(await caso.value(), isFalse, reason: 'caso: ${caso.key}');
+        final mensaje = controller!.errorMessage;
+        expect(mensaje, isNotNull, reason: 'caso: ${caso.key}');
+        expect(
+          permitido.hasMatch(mensaje!),
+          isTrue,
+          reason: 'allowlist violada en "${caso.key}": $mensaje',
+        );
+        expect(
+          denylist.hasMatch(mensaje),
+          isFalse,
+          reason: 'denylist violada en "${caso.key}": $mensaje',
+        );
+      }
+    });
   });
 }

@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import '../../../core/app_colors.dart';
 import '../../../domain/controllers/auth_controller.dart';
 import '../../widgets/custom_text_field.dart';
 import 'register_screen.dart';
@@ -43,12 +44,13 @@ class _LoginScreenState extends State<LoginScreen>
     _fadeAnim = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _entranceController, curve: Curves.easeOut),
     );
-    _slideAnim = Tween<Offset>(
-      begin: const Offset(0, 0.25),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: _entranceController, curve: Curves.easeOutCubic),
-    );
+    _slideAnim = Tween<Offset>(begin: const Offset(0, 0.25), end: Offset.zero)
+        .animate(
+          CurvedAnimation(
+            parent: _entranceController,
+            curve: Curves.easeOutCubic,
+          ),
+        );
     _formAnim = CurvedAnimation(
       parent: _formExpandController,
       curve: Curves.easeInOut,
@@ -195,32 +197,48 @@ class _LoginScreenState extends State<LoginScreen>
                         Consumer<AuthController>(
                           builder: (context, auth, _) {
                             if (auth.errorMessage != null) {
-                              return Container(
-                                margin: const EdgeInsets.only(top: 4, bottom: 8),
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 16, vertical: 10),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFFFEBEE),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                      color: const Color(0xFFEF9A9A)),
-                                ),
-                                child: Row(
-                                  children: [
-                                    const Icon(Icons.error_outline_rounded,
-                                        color: Color(0xFFE53935), size: 18),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Text(
-                                        auth.errorMessage!,
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 12,
-                                          color: const Color(0xFFE53935),
-                                          fontWeight: FontWeight.w500,
+                              // ERR-07/R1: liveRegion propio para que los
+                              // lectores de pantalla anuncien el banner.
+                              return Semantics(
+                                container: true,
+                                liveRegion: true,
+                                child: Container(
+                                  margin: const EdgeInsets.only(
+                                    top: 4,
+                                    bottom: 8,
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 10,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.redBg,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: AppColors.red),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.error_outline_rounded,
+                                        color: AppColors.red,
+                                        size: 18,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          auth.errorMessage!,
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 12,
+                                            // R1: redDark sobre redBg =
+                                            // 6.14:1 ≥ 4.5 (rojo puro
+                                            // daría 3.95:1 y no cumple).
+                                            color: AppColors.redDark,
+                                            fontWeight: FontWeight.w500,
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
                               );
                             }
@@ -293,9 +311,7 @@ class _MethodButton extends StatelessWidget {
               : Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isActive
-                ? const Color(0xFF5BBFBF)
-                : const Color(0xFFDCEEF0),
+            color: isActive ? const Color(0xFF5BBFBF) : const Color(0xFFDCEEF0),
             width: isActive ? 1.8 : 1.2,
           ),
           boxShadow: [
@@ -361,10 +377,7 @@ class _GoogleButton extends StatelessWidget {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: const Color(0xFFDCEEF0),
-                width: 1.2,
-              ),
+              border: Border.all(color: const Color(0xFFDCEEF0), width: 1.2),
               boxShadow: [
                 BoxShadow(
                   color: const Color(0xFF5BBFBF).withValues(alpha: 0.06),
@@ -385,9 +398,7 @@ class _GoogleButton extends StatelessWidget {
                     : SizedBox(
                         width: 22,
                         height: 22,
-                        child: CustomPaint(
-                          painter: _GoogleLogoPainter(),
-                        ),
+                        child: CustomPaint(painter: _GoogleLogoPainter()),
                       ),
                 const SizedBox(width: 14),
                 Text(
@@ -467,8 +478,9 @@ class _EmailForm extends StatelessWidget {
                 if (value == null || value.trim().isEmpty) {
                   return 'Ingresa tu correo electrónico';
                 }
-                if (!RegExp(r'^[\w\.-]+@[\w\.-]+\.\w+$')
-                    .hasMatch(value.trim())) {
+                if (!RegExp(
+                  r'^[\w\.-]+@[\w\.-]+\.\w+$',
+                ).hasMatch(value.trim())) {
                   return 'Ingresa un correo válido';
                 }
                 return null;
@@ -520,8 +532,9 @@ class _EmailForm extends StatelessWidget {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
                       ),
-                      disabledBackgroundColor:
-                          const Color(0xFF5BBFBF).withValues(alpha: 0.5),
+                      disabledBackgroundColor: const Color(
+                        0xFF5BBFBF,
+                      ).withValues(alpha: 0.5),
                     ),
                     child: auth.isLoading
                         ? const SizedBox(
@@ -558,11 +571,7 @@ class _WaveBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox.expand(
-      child: CustomPaint(
-        painter: _WavePainter(),
-      ),
-    );
+    return SizedBox.expand(child: CustomPaint(painter: _WavePainter()));
   }
 }
 
@@ -584,40 +593,88 @@ class _WavePainter extends CustomPainter {
     // Blob superior izquierdo
     final pathTop = Path()
       ..moveTo(0, 0)
-      ..cubicTo(size.width * 0.15, -size.height * 0.04,
-          size.width * 0.55, size.height * 0.05, size.width * 0.4, size.height * 0.22)
-      ..cubicTo(size.width * 0.28, size.height * 0.32,
-          -size.width * 0.05, size.height * 0.25, 0, size.height * 0.15)
+      ..cubicTo(
+        size.width * 0.15,
+        -size.height * 0.04,
+        size.width * 0.55,
+        size.height * 0.05,
+        size.width * 0.4,
+        size.height * 0.22,
+      )
+      ..cubicTo(
+        size.width * 0.28,
+        size.height * 0.32,
+        -size.width * 0.05,
+        size.height * 0.25,
+        0,
+        size.height * 0.15,
+      )
       ..close();
     canvas.drawPath(pathTop, paintTop);
 
     // Blob superior derecho
     final pathTopRight = Path()
       ..moveTo(size.width, 0)
-      ..cubicTo(size.width * 0.85, size.height * 0.02,
-          size.width * 0.65, size.height * 0.12, size.width * 0.75, size.height * 0.28)
-      ..cubicTo(size.width * 0.82, size.height * 0.38,
-          size.width * 1.05, size.height * 0.3, size.width, size.height * 0.18)
+      ..cubicTo(
+        size.width * 0.85,
+        size.height * 0.02,
+        size.width * 0.65,
+        size.height * 0.12,
+        size.width * 0.75,
+        size.height * 0.28,
+      )
+      ..cubicTo(
+        size.width * 0.82,
+        size.height * 0.38,
+        size.width * 1.05,
+        size.height * 0.3,
+        size.width,
+        size.height * 0.18,
+      )
       ..close();
     canvas.drawPath(pathTopRight, paintAccent);
 
     // Blob inferior izquierdo
     final pathBottomLeft = Path()
       ..moveTo(0, size.height)
-      ..cubicTo(size.width * 0.05, size.height * 0.82,
-          size.width * 0.25, size.height * 0.78, size.width * 0.2, size.height * 0.88)
-      ..cubicTo(size.width * 0.15, size.height * 0.95,
-          size.width * 0.08, size.height * 1.02, 0, size.height)
+      ..cubicTo(
+        size.width * 0.05,
+        size.height * 0.82,
+        size.width * 0.25,
+        size.height * 0.78,
+        size.width * 0.2,
+        size.height * 0.88,
+      )
+      ..cubicTo(
+        size.width * 0.15,
+        size.height * 0.95,
+        size.width * 0.08,
+        size.height * 1.02,
+        0,
+        size.height,
+      )
       ..close();
     canvas.drawPath(pathBottomLeft, paintAccent);
 
     // Blob inferior derecho grande
     final pathBottom = Path()
       ..moveTo(size.width, size.height)
-      ..cubicTo(size.width * 0.85, size.height * 0.92,
-          size.width * 0.55, size.height * 0.88, size.width * 0.6, size.height * 0.75)
-      ..cubicTo(size.width * 0.65, size.height * 0.65,
-          size.width * 1.08, size.height * 0.7, size.width, size.height * 0.85)
+      ..cubicTo(
+        size.width * 0.85,
+        size.height * 0.92,
+        size.width * 0.55,
+        size.height * 0.88,
+        size.width * 0.6,
+        size.height * 0.75,
+      )
+      ..cubicTo(
+        size.width * 0.65,
+        size.height * 0.65,
+        size.width * 1.08,
+        size.height * 0.7,
+        size.width,
+        size.height * 0.85,
+      )
       ..close();
     canvas.drawPath(pathBottom, paintBottom);
   }
@@ -625,7 +682,6 @@ class _WavePainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
-
 
 // ────────────────────────────────────────────────
 // CustomPainter: Logo de Google
@@ -654,11 +710,7 @@ class _GoogleLogoPainter extends CustomPainter {
       );
     }
 
-    canvas.drawCircle(
-      Offset(cx, cy),
-      r * 0.58,
-      Paint()..color = Colors.white,
-    );
+    canvas.drawCircle(Offset(cx, cy), r * 0.58, Paint()..color = Colors.white);
   }
 
   @override
@@ -719,8 +771,9 @@ class _RecuperarContrasenaScreenState
     if (ok) {
       setState(() => _paso = 2);
     } else {
-      _mostrarError(auth.errorMessage ??
-          'No se encontró una cuenta con ese correo.');
+      _mostrarError(
+        auth.errorMessage ?? 'No se encontró una cuenta con ese correo.',
+      );
     }
   }
 
@@ -751,32 +804,46 @@ class _RecuperarContrasenaScreenState
     if (!mounted) return;
     if (ok) {
       Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Row(children: [
-          const Icon(Icons.check_circle_outline_rounded,
-              color: Colors.white, size: 20),
-          const SizedBox(width: 10),
-          Text('¡Contraseña actualizada correctamente!',
-              style: GoogleFonts.poppins(fontSize: 13)),
-        ]),
-        backgroundColor: const Color(0xFF43B89C),
-        behavior: SnackBarBehavior.floating,
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(
+                Icons.check_circle_outline_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
+              const SizedBox(width: 10),
+              Text(
+                '¡Contraseña actualizada correctamente!',
+                style: GoogleFonts.poppins(fontSize: 13),
+              ),
+            ],
+          ),
+          backgroundColor: const Color(0xFF43B89C),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
     } else {
-      _mostrarError(auth.errorMessage ??
-          'Código incorrecto o expirado. Solicita uno nuevo.');
+      _mostrarError(
+        auth.errorMessage ??
+            'Código incorrecto o expirado. Solicita uno nuevo.',
+      );
     }
   }
 
   void _mostrarError(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg, style: GoogleFonts.poppins(fontSize: 13)),
-      backgroundColor: const Color(0xFFE53935),
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-    ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg, style: GoogleFonts.poppins(fontSize: 13)),
+        backgroundColor: AppColors.red,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
   }
 
   @override
@@ -794,42 +861,50 @@ class _RecuperarContrasenaScreenState
                 children: [
                   const SizedBox(height: 16),
                   // AppBar
-                  Row(children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                          color: Color(0xFF5BBFBF), size: 22),
-                      onPressed: () {
-                        if (_paso == 2) {
-                          setState(() => _paso = 1);
-                        } else {
-                          Navigator.pop(context);
-                        }
-                      },
-                    ),
-                  ]),
+                  Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          color: Color(0xFF5BBFBF),
+                          size: 22,
+                        ),
+                        onPressed: () {
+                          if (_paso == 2) {
+                            setState(() => _paso = 1);
+                          } else {
+                            Navigator.pop(context);
+                          }
+                        },
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 16),
 
                   // Ícono
                   Container(
-                    width: 80, height: 80,
+                    width: 80,
+                    height: 80,
                     decoration: BoxDecoration(
                       color: const Color(0xFF5BBFBF).withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.lock_reset_rounded,
-                        color: Color(0xFF5BBFBF), size: 40),
+                    child: const Icon(
+                      Icons.lock_reset_rounded,
+                      color: Color(0xFF5BBFBF),
+                      size: 40,
+                    ),
                   ),
                   const SizedBox(height: 20),
 
                   // Título y subtítulo
                   Text(
-                    _paso == 1
-                        ? 'Recuperar contraseña'
-                        : 'Ingresa el código',
+                    _paso == 1 ? 'Recuperar contraseña' : 'Ingresa el código',
                     style: GoogleFonts.poppins(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF1A1A2E)),
+                      fontSize: 24,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF1A1A2E),
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text(
@@ -838,9 +913,10 @@ class _RecuperarContrasenaScreenState
                         : 'Revisa tu correo ${_correoCtrl.text}\ny escribe el código de 6 dígitos.',
                     textAlign: TextAlign.center,
                     style: GoogleFonts.poppins(
-                        fontSize: 13,
-                        color: Colors.grey.shade600,
-                        height: 1.5),
+                      fontSize: 13,
+                      color: Colors.grey.shade600,
+                      height: 1.5,
+                    ),
                   ),
                   const SizedBox(height: 36),
 
@@ -857,6 +933,7 @@ class _RecuperarContrasenaScreenState
                       label: 'Enviar código',
                       icon: Icons.send_rounded,
                       onTap: _enviarCodigo,
+                      aplicaCooldown: true,
                     ),
                   ],
 
@@ -906,7 +983,8 @@ class _RecuperarContrasenaScreenState
                           size: 20,
                         ),
                         onPressed: () => setState(
-                            () => _obscureConfirmar = !_obscureConfirmar),
+                          () => _obscureConfirmar = !_obscureConfirmar,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -916,20 +994,29 @@ class _RecuperarContrasenaScreenState
                       onTap: _cambiarContrasena,
                     ),
                     const SizedBox(height: 16),
-                    // Reenviar código
+                    // Reenviar código — target táctil ≥ 44 px (R4): el
+                    // GestureDetector envuelve un área de 44 px opaca.
                     GestureDetector(
+                      key: const Key('reenviar-codigo-link'),
+                      behavior: HitTestBehavior.opaque,
                       onTap: () => setState(() {
                         _paso = 1;
                         _otpCtrl.clear();
                       }),
-                      child: Text(
-                        '¿No recibiste el código? Enviar de nuevo',
-                        style: GoogleFonts.poppins(
-                            fontSize: 13,
-                            color: const Color(0xFF5BBFBF),
-                            fontWeight: FontWeight.w600,
-                            decoration: TextDecoration.underline,
-                            decorationColor: const Color(0xFF5BBFBF)),
+                      child: SizedBox(
+                        height: 44,
+                        child: Center(
+                          child: Text(
+                            '¿No recibiste el código? Enviar de nuevo',
+                            style: GoogleFonts.poppins(
+                              fontSize: 13,
+                              color: const Color(0xFF5BBFBF),
+                              fontWeight: FontWeight.w600,
+                              decoration: TextDecoration.underline,
+                              decorationColor: const Color(0xFF5BBFBF),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -963,34 +1050,41 @@ class _RecuperarContrasenaScreenState
       maxLength: maxLength,
       textAlign: centerText ? TextAlign.center : TextAlign.start,
       style: GoogleFonts.poppins(
-          fontSize: fontSize,
-          color: const Color(0xFF2D2D2D),
-          letterSpacing: letterSpacing,
-          fontWeight: centerText ? FontWeight.w700 : FontWeight.normal),
+        fontSize: fontSize,
+        color: const Color(0xFF2D2D2D),
+        letterSpacing: letterSpacing,
+        fontWeight: centerText ? FontWeight.w700 : FontWeight.normal,
+      ),
       decoration: InputDecoration(
         counterText: '',
         labelText: centerText ? null : label,
         hintText: centerText ? label : null,
-        labelStyle:
-            GoogleFonts.poppins(color: Colors.grey.shade500, fontSize: 13),
-        hintStyle:
-            GoogleFonts.poppins(color: Colors.grey.shade400, fontSize: 14),
-        prefixIcon:
-            centerText ? null : Icon(icon, color: const Color(0xFF5BBFBF), size: 20),
+        labelStyle: GoogleFonts.poppins(
+          color: Colors.grey.shade500,
+          fontSize: 13,
+        ),
+        hintStyle: GoogleFonts.poppins(
+          color: Colors.grey.shade400,
+          fontSize: 14,
+        ),
+        prefixIcon: centerText
+            ? null
+            : Icon(icon, color: const Color(0xFF5BBFBF), size: 20),
         suffixIcon: suffixIcon,
         filled: true,
         fillColor: Colors.white,
         border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide.none),
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
+        ),
         enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide:
-                const BorderSide(color: Color(0xFFDCEEF0), width: 1.2)),
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: Color(0xFFDCEEF0), width: 1.2),
+        ),
         focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide:
-                const BorderSide(color: Color(0xFF5BBFBF), width: 2)),
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: Color(0xFF5BBFBF), width: 2),
+        ),
       ),
     );
   }
@@ -999,35 +1093,54 @@ class _RecuperarContrasenaScreenState
     required String label,
     required IconData icon,
     required VoidCallback onTap,
+    bool aplicaCooldown = false,
   }) {
     return Consumer<AuthController>(
-      builder: (ctx, auth, child) => SizedBox(
-        width: double.infinity,
-        height: 54,
-        child: ElevatedButton.icon(
-          onPressed: auth.isLoading ? null : onTap,
-          icon: auth.isLoading
-              ? const SizedBox(
-                  width: 18, height: 18,
-                  child: CircularProgressIndicator(
-                      color: Colors.white, strokeWidth: 2))
-              : Icon(icon, size: 20),
-          label: Text(
-            auth.isLoading ? 'Procesando…' : label,
-            style: GoogleFonts.poppins(
-                fontSize: 15, fontWeight: FontWeight.w600),
+      builder: (ctx, auth, child) {
+        // ERR-07 (R3): sólo las acciones de envío/resenvio respetan el
+        // cooldown — 'Cambiar contraseña' (paso 2) nunca se bloquea.
+        final enfriando = aplicaCooldown && !auth.puedeReenviarCodigo;
+        final etiqueta = auth.isLoading
+            ? 'Procesando…'
+            : enfriando
+            ? 'Reenviar en ${auth.cooldownRestante.inSeconds} s'
+            : label;
+        return SizedBox(
+          width: double.infinity,
+          height: 54,
+          child: ElevatedButton.icon(
+            onPressed: (auth.isLoading || enfriando) ? null : onTap,
+            icon: auth.isLoading
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : Icon(icon, size: 20),
+            label: Text(
+              etiqueta,
+              style: GoogleFonts.poppins(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF5BBFBF),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              disabledBackgroundColor: const Color(
+                0xFF5BBFBF,
+              ).withValues(alpha: 0.5),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
           ),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF5BBFBF),
-            foregroundColor: Colors.white,
-            elevation: 0,
-            disabledBackgroundColor:
-                const Color(0xFF5BBFBF).withValues(alpha: 0.5),
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16)),
-          ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
