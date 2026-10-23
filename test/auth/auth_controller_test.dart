@@ -292,6 +292,48 @@ void main() {
     );
   });
 
+  // ── AMD-2026-10-23-02 — BUG 1: fallo de Google punta a punta ──────────────
+  group('ERR-05 / AMD-2026-10-23-02 — fallo Google mapeado', () {
+    // AMD-2026-10-23-02 scenario "Google platform error maps to actionable
+    // Spanish copy" + scenario "Wrapper-prefixed stage errors are
+    // distinguishable" en su forma REAL: el servicio siempre prefija la etapa
+    // ('Error al abrir Google: $e') e interpola el PlatformException crudo.
+    // Pin del contrato end-to-end: loginWithGoogle() devuelve false y el
+    // banner recibe el copy accionable de la etapa — NUNCA el fallback ni
+    // el texto crudo (ERR-06).
+    // RED (verify-only GREEN): el mapper aún no conoce el prefijo de etapa
+    // → cae al genérico; el GREEN llega con las ramas de la 11.2.
+    test(
+      'wrapper de etapa con ApiException: 10 produce copy accionable, no fallback',
+      () async {
+        when(() => mockAuthService.signInWithGoogle()).thenAnswer(
+          (_) async => throw Exception(
+            'Error al abrir Google: '
+            'PlatformException(sign_in_failed, ApiException: 10, null)',
+          ),
+        );
+        controller = AuthController(
+          authService: mockAuthService,
+          tokenPush: FakeTokenPushPort(),
+        );
+
+        final resultado = await controller!.loginWithGoogle();
+
+        expect(resultado, isFalse);
+        expect(
+          controller!.errorMessage,
+          'No se pudo abrir el selector de cuentas de Google. '
+          'Revisa Google Play Services e inténtalo de nuevo.',
+        );
+        expect(
+          controller!.errorMessage,
+          isNot('Ocurrió un error. Intenta de nuevo.'),
+        );
+        expect(controller!.isLoading, isFalse);
+      },
+    );
+  });
+
   group('ERR-06 — lint de seguridad sobre el pipeline del controlador', () {
     // ERR-06 escenario "Security lint on the mapping": fallos crudos
     // representativos (red, SQL, wrappers que interpolan $e) pasados por las
@@ -305,7 +347,8 @@ void main() {
       );
 
       // Allowlist: el conjunto FINJO de mensajes que la UI puede mostrar
-      // (espejo de las ramas de AuthErrorMapper).
+      // (espejo de las ramas de AuthErrorMapper — AMD-2026-10-23-02 añade
+      // las 4 copias accionables de Google).
       final permitido = RegExp(
         r'^(Ocurrió un error\. Intenta de nuevo\.|'
         r'Correo o contraseña incorrectos\.|'
@@ -317,6 +360,17 @@ void main() {
         r'Sin conexión a internet\. Revisa tu conexión y vuelve a intentarlo\.|'
         r'No se pudo iniciar sesión con Google\. '
         r'Verifica el Web Client ID \(tipo Aplicación web\)\.|'
+        r'No se pudo iniciar sesión con Google\. '
+        r'Verifica tu cuenta en el dispositivo o contacta al '
+        r'administrador\.|'
+        r'No se pudo abrir el selector de cuentas de Google\. '
+        r'Revisa Google Play Services e inténtalo de nuevo\.|'
+        r'No se pudo verificar tu cuenta de Google\. '
+        r'Cierra la sesión de Google en tu dispositivo y vuelve a '
+        r'intentarlo\.|'
+        r'La cuenta de Google fue verificada, pero el servidor no '
+        r'autorizó el inicio de sesión\. Vuelve a intentarlo en unos '
+        r'minutos\.|'
         r'No encontramos tu perfil\. Contacta al administrador\.)$',
       );
       final denylist = RegExp(

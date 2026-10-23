@@ -8,10 +8,13 @@
 // Lookup order del diseño (decision "Error mapping extracted to a pure,
 // security-testable mapper"):
 //   1. AuthException + sub-cadenas allowlisteadas (existentes + rate-limit + lockout)
-//   2. Marcador de cancelación de Google → null (silencio)
-//   3. Fallos de conectividad (Socket/Timeout/Client) → mensaje de conexión
-//   4. PostgrestException PGRST116 → perfil no encontrado (orfanato SGN-06)
-//   5. Fallback fijo genérico (ERR-06)
+//   2. Marcadores de cancelación de Google — original + sign_in_canceled /
+//      12501 (AMD-2026-10-23-02) — → null (silencio, precedencia máxima)
+//   3. Códigos de plataforma de Google crudos (AMD-2026-10-23-02) → copy
+//      accionable; los prefijos de etapa del wrapper van antes (más específicos)
+//   4. Fallos de conectividad (Socket/Timeout/Client) → mensaje de conexión
+//   5. PostgrestException PGRST116 → perfil no encontrado (orfanato SGN-06)
+//   6. Fallback fijo genérico (ERR-06)
 
 import 'dart:async';
 import 'dart:io';
@@ -30,9 +33,45 @@ class AuthErrorMapper {
     // jamás se re-emite — ERR-06).
     final texto = error.toString();
 
-    // Rama 2 (ERR-05/ERR-01): cancelación del selector de Google → null.
-    // Primera para que NUNCA se muestre banner en el flujo de cancelación.
-    if (texto.contains('cancelado')) return null;
+    // Rama 2 (ERR-05/ERR-01 + AMD-2026-10-23-02): cancelación del selector
+    // de Google → null. Sigue siendo la PRIMERA rama y ahora cubre también
+    // los marcadores de plataforma de la cancelación, de modo que el
+    // silencio gana siempre (guard de precedencia, ciclo 1 de la 11.2).
+    if (texto.contains('cancelado') ||
+        texto.contains('sign_in_canceled') ||
+        texto.contains('12501')) {
+      return null;
+    }
+
+    // Rama nueva (AMD-2026-10-23-02, ciclo 2): prefijos de etapa del wrapper
+    // del servicio — ANTES que los códigos de plataforma crudos que
+    // interpolan dentro, para que cada etapa muestre su copy propio.
+    if (texto.contains('Error al abrir Google:')) {
+      return 'No se pudo abrir el selector de cuentas de Google. '
+          'Revisa Google Play Services e inténtalo de nuevo.';
+    }
+    if (texto.contains('Error obteniendo autenticación de Google:')) {
+      return 'No se pudo verificar tu cuenta de Google. '
+          'Cierra la sesión de Google en tu dispositivo y vuelve a '
+          'intentarlo.';
+    }
+    if (texto.contains('Error autenticando en Supabase con Google:')) {
+      return 'La cuenta de Google fue verificada, pero el servidor no '
+          'autorizó el inicio de sesión. Vuelve a intentarlo en unos '
+          'minutos.';
+    }
+
+    // Rama nueva (AMD-2026-10-23-02, ciclo 1): códigos de plataforma de
+    // Google crudos → copy accionable; jamás tokens crudos hacia la UI
+    // (ERR-06: sin ApiException, sin códigos numéricos, sin texto técnico)
+    // y siempre distinto del fallback genérico.
+    if (texto.contains('sign_in_failed') ||
+        texto.contains('sign_in_required') ||
+        texto.contains('ApiException: 10') ||
+        texto.contains('ApiException: 12500')) {
+      return 'No se pudo iniciar sesión con Google. '
+          'Verifica tu cuenta en el dispositivo o contacta al administrador.';
+    }
 
     // Rama 1 (ERR-02): rate-limit de correo → espera en español.
     if (texto.contains('over_email_send_rate_limit')) {

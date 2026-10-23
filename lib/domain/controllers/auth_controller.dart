@@ -263,6 +263,9 @@ class AuthController extends ChangeNotifier {
     } catch (e) {
       // ERR-05/ERR-01: cancelación de Google → map devuelve null (silencio);
       // cualquier otro fallo → copy permitido, jamás el wrapper crudo.
+      // Diagnóstico log-only (AMD-2026-10-23-02 / ERR-06): el texto crudo
+      // va SOLO al log de debug, jamás a la UI.
+      debugPrint('Error en login con Google: $e');
       _errorMessage = AuthErrorMapper.map(e);
       _setLoading(false);
       return false;

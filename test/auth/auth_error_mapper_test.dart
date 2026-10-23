@@ -154,6 +154,96 @@ void main() {
       expect(rechazo, 'Ocurrió un error. Intenta de nuevo.');
       expect(rechazo, isNot(contains('Error inesperado')));
     });
+
+    // AMD-2026-10-23-02, ciclo 1 — scenario "Google platform error maps to
+    // actionable Spanish copy": los códigos de plataforma de Google
+    // (sign_in_failed / sign_in_required / ApiException: 10 / 12500) mapean a
+    // copy accionable en español, distinto del fallback y limpio de tokens
+    // crudos (ERR-06: sin ApiException, sin códigos numéricos, sin texto
+    // técnico). Incluye la cancelación ampliada (sign_in_canceled / 12501 →
+    // null) CON precedencia sobre los códigos de plataforma — baseline-first:
+    // el test 'cancelado' de arriba debe seguir en verde.
+    // RED: el mapa aún no reconoce ninguna de estas marcas → fallback crudo.
+    test(
+      'plataforma Google mapea a copy accionable y el cancel ampliado sigue silencioso',
+      () {
+        const esperado =
+            'No se pudo iniciar sesión con Google. '
+            'Verifica tu cuenta en el dispositivo o contacta al administrador.';
+        final denylistGoogle = RegExp(
+          r'ApiException|PlatformException|sign_in|Api|\d',
+        );
+        final plataforma = <String>[
+          'PlatformException(sign_in_failed, ApiException: 10, null)',
+          'PlatformException(sign_in_failed, ApiException: 12500, null)',
+          'PlatformException(sign_in_required, null, null)',
+        ];
+
+        for (final caso in plataforma) {
+          final resultado = AuthErrorMapper.map(Exception(caso));
+          expect(resultado, esperado, reason: 'para $caso');
+          expect(resultado, isNot('Ocurrió un error. Intenta de nuevo.'));
+          expect(denylist.hasMatch(resultado!), isFalse);
+          expect(denylistGoogle.hasMatch(resultado), isFalse);
+        }
+
+        // Cancel ampliado: un marcador por caso; el segundo además pinza la
+        // precedencia de la rama de silencio (texto con 'sign_in_failed').
+        expect(
+          AuthErrorMapper.map(
+            Exception('PlatformException(sign_in_canceled, null, null)'),
+          ),
+          isNull,
+        );
+        expect(
+          AuthErrorMapper.map(
+            Exception(
+              'PlatformException(sign_in_failed, ApiException: 12501, null)',
+            ),
+          ),
+          isNull,
+        );
+      },
+    );
+
+    // AMD-2026-10-23-02, ciclo 2 — scenario "Wrapper-prefixed stage errors
+    // are distinguishable": cada prefijo de etapa del servicio mapea a su
+    // copy accionable PROPIO — distinto entre sí, del fallback y del copy de
+    // plataforma (los wrappers ganan: son más específicos e interpolan los
+    // códigos crudos dentro). Sin tokens crudos hacia la UI (ERR-06).
+    // RED: las ramas de prefijo aún no existen → los wrappers con códigos
+    // dentro caen a la rama de plataforma del ciclo 1.
+    test(
+      'los tres prefijos de etapa del wrapper Google mapean a su copy propio',
+      () {
+        final denylistGoogle = RegExp(r'Exception|sign_in|Api|\d');
+        final wrapper = <String, String>{
+          'Error al abrir Google: '
+                  'PlatformException(sign_in_failed, ApiException: 10, null)':
+              'No se pudo abrir el selector de cuentas de Google. '
+              'Revisa Google Play Services e inténtalo de nuevo.',
+          'Error obteniendo autenticación de Google: '
+                  'PlatformException(sign_in_failed, ApiException: 12500, null)':
+              'No se pudo verificar tu cuenta de Google. '
+              'Cierra la sesión de Google en tu dispositivo y vuelve a '
+              'intentarlo.',
+          'Error autenticando en Supabase con Google: '
+                  'AuthException(message: SQLSTATE 23505, statusCode: 409)':
+              'La cuenta de Google fue verificada, pero el servidor no '
+              'autorizó el inicio de sesión. Vuelve a intentarlo en unos '
+              'minutos.',
+        };
+
+        for (final caso in wrapper.entries) {
+          final resultado = AuthErrorMapper.map(Exception(caso.key));
+          // Cada etapa → su copy distinto (valores únicos por prefijo).
+          expect(resultado, caso.value, reason: 'para ${caso.key}');
+          expect(resultado, isNot('Ocurrió un error. Intenta de nuevo.'));
+          expect(denylist.hasMatch(resultado!), isFalse);
+          expect(denylistGoogle.hasMatch(resultado), isFalse);
+        }
+      },
+    );
   });
 
   group('SES-03 / SGN-06 — perfil inexistente', () {

@@ -119,6 +119,9 @@ class AuthService {
     try {
       googleUser = await googleSignIn.signIn();
     } catch (e) {
+      // Log-only (AMD-2026-10-23-02 / ERR-06): el PlatformException crudo
+      // se correlaciona en el log con el prefijo de etapa del wrapper.
+      debugPrint('signInWithGoogle (abrir selector): $e');
       throw Exception('Error al abrir Google: $e');
     }
 
@@ -131,6 +134,9 @@ class AuthService {
     try {
       googleAuth = await googleUser.authentication;
     } catch (e) {
+      // Log-only (AMD-2026-10-23-02 / ERR-06): ver comentario del wrapper
+      // anterior — sin texto crudo hacia la UI.
+      debugPrint('signInWithGoogle (obtener token): $e');
       throw Exception('Error obteniendo autenticación de Google: $e');
     }
 
@@ -152,6 +158,9 @@ class AuthService {
         accessToken: googleAuth.accessToken,
       );
     } catch (e) {
+      // Log-only (AMD-2026-10-23-02 / ERR-06): ver comentario del primer
+      // wrapper — sin texto crudo hacia la UI.
+      debugPrint('signInWithGoogle (autenticar en Supabase): $e');
       throw Exception('Error autenticando en Supabase con Google: $e');
     }
 
