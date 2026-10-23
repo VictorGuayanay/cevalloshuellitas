@@ -28,19 +28,29 @@ class _RegisterScreenState extends State<RegisterScreen>
   @override
   void initState() {
     super.initState();
+    // ERR-01 / AMD-2026-10-23-01: choke point único al entrar en la pantalla
+    // de registro — un banner heredado de un fallo previo (login u otra
+    // operación) nunca debe renderizarse aquí. `limpiarError()` notifica a
+    // los listeners, y `initState` corre dentro de la fase de build: marcar
+    // el provider como sucio en ese momento viola el framework
+    // (setState()/markNeedsBuild() during build), así que la limpieza se
+    // difiere al primer frame — el Consumer ya no pinta el banner obsoleto.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<AuthController>().limpiarError();
+    });
     _animController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 900),
     );
-    _fadeAnim = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animController, curve: Curves.easeOut),
-    );
-    _slideAnim = Tween<Offset>(
-      begin: const Offset(0, 0.25),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic),
-    );
+    _fadeAnim = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOut));
+    _slideAnim = Tween<Offset>(begin: const Offset(0, 0.25), end: Offset.zero)
+        .animate(
+          CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic),
+        );
     _animController.forward();
   }
 
@@ -81,9 +91,7 @@ class _RegisterScreenState extends State<RegisterScreen>
       body: Stack(
         children: [
           // Fondo con ondas decorativas
-          SizedBox.expand(
-            child: CustomPaint(painter: _RegisterWavePainter()),
-          ),
+          SizedBox.expand(child: CustomPaint(painter: _RegisterWavePainter())),
 
           SafeArea(
             child: FadeTransition(
@@ -115,8 +123,9 @@ class _RegisterScreenState extends State<RegisterScreen>
                                   ),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: const Color(0xFF5BBFBF)
-                                          .withValues(alpha: 0.08),
+                                      color: const Color(
+                                        0xFF5BBFBF,
+                                      ).withValues(alpha: 0.08),
                                       blurRadius: 10,
                                       offset: const Offset(0, 3),
                                     ),
@@ -175,8 +184,9 @@ class _RegisterScreenState extends State<RegisterScreen>
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color:
-                                    const Color(0xFF5BBFBF).withValues(alpha: 0.07),
+                                color: const Color(
+                                  0xFF5BBFBF,
+                                ).withValues(alpha: 0.07),
                                 blurRadius: 24,
                                 offset: const Offset(0, 10),
                               ),
@@ -214,8 +224,9 @@ class _RegisterScreenState extends State<RegisterScreen>
                                     if (value == null || value.trim().isEmpty) {
                                       return 'Ingresa tu correo electrónico';
                                     }
-                                    if (!RegExp(r'^[\w\.-]+@[\w\.-]+\.\w+$')
-                                        .hasMatch(value.trim())) {
+                                    if (!RegExp(
+                                      r'^[\w\.-]+@[\w\.-]+\.\w+$',
+                                    ).hasMatch(value.trim())) {
                                       return 'Ingresa un correo válido';
                                     }
                                     return null;
@@ -318,8 +329,9 @@ class _RegisterScreenState extends State<RegisterScreen>
                                   builder: (context, auth, _) {
                                     if (auth.errorMessage != null) {
                                       return Padding(
-                                        padding:
-                                            const EdgeInsets.only(bottom: 14),
+                                        padding: const EdgeInsets.only(
+                                          bottom: 14,
+                                        ),
                                         child: Container(
                                           padding: const EdgeInsets.symmetric(
                                             horizontal: 14,
@@ -327,8 +339,9 @@ class _RegisterScreenState extends State<RegisterScreen>
                                           ),
                                           decoration: BoxDecoration(
                                             color: const Color(0xFFFFEBEE),
-                                            borderRadius:
-                                                BorderRadius.circular(12),
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
                                             border: Border.all(
                                               color: const Color(0xFFEF9A9A),
                                             ),
@@ -346,8 +359,9 @@ class _RegisterScreenState extends State<RegisterScreen>
                                                   auth.errorMessage!,
                                                   style: GoogleFonts.poppins(
                                                     fontSize: 12,
-                                                    color:
-                                                        const Color(0xFFE53935),
+                                                    color: const Color(
+                                                      0xFFE53935,
+                                                    ),
                                                     fontWeight: FontWeight.w500,
                                                   ),
                                                 ),
@@ -371,17 +385,19 @@ class _RegisterScreenState extends State<RegisterScreen>
                                             ? null
                                             : _handleRegister,
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor:
-                                              const Color(0xFF5BBFBF),
+                                          backgroundColor: const Color(
+                                            0xFF5BBFBF,
+                                          ),
                                           foregroundColor: Colors.white,
                                           elevation: 0,
                                           shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(14),
+                                            borderRadius: BorderRadius.circular(
+                                              14,
+                                            ),
                                           ),
-                                          disabledBackgroundColor:
-                                              const Color(0xFF5BBFBF)
-                                                  .withValues(alpha: 0.5),
+                                          disabledBackgroundColor: const Color(
+                                            0xFF5BBFBF,
+                                          ).withValues(alpha: 0.5),
                                         ),
                                         child: auth.isLoading
                                             ? const SizedBox(
@@ -389,9 +405,9 @@ class _RegisterScreenState extends State<RegisterScreen>
                                                 width: 22,
                                                 child:
                                                     CircularProgressIndicator(
-                                                  strokeWidth: 2.5,
-                                                  color: Colors.white,
-                                                ),
+                                                      strokeWidth: 2.5,
+                                                      color: Colors.white,
+                                                    ),
                                               )
                                             : Text(
                                                 'Crear Cuenta',
@@ -458,28 +474,64 @@ class _RegisterWavePainter extends CustomPainter {
 
     final pathTop = Path()
       ..moveTo(0, 0)
-      ..cubicTo(size.width * 0.4, -size.height * 0.02,
-          size.width * 0.7, size.height * 0.08, size.width * 0.5, size.height * 0.18)
-      ..cubicTo(size.width * 0.3, size.height * 0.28,
-          -size.width * 0.05, size.height * 0.2, 0, size.height * 0.1)
+      ..cubicTo(
+        size.width * 0.4,
+        -size.height * 0.02,
+        size.width * 0.7,
+        size.height * 0.08,
+        size.width * 0.5,
+        size.height * 0.18,
+      )
+      ..cubicTo(
+        size.width * 0.3,
+        size.height * 0.28,
+        -size.width * 0.05,
+        size.height * 0.2,
+        0,
+        size.height * 0.1,
+      )
       ..close();
     canvas.drawPath(pathTop, paintTop);
 
     final pathRight = Path()
       ..moveTo(size.width, 0)
-      ..cubicTo(size.width * 0.78, size.height * 0.04,
-          size.width * 0.6, size.height * 0.15, size.width * 0.72, size.height * 0.26)
-      ..cubicTo(size.width * 0.85, size.height * 0.36,
-          size.width * 1.08, size.height * 0.28, size.width, size.height * 0.16)
+      ..cubicTo(
+        size.width * 0.78,
+        size.height * 0.04,
+        size.width * 0.6,
+        size.height * 0.15,
+        size.width * 0.72,
+        size.height * 0.26,
+      )
+      ..cubicTo(
+        size.width * 0.85,
+        size.height * 0.36,
+        size.width * 1.08,
+        size.height * 0.28,
+        size.width,
+        size.height * 0.16,
+      )
       ..close();
     canvas.drawPath(pathRight, paintAccent);
 
     final pathBottom = Path()
       ..moveTo(size.width, size.height)
-      ..cubicTo(size.width * 0.82, size.height * 0.9,
-          size.width * 0.5, size.height * 0.86, size.width * 0.58, size.height * 0.76)
-      ..cubicTo(size.width * 0.65, size.height * 0.67,
-          size.width * 1.1, size.height * 0.72, size.width, size.height * 0.86)
+      ..cubicTo(
+        size.width * 0.82,
+        size.height * 0.9,
+        size.width * 0.5,
+        size.height * 0.86,
+        size.width * 0.58,
+        size.height * 0.76,
+      )
+      ..cubicTo(
+        size.width * 0.65,
+        size.height * 0.67,
+        size.width * 1.1,
+        size.height * 0.72,
+        size.width,
+        size.height * 0.86,
+      )
       ..close();
     canvas.drawPath(pathBottom, paintBottom);
   }

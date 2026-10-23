@@ -441,4 +441,45 @@ void main() {
       }
     });
   });
+
+  // ── 11.5 — AMD-2026-10-23-01 (ERR-01): limpiarError() ──────────────────────
+  // Escenario "Error cleared when entering register screen" (mitad controlador):
+  //   GIVEN un login fallido dejó errorMessage poblado,
+  //   WHEN la pantalla de registro invoca limpiarError() (choke point),
+  //   THEN errorMessage queda null Y los listeners son notificados.
+  group('limpiarError (11.5 / AMD-2026-10-23-01)', () {
+    test('un error dejado por un login fallido se limpia y notifica', () async {
+      when(
+        () => mockAuthService.signIn(
+          correo: any(named: 'correo'),
+          password: any(named: 'password'),
+        ),
+      ).thenAnswer(
+        (_) async => throw const AuthException('Invalid login credentials'),
+      );
+      final fakeTokenPush = FakeTokenPushPort();
+      controller = AuthController(
+        authService: mockAuthService,
+        tokenPush: fakeTokenPush,
+      );
+
+      // GIVEN el login falló y dejó el mensaje de error poblado
+      final resultado = await controller!.login('ana@test.local', 'mala');
+      expect(resultado, isFalse);
+      expect(controller!.errorMessage, isNotNull);
+
+      // WHEN invocan limpiarError() (lo hará initState de RegisterScreen)
+      var notifico = false;
+      controller!.addListener(() => notifico = true);
+      controller!.limpiarError();
+
+      // THEN el error queda limpio y los listeners fueron notificados
+      expect(
+        controller!.errorMessage,
+        isNull,
+        reason: 'limpiarError() debe descartar el banner heredado (ERR-01)',
+      );
+      expect(notifico, isTrue, reason: 'limpiarError() debe notificar');
+    });
+  });
 }

@@ -213,6 +213,17 @@ class AuthController extends ChangeNotifier {
   UsuarioModel? get currentUser => _currentUser;
   bool get isAuthenticated => _authService.isAuthenticated;
 
+  // ── Limpieza de error (ERR-01 / AMD-2026-10-23-01) ─────────────────────────
+
+  /// Limpia el mensaje de error pendiente y notifica a los listeners.
+  ///
+  /// Punto único de entrada para que una pantalla (p. ej. RegisterScreen en su
+  /// `initState`) descarte un banner de error heredado de una operación previa.
+  void limpiarError() {
+    _errorMessage = null;
+    notifyListeners();
+  }
+
   // ── Login ──────────────────────────────────────────────────────────────────
 
   /// Inicia sesión con email y contraseña.
