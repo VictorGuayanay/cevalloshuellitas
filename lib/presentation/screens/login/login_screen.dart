@@ -333,17 +333,26 @@ class _MethodButton extends StatelessWidget {
                   : const Color(0xFF555555),
             ),
             const SizedBox(width: 14),
-            Text(
-              label,
-              style: GoogleFonts.poppins(
-                fontSize: 15,
-                fontWeight: FontWeight.w500,
-                color: isActive
-                    ? const Color(0xFF5BBFBF)
-                    : const Color(0xFF2D2D2D),
+            // Expanded + ellipsis: en pantallas angostas la etiqueta encoge
+            // y se recorta en lugar de desbordar el RenderFlex (defecto
+            // observado en vivo en :325), y sigue empujando la flecha a la
+            // derecha (aquí reemplaza al Spacer, que no dejaba encoger al
+            // texto). En pantallas anchas el diseño no cambia: la etiqueta
+            // ocupa su ancho natural y la flecha queda a la derecha.
+            Expanded(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.poppins(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  color: isActive
+                      ? const Color(0xFF5BBFBF)
+                      : const Color(0xFF2D2D2D),
+                ),
               ),
             ),
-            const Spacer(),
             Icon(
               isActive ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
               color: const Color(0xFFAAAAAA),
