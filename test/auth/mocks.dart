@@ -76,7 +76,7 @@ void stubPostgrestSingle(
 }
 
 /// Builder de [User] de Supabase Auth (gotrue) para armar [AuthResponse]
-/// en los stubs de signInWithPassword / verifyOTP / signUp.
+/// en los stubs de signInWithPassword / signUp.
 User buildAuthUser({
   String id = 'uid-test-001',
   String email = 'ana@test.local',

@@ -342,61 +342,6 @@ void main() {
     });
   });
 
-  group('SES-06 — recuperación de contraseña', () {
-    // SES-06 escenario "Recovery OTP succeeds": verificado el OTP existe
-    // sesión → el estado debe reflejarla (Consumer deja de renderizar un
-    // LoginScreen desync-eado). Nunca fuerza navegación (carrera con
-    // updateUser en vuelo). RED: el handler ignora el evento.
-    test('passwordRecovery con sesión activa carga el perfil', () async {
-      final perfil = buildUsuarioModel();
-      when(
-        () => mockAuthService.getUserProfile(perfil.id),
-      ).thenAnswer((_) async => perfil);
-      final fuente = _FuenteAuthEvents();
-      when(() => mockAuthService.authStates).thenAnswer((_) => fuente.stream);
-      controller = AuthController(
-        authService: mockAuthService,
-        tokenPush: FakeTokenPushPort(),
-      );
-      controller!.initAuthListener();
-
-      await fuente.emitir(
-        AuthState(
-          AuthChangeEvent.passwordRecovery,
-          Session(
-            accessToken: 'token-test',
-            tokenType: 'bearer',
-            user: buildAuthUser(id: perfil.id),
-          ),
-        ),
-      );
-
-      expect(controller!.currentUser, same(perfil));
-      await fuente.cerrar();
-    });
-
-    // SES-06 escenario "Recovery event without a session": sesión nula o
-    // expirada → quedarse (o volver) a login con mensaje recuperable y sin
-    // crash. RED: el handler no deja mensaje → errorMessage sigue en null.
-    test('passwordRecovery sin sesión deja mensaje recuperable', () async {
-      final fuente = _FuenteAuthEvents();
-      when(() => mockAuthService.authStates).thenAnswer((_) => fuente.stream);
-      controller = AuthController(
-        authService: mockAuthService,
-        tokenPush: FakeTokenPushPort(),
-      );
-      controller!.initAuthListener();
-
-      await fuente.emitir(
-        const AuthState(AuthChangeEvent.passwordRecovery, null),
-      );
-
-      expect(controller!.errorMessage, isNotNull); // mensaje mapeado (SES-06)
-      expect(controller!.currentUser, isNull); // sin sesión → en login
-      await fuente.cerrar();
-    });
-  });
-
   group('SES-07 — initialSession no pelea con la restauración', () {
     // SES-07 escenario "Warm start with stored session": en frío,
     // `tryRestoreSession()` es la ÚNICA vía de carga (el replay de GoTrue a

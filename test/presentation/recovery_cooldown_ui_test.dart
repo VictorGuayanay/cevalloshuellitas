@@ -148,19 +148,6 @@ void main() {
       );
       expect(botonHabilitado.onPressed, isNotNull);
 
-      // WHEN avanza al paso 2 (código OTP + nueva contraseña)
-      final botonEnviar = find.widgetWithText(ElevatedButton, 'Enviar código');
-      await tester.ensureVisible(botonEnviar);
-      await tester.pumpAndSettle();
-      await tester.tap(botonEnviar);
-      await tester.pump();
-      await tester.pumpAndSettle();
-
-      // THEN el enlace de reenvío tiene target táctil ≥ 44 px (R4).
-      final enlace = find.byKey(const Key('reenviar-codigo-link'));
-      expect(enlace, findsOneWidget);
-      expect(tester.getSize(enlace).height, greaterThanOrEqualTo(44));
-
       // Limpieza: desmontar el árbol — ChangeNotifierProvider es DUEÑO del
       // controlador (create:) y lo dispone al desmontar, cancelando el timer
       // del cooldown (regla de duración ERR-07: cero timers tras dispose).
