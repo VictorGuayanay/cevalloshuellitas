@@ -264,4 +264,100 @@ void main() {
       expect(denylist.hasMatch(resultado!), isFalse);
     });
   });
+
+  group('RST-09 / RST-12 — fallos de enlace de recuperación', () {
+    // RST-09: esFalloDeEnlaceRecuperacion detecta fallos de canje de código PKCE
+    // design §6.1 decisión 3: AuthPKCEGrantCodeExchangeError → true,
+    // AuthApiException → true, AuthRetryableFetchException → false (transitorio).
+    test(
+      'esFalloDeEnlaceRecuperacion: AuthPKCEGrantCodeExchangeError → true',
+      () {
+        final error = AuthPKCEGrantCodeExchangeError(
+          'Code verifier could not be found',
+        );
+        expect(AuthErrorMapper.esFalloDeEnlaceRecuperacion(error), isTrue);
+      },
+    );
+
+    test('esFalloDeEnlaceRecuperacion: AuthApiException → true', () {
+      final error = AuthApiException('Invalid code');
+      expect(AuthErrorMapper.esFalloDeEnlaceRecuperacion(error), isTrue);
+    });
+
+    test(
+      'esFalloDeEnlaceRecuperacion: AuthRetryableFetchException → false (transitorio)',
+      () {
+        final error = AuthRetryableFetchException(message: 'Network error');
+        expect(AuthErrorMapper.esFalloDeEnlaceRecuperacion(error), isFalse);
+      },
+    );
+
+    test('esFalloDeEnlaceRecuperacion: otros errores → false', () {
+      expect(AuthErrorMapper.esFalloDeEnlaceRecuperacion(Object()), isFalse);
+      expect(
+        AuthErrorMapper.esFalloDeEnlaceRecuperacion(
+          const AuthException('Invalid login credentials'),
+        ),
+        isFalse,
+      );
+      expect(
+        AuthErrorMapper.esFalloDeEnlaceRecuperacion(
+          const SocketException('failed'),
+        ),
+        isFalse,
+      );
+    });
+  });
+
+  group(
+    'RST-09 / RST-12 — literales verbatim y AuthSessionMissingException',
+    () {
+      // RST-DP-3(a): literales verbatim del spec — igualdad exacta de strings.
+      test('mensajeEnlaceInvalido literal verbatim (RST-09)', () {
+        expect(
+          AuthErrorMapper.mensajeEnlaceInvalido,
+          'El enlace expiró o no es válido. Solicita uno nuevo.',
+        );
+      });
+
+      test(
+        'mensajeSesionRecuperacionExpirada literal verbatim (RST-12, E7)',
+        () {
+          expect(
+            AuthErrorMapper.mensajeSesionRecuperacionExpirada,
+            'Tu sesión de recuperación expiró. Solicita un enlace nuevo.',
+          );
+        },
+      );
+
+      // RST-12 scenario "Submit without a session": AuthSessionMissingException
+      // mapea al literal de sesión de recuperación expirada.
+      test(
+        'AuthSessionMissingException → mensajeSesionRecuperacionExpirada',
+        () {
+          final resultado = AuthErrorMapper.map(
+            AuthSessionMissingException('Session missing'),
+          );
+
+          expect(resultado, AuthErrorMapper.mensajeSesionRecuperacionExpirada);
+          expect(denylist.hasMatch(resultado!), isFalse);
+        },
+      );
+    },
+  );
+
+  group('ERR-06 — denylist para nuevos literales (RST-09 pre-gate)', () {
+    // RST-09 "No token leakage on failure": los nuevos literales deben pasar
+    // el denylist ERR-06 (sin Exception, rate limit, attempt, ApiException).
+    test('mensajeEnlaceInvalido pasa denylist ERR-06', () {
+      expect(denylist.hasMatch(AuthErrorMapper.mensajeEnlaceInvalido), isFalse);
+    });
+
+    test('mensajeSesionRecuperacionExpirada pasa denylist ERR-06', () {
+      expect(
+        denylist.hasMatch(AuthErrorMapper.mensajeSesionRecuperacionExpirada),
+        isFalse,
+      );
+    });
+  });
 }

@@ -584,17 +584,17 @@ Cutover invariants: **7.3 strictly before 9.1; 9.1 strictly before 9.2; Phase 4 
 
 ### P12-b — Mapper: fallo de enlace + literales (commit: `feat(auth): mapeo de fallos de enlace y literales de recuperación`)
 
-- [ ] 12.4 **RED → GREEN** — `test/auth/auth_error_mapper_test.dart`: (a) `AuthPKCEGrantCodeExchangeError` → `esFalloDeEnlaceRecuperacion(...) == true`; (b) `AuthApiException` → `true`; (c) `AuthRetryableFetchException` → `false` (transitorio — NO es fallo de enlace, design §6.1/decisión 3). RED con stub-first: el `static` se añade devolviendo `false` para que (a) falle en la aserción (no en compilación). GREEN: añadir `static bool esFalloDeEnlaceRecuperacion(Object error)` en `lib/core/auth_error_mapper.dart` (tipos gotrue exportados por `supabase_flutter` — verificar constructor de `AuthPKCEGrantCodeExchangeError` en el pub cache antes de escribir el test; design §1 lo verificó en gotrue 2.22.0).
+- [x] 12.4 **RED → GREEN** — `test/auth/auth_error_mapper_test.dart`: (a) `AuthPKCEGrantCodeExchangeError` → `esFalloDeEnlaceRecuperacion(...) == true`; (b) `AuthApiException` → `true`; (c) `AuthRetryableFetchException` → `false` (transitorio — NO es fallo de enlace, design §6.1/decisión 3). RED con stub-first: el `static` se añade devolviendo `false` para que (a) falle en la aserción (no en compilación). GREEN: añadir `static bool esFalloDeEnlaceRecuperacion(Object error)` en `lib/core/auth_error_mapper.dart` (tipos gotrue exportados por `supabase_flutter` — verificar constructor de `AuthPKCEGrantCodeExchangeError` en el pub cache antes de escribir el test; design §1 lo verificó en gotrue 2.22.0).
   - **Files**: `test/auth/auth_error_mapper_test.dart`, `lib/core/auth_error_mapper.dart`
   - **TDD step**: RED assertion-level (stub scaffold para evitar RED de compilación — un ciclo por tipo).
   - **Accepts**: RST-09 (mapeo de tipo), design §6.1 decisión 3
   - **Status**: UNBLOCKED
-- [ ] 12.5 **RED → GREEN** — Literales verbatim (RST-DP-3(a)): (a) `AuthErrorMapper.mensajeEnlaceInvalido == 'El enlace expiró o no es válido. Solicita uno nuevo.'` (RST-09); (b) `AuthErrorMapper.mensajeSesionRecuperacionExpirada == 'Tu sesión de recuperación expiró. Solicita un enlace nuevo.'` (RST-12, E7); (c) `map()` con `AuthSessionMissingException` → `mensajeSesionRecuperacionExpirada`. GREEN: `static const` + rama del mapper.
+- [x] 12.5 **RED → GREEN** — Literales verbatim (RST-DP-3(a)): (a) `AuthErrorMapper.mensajeEnlaceInvalido == 'El enlace expiró o no es válido. Solicita uno nuevo.'` (RST-09); (b) `AuthErrorMapper.mensajeSesionRecuperacionExpirada == 'Tu sesión de recuperación expiró. Solicita un enlace nuevo.'` (RST-12, E7); (c) `map()` con `AuthSessionMissingException` → `mensajeSesionRecuperacionExpirada`. GREEN: `static const` + rama del mapper.
   - **Files**: `test/auth/auth_error_mapper_test.dart`, `lib/core/auth_error_mapper.dart`
   - **TDD step**: RED assertions (3 literales exactos — string equality, no `contains`).
   - **Accepts**: RST-09 scenario "Expired link" (copy half), RST-12 scenario "Submit without a session" (copy half), RST-DP-3(a)
   - **Status**: UNBLOCKED
-- [ ] 12.6 **VERIFY + COMMIT** — Assert the two nuevos literales pasan el denylist ERR-06 (no `Exception|rate limit|attempt(|ApiException`); full mapper suite green; commit `feat(auth): …` (`P12-b`).
+- [x] 12.6 **VERIFY + COMMIT** — Assert the two nuevos literales pasan el denylist ERR-06 (no `Exception|rate limit|attempt(|ApiException`); full mapper suite green; commit `feat(auth): …` (`P12-b`).
   - **Files**: `test/auth/auth_error_mapper_test.dart` (denylist assertions), no production edits expected
   - **TDD step**: regression gate (3.1 baseline denylist intact) + static denylist assertion (RST-09 "No token leakage on failure" pre-gate).
   - **Accepts**: ERR-06 denylist, RST-09 (no raw text), RST-13(a) copy half

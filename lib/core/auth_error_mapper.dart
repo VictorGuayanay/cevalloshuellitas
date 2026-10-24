@@ -25,6 +25,31 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class AuthErrorMapper {
   AuthErrorMapper._();
 
+  /// Literal verbatim (RST-DP-3(a)): copy para fallo de enlace de recuperación
+  /// (RST-09 scenario "Expired link").
+  static const mensajeEnlaceInvalido =
+      'El enlace expiró o no es válido. Solicita uno nuevo.';
+
+  /// Literal verbatim (RST-DP-3(a)): copy para sesión de recuperación expirada
+  /// (RST-12 scenario "Submit without a session", E7).
+  static const mensajeSesionRecuperacionExpirada =
+      'Tu sesión de recuperación expiró. Solicita un enlace nuevo.';
+
+  /// Detecta si [error] corresponde a un fallo de canje de enlace de recuperación.
+  ///
+  /// Retorna `true` para:
+  /// - [AuthPKCEGrantCodeExchangeError] (siempre — código PKCE inválido/ausente)
+  /// - [AuthApiException] (fallo de API durante el canje)
+  /// Retorna `false` para:
+  /// - [AuthRetryableFetchException] (transitorio de red/5xx — design §6.1 decisión 3)
+  /// - Cualquier otro tipo de error.
+  static bool esFalloDeEnlaceRecuperacion(Object error) {
+    if (error is AuthPKCEGrantCodeExchangeError) return true;
+    if (error is AuthApiException) return true;
+    if (error is AuthRetryableFetchException) return false;
+    return false;
+  }
+
   /// Devuelve el mensaje en español para [error], o `null` si el error no
   /// debe mostrarse (silencio intencional, p. ej. cancelación de Google).
   static String? map(Object error) {
@@ -124,6 +149,12 @@ class AuthErrorMapper {
     // autenticado → orfanato detectable con mensaje accionable, nunca loop.
     if (error is PostgrestException && error.code == 'PGRST116') {
       return 'No encontramos tu perfil. Contacta al administrador.';
+    }
+
+    // Rama nueva (RST-12): sesión de recuperación expirada / faltante →
+    // literal verbatim mensajeSesionRecuperacionExpirada (design §6.1).
+    if (error is AuthSessionMissingException) {
+      return mensajeSesionRecuperacionExpirada;
     }
 
     // Rama 5 (ERR-06): fallback fijo — sin ramas pendientes.
