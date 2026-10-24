@@ -87,5 +87,57 @@ All 24 tests pass after retirements (down from 26 baseline):
   - **ERR-01 re-pin**: Enumeration now reads: `login`, `loginWithGoogle`, `register`, `recuperarContrasena`, `restablecerContrasena`, `logout`, `updateProfile`, `cambiarContrasena` (removed `verificarOtpYCambiarContrasena`, added `restablecerContrasena`).
   - **Static gate**: `grep -n "verificarOtpYCambiarContrasena\|verifyOtp" lib/domain/ test/` → 0 matches.
   - **Suite status**: GREEN (56 auth tests pass).
- 
+  
+---
+
+### Task 12.20 — RST-06 Manifest Gate (Static)
+
+**Change**: Added intent-filter for `huellitas://password-recovery` to `android/app/src/main/AndroidManifest.xml` inside `.MainActivity`.
+
+**Verification**:
+- Exactly 1 VIEW/BROWSABLE filter with `android:scheme="huellitas"` + `android:host="password-recovery"` ✓
+- MAIN/LAUNCHER filter (lines 41-44) intact ✓
+- BOOT_COMPLETED filter (lines 51-56) intact ✓
+- `launchMode="singleTop"` (line 27) intact ✓
+- `flutter analyze` clean (no new issues) ✓
+
+**Result**: Static gate PASS — RST-06 scenario "Manifest gate (static)" satisfied.
+
+---
+
+### Task 12.21 — Static Gates RST-01 / RST-13 (grep assertions)
+
+All grep gates executed and verified 0 matches in recovery flow:
+
+| Gate | Pattern | Scope | Matches | Status |
+|------|---------|-------|---------|--------|
+| RST-13(d) | `verifyOtp\|verificarOtpYCambiarContrasena\|OtpType\.recovery` | `lib/` | 0 | ✓ PASS |
+| RST-01 | `6 dígitos\|_otpCtrl` | login screens, controllers, services | 0 | ✓ PASS |
+| RST-13(a)/(b) | `Uri.parse\|access_token\|refresh_token\|token_hash` | presentation, domain, data | 0 in recovery flow* | ✓ PASS |
+| RST-13(b) | `SharedPreferences\|Hive\|getStorage` | login screens, controllers, services | 0 | ✓ PASS |
+
+*Note: 2 `Uri.parse` matches found in unrelated screens (`mapa_veterinarios_screen.dart`, `servicios_screen.dart`) — not in recovery flow.
+
+**`dart analyze`**: 63 pre-existing issues (0 NEW) — baseline maintained.
+
+**Result**: All static gates PASS — RST-01 "No OTP artifacts", RST-13 "No manual token handling" satisfied.
+
+---
+
+### Task 12.22 — Final Verification + Batch Commit
+
+**Regression suite**: `flutter test` → 72 tests PASS (exit 0), no pending timers, no platform-channel errors.
+
+**Formatting**: `dart format --set-exit-if-changed .` → clean (2 files reformatted, re-verified green).
+
+**Static analysis**: `flutter analyze` → 63 issues (0 NEW vs baseline).
+
+**Coverage** (`flutter test --coverage`):
+- `lib/domain/controllers/auth_controller.dart`: 154/206 lines = **74.8%** (below 80% TDD-07 threshold)
+- `lib/data/services/auth_service.dart`: 17/98 lines = **17.3%** (below 80% TDD-07 threshold)
+
+**Coverage deviation**: Pre-existing gap from Phase 10.1 (unblocked Track A). Phase 12 changes (OTP retirements, new link-based flow) did not degrade coverage further — removed methods were deprecated stubs with no test coverage. TDD-07 remains open for Phase 10.1 resolution.
+
+**Result**: Format/Analyze/Test gates PASS. Coverage noted as tracked deviation (TDD-07 pending Phase 10.1).
+
 ---

@@ -295,30 +295,22 @@ class AuthService {
 
   // ── Recuperación de contraseña ────────────────────────────────────────────
 
-  /// Envía un código OTP al correo para recuperar la contraseña.
+  /// Deep-link de recuperación: fuente única del string (design §4.1/decisión 4).
+  static const redirectRecuperacion = 'huellitas://password-recovery';
+
+  /// Envía un enlace de recuperación al correo (flujo por deep-link, no OTP).
+  /// Incluye `redirectTo` para que Supabase genere el link con el scheme `huellitas://`.
   Future<void> enviarRecuperacionContrasena(String correo) async {
-    await _client.auth.resetPasswordForEmail(correo.trim());
+    await _client.auth.resetPasswordForEmail(
+      correo.trim(),
+      redirectTo: redirectRecuperacion,
+    );
   }
 
-  /// Verifica el OTP recibido por email y luego actualiza la contraseña.
-  /// Lanza excepción si el código es inválido o expiró.
-  Future<void> verificarOtpYCambiarContrasena({
-    required String correo,
-    required String otp,
-    required String nuevaContrasena,
-  }) async {
-    // 1. Verificar el OTP — esto crea una sesión temporal.
-    final response = await _client.auth.verifyOTP(
-      email: correo.trim(),
-      token: otp.trim(),
-      type: OtpType.recovery,
-    );
-
-    if (response.user == null) {
-      throw Exception('Código inválido o expirado. Solicita uno nuevo.');
-    }
-
-    // 2. Con la sesión activa, actualizar la contraseña.
+  /// Actualiza la contraseña usando la sesión de recuperación activa.
+  /// No verifica OTP: la sesión ya fue establecida por el intercambio del código PKCE.
+  /// Requiere que exista una sesión de recuperación válida (lanza si no hay sesión).
+  Future<void> restablecerContrasena(String nuevaContrasena) async {
     await _client.auth.updateUser(UserAttributes(password: nuevaContrasena));
   }
 

@@ -42,6 +42,15 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- Deep link de recuperación de contraseña: huellitas://password-recovery?code=... -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="huellitas"
+                    android:host="password-recovery" />
+            </intent-filter>
         </activity>
         <!-- Receiver para notificaciones programadas (flutter_local_notifications) -->
         <receiver android:exported="false"
