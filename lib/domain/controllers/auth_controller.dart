@@ -47,18 +47,45 @@ class AuthController extends ChangeNotifier {
   // Lector único por diseño (DP-P2-1, opción a).
   bool _avisoDeCierrePendiente = false;
 
+  // true desde que llega `passwordRecovery` hasta que la recuperación se
+  // completa (signOut) o se consume el fallo. El Consumer raíz usa este flag
+  // para renderizar NuevaContrasenaScreen con prioridad sobre sesión/home (RST-07).
+  bool _enModoRecuperacion = false;
+  bool get enModoRecuperacion => _enModoRecuperacion;
+
+  // Aviso one-shot para enlace de recuperación inválido/expirado (RST-09):
+  // el Consumer raíz lo consume para resetear pila y mostrar errorMessage.
+  bool _avisoEnlaceInvalidoPendiente = false;
+
+  /// Devuelve true UNA sola vez tras un fallo de enlace de recuperación
+  /// (consume-once, patrón `_avisoDeCierrePendiente`).
+  bool consumirAvisoEnlaceInvalido() {
+    final pendiente = _avisoEnlaceInvalidoPendiente;
+    _avisoEnlaceInvalidoPendiente = false;
+    return pendiente;
+  }
+
   /// Suscribe el listener de eventos de autenticación de forma idempotente:
   /// las llamadas repetidas NO registran suscripciones adicionales (SES-01).
   void initAuthListener() {
     if (_authSub != null) return;
     _authSub = _authService.authStates.listen(
       (state) => unawaited(_procesarEvento(state)),
-      // Errores del stream (p. ej. refresh con red caída): sólo traza —
-      // NUNCA mutan estado: una transitoria no debe simular un logout;
-      // el fallo definitivo de sesión llega como `signedOut` (diseño,
-      // matriz de eventos; un error de stream sin onError crashea la app).
-      onError: (Object error) =>
-          debugPrint('Stream de sesión (onAuthStateChange): $error'),
+      // Errores del stream: si es fallo de enlace de recuperación
+      // (AuthPKCEGrantCodeExchangeError / AuthApiException) → muta estado
+      // (flag false, aviso one-shot, errorMessage literal). Otros errores
+      // (AuthRetryableFetchException, etc.) → solo traza, sin mutar estado
+      // (SES-02: offline no debe simular logout).
+      onError: (Object error) {
+        if (AuthErrorMapper.esFalloDeEnlaceRecuperacion(error)) {
+          _enModoRecuperacion = false;
+          _avisoEnlaceInvalidoPendiente = true;
+          _errorMessage = AuthErrorMapper.mensajeEnlaceInvalido;
+          notifyListeners();
+        } else {
+          debugPrint('Stream de sesión (onAuthStateChange): $error');
+        }
+      },
     );
   }
 
@@ -105,20 +132,12 @@ class AuthController extends ChangeNotifier {
         final uid = state.session?.user.id;
         if (uid != null) await _cargarPerfil(uid);
       case AuthChangeEvent.passwordRecovery:
-        // SES-06: con sesión activa, reflejarla cargando el perfil.
-        // Nunca fuerza navegación — la pantalla de recuperación maneja su
-        // propio flujo (evita carrera con el updateUser en vuelo).
-        final uidRecuperacion = state.session?.user.id;
-        if (uidRecuperacion != null) {
-          await _cargarPerfil(uidRecuperacion);
-        } else {
-          // Sesión nula/expirada: quedarse en login con mensaje recuperable.
-          // Copy interim: el mapeo fino de recuperación llega con el
-          // AuthErrorMapper en la Fase 3; por ahora, el fallback fijo de
-          // ERR-06 (string acotado en el spec).
-          _errorMessage = 'Ocurrió un error. Intenta de nuevo.';
-          notifyListeners();
-        }
+        // RST-07 / RST-01 / RST-02: setea flag de modo recuperación.
+        // NO carga perfil (cambio vs SES-06) — la sesión de recuperación es
+        // transitoria; el Consumer raíz renderiza NuevaContrasenaScreen
+        // mientras este flag sea true (prioridad sobre sesión/home).
+        _enModoRecuperacion = true;
+        notifyListeners();
       case AuthChangeEvent.initialSession:
         // SES-07: en frío, `tryRestoreSession()` es dueña del arranque —
         // el replay de GoTrue no debe duplicar la carga (exactamente UNA
@@ -485,34 +504,6 @@ class AuthController extends ChangeNotifier {
     }
   }
 
-  /// Verifica el OTP y cambia la contraseña al nuevo valor.
-  Future<bool> verificarOtpYCambiarContrasena({
-    required String correo,
-    required String otp,
-    required String nuevaContrasena,
-  }) async {
-    // ERR-01: el error anterior no sobrevive a la nueva operación.
-    _errorMessage = null;
-    _setLoading(true);
-    try {
-      await _authService.verificarOtpYCambiarContrasena(
-        correo: correo,
-        otp: otp,
-        nuevaContrasena: nuevaContrasena,
-      );
-      _setLoading(false);
-      return true;
-    } on AuthException catch (e) {
-      _errorMessage = AuthErrorMapper.map(e);
-      _setLoading(false);
-      return false;
-    } catch (e) {
-      _errorMessage = AuthErrorMapper.map(e);
-      _setLoading(false);
-      return false;
-    }
-  }
-
   /// Cambia la contraseña del usuario ya autenticado (desde perfil).
   Future<bool> cambiarContrasena(String nuevaContrasena) async {
     // ERR-01: el error anterior no sobrevive a la nueva operación.
@@ -533,6 +524,45 @@ class AuthController extends ChangeNotifier {
       _setLoading(false);
       return false;
     }
+  }
+
+  // ── Recuperación por enlace (RST-11 / RST-DP-2(a)) ──────────────────────────
+
+  /// Restablece la contraseña usando la sesión de recuperación activa.
+  /// Requiere una sesión de recuperación válida (la creada por el intercambio
+  /// del código PKCE). En éxito: `updateUser` → `signOut` silencioso (reusa
+  /// `_cerrandoSesion` para no emitir mensaje de expiración), limpia el flag
+  /// `enModoRecuperacion` y retorna `true`. En fallo: `errorMessage` mapeado,
+  /// `signOut` NO invocado, flag se mantiene, retorna `false`.
+  Future<bool> restablecerContrasena(String nuevaContrasena) async {
+    // ERR-01: el error anterior no sobrevive a la nueva operación.
+    _errorMessage = null;
+    _setLoading(true);
+    try {
+      await _authService.restablecerContrasena(nuevaContrasena);
+      // Éxito: cerrar la sesión de recuperación silenciosamente.
+      await _cerrarSesionRecuperacion();
+      _setLoading(false);
+      return true;
+    } on AuthException catch (e) {
+      _errorMessage = AuthErrorMapper.map(e);
+      _setLoading(false);
+      return false;
+    } catch (e) {
+      _errorMessage = AuthErrorMapper.map(e);
+      _setLoading(false);
+      return false;
+    }
+  }
+
+  /// Cierra la sesión de recuperación reutilizando `_cerrandoSesion` (one-shot
+  /// de silencio para `signedOut`, matriz de eventos SES-02). Limpia el flag
+  /// `enModoRecuperacion` ANTES del signOut para que el Consumer raíz no
+  // renderice NuevaContrasenaScreen durante el cierre.
+  Future<void> _cerrarSesionRecuperacion() async {
+    _enModoRecuperacion = false;
+    _cerrandoSesion = true; // silencio del signedOut resultante
+    await _authService.signOut();
   }
 
   // ── Utilidades privadas ────────────────────────────────────────────────────

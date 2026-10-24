@@ -482,4 +482,101 @@ void main() {
       expect(notifico, isTrue, reason: 'limpiarError() debe notificar');
     });
   });
+
+  // ── 12.11 BASELINE — recuperarContrasena guards (RST-02, RST-05, ERR-07) ──
+  // Baseline-first: estos tests DEBEN pasar contra el código actual. Si fallan,
+  // se convierten en ciclos RED→GREEN mínimos.
+  group('recuperarContrasena baseline guards (12.11)', () {
+    // RST-05 scenario "Offline send" + ERR-07 re-pinned "Network failure does
+    // not lock the user out": fallo de red → copy de conectividad, NO cooldown.
+    test(
+      'recuperarContrasena offline → error de conectividad, sin cooldown',
+      () async {
+        when(
+          () => mockAuthService.enviarRecuperacionContrasena(any()),
+        ).thenAnswer(
+          (_) async => throw const SocketException(
+            "Failed host lookup: 'xxxx.supabase.co' (errno = -2)",
+          ),
+        );
+        controller = AuthController(
+          authService: mockAuthService,
+          tokenPush: FakeTokenPushPort(),
+        );
+
+        final resultado = await controller!.recuperarContrasena(
+          'ana@test.local',
+        );
+
+        expect(resultado, isFalse);
+        expect(
+          controller!.errorMessage,
+          'Sin conexión a internet. Revisa tu conexión y vuelve a intentarlo.',
+        );
+        expect(controller!.isLoading, isFalse);
+        // ERR-07: fallo de red NO debe iniciar cooldown (usuario no bloqueado).
+        expect(controller!.puedeReenviarCodigo, isTrue);
+        expect(controller!.cooldownRestante, Duration.zero);
+      },
+    );
+
+    // RST-02 scenario "No enumeration channel in the client": la ÚNICA
+    // interacción con auth es el send — NUNCA lookup de perfil/usuario.
+    test(
+      'recuperarContrasena solo llama a enviarRecuperacionContrasena (sin enumeración)',
+      () async {
+        when(
+          () => mockAuthService.enviarRecuperacionContrasena('ana@test.local'),
+        ).thenAnswer((_) async {});
+        controller = AuthController(
+          authService: mockAuthService,
+          tokenPush: FakeTokenPushPort(),
+        );
+
+        await controller!.recuperarContrasena('ana@test.local');
+
+        verify(
+          () => mockAuthService.enviarRecuperacionContrasena('ana@test.local'),
+        ).called(1);
+        verifyNever(() => mockAuthService.getUserProfile(any()));
+        verifyNever(() => mockAuthService.getCurrentUserId());
+        verifyNever(
+          () => mockAuthService.signIn(
+            correo: any(named: 'correo'),
+            password: any(named: 'password'),
+          ),
+        );
+      },
+    );
+
+    // Guard de 3.10: rate-limit server-driven → copy ERR-02 + cooldown arranca.
+    test(
+      'recuperarContrasena rate-limit → copy espera + cooldown arranca',
+      () async {
+        when(
+          () => mockAuthService.enviarRecuperacionContrasena(any()),
+        ).thenAnswer(
+          (_) async => throw AuthException('over_email_send_rate_limit'),
+        );
+        controller = AuthController(
+          authService: mockAuthService,
+          tokenPush: FakeTokenPushPort(),
+        );
+
+        final resultado = await controller!.recuperarContrasena(
+          'ana@test.local',
+        );
+
+        expect(resultado, isFalse);
+        expect(
+          controller!.errorMessage,
+          'Espera un momento antes de solicitar otro correo.',
+        );
+        expect(controller!.isLoading, isFalse);
+        // ERR-07 server-driven: cooldown DEBE arrancar.
+        expect(controller!.puedeReenviarCodigo, isFalse);
+        expect(controller!.cooldownRestante.inSeconds, greaterThan(0));
+      },
+    );
+  });
 }

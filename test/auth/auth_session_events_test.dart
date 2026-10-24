@@ -44,6 +44,12 @@ class _FuenteAuthEvents {
     await Future<void>.delayed(Duration.zero);
   }
 
+  /// Emite un error en el stream y drena micro-tasks.
+  Future<void> emitirError(Object error) async {
+    eventos.addError(error);
+    await Future<void>.delayed(Duration.zero);
+  }
+
   Future<void> cerrar() => eventos.close();
 }
 
@@ -389,6 +395,214 @@ void main() {
         // THEN el perfil se carga EXACTAMENTE una vez (sin doble carga).
         expect(cargas, 1);
         expect(controller!.currentUser, same(perfil));
+        await fuente.cerrar();
+      },
+    );
+  });
+
+  group(
+    'RST-07 — passwordRecovery setea enModoRecuperacion (no carga perfil)',
+    () {
+      // RST-07 escenario "Anti-desync preserved (SES-06 migration)":
+      // el evento passwordRecovery con sesión activa DEBE setear el flag
+      // enModoRecuperacion = true y NO cargar el perfil (cambio vs rama
+      // actual que sí lo hacía). Sustituye al test SES-06 retirado en 12.2.
+      test(
+        'passwordRecovery con sesión activa setea flag y NO carga perfil',
+        () async {
+          final perfil = buildUsuarioModel();
+          when(
+            () => mockAuthService.signIn(
+              correo: any(named: 'correo'),
+              password: any(named: 'password'),
+            ),
+          ).thenAnswer((_) async => perfil);
+          final fuente = _FuenteAuthEvents();
+          when(
+            () => mockAuthService.authStates,
+          ).thenAnswer((_) => fuente.stream);
+          controller = AuthController(
+            authService: mockAuthService,
+            tokenPush: FakeTokenPushPort(),
+          );
+          // Precondición: usuario autenticado (simula estado tras login exitoso).
+          await controller!.login('ana@test.local', 'secreto123');
+          expect(controller!.currentUser, same(perfil));
+          controller!.initAuthListener();
+
+          var notificaciones = 0;
+          controller!.addListener(() => notificaciones++);
+
+          // WHEN llega evento passwordRecovery con sesión activa.
+          final sesionRecuperacion = Session(
+            accessToken: 'recovery-token',
+            tokenType: 'bearer',
+            user: buildAuthUser(id: perfil.id),
+          );
+          await fuente.emitir(
+            AuthState(AuthChangeEvent.passwordRecovery, sesionRecuperacion),
+          );
+
+          // THEN: flag true, NO se cargó perfil, listeners notificados.
+          expect(controller!.enModoRecuperacion, isTrue);
+          verifyNever(() => mockAuthService.getUserProfile(any()));
+          expect(notificaciones, greaterThan(0));
+          await fuente.cerrar();
+        },
+      );
+
+      // RST-02: passwordRecovery sin sesión (sesión nula/expirada) →
+      // flag true, sin crash, errorMessage recuperable (mapeo fino en 12.13).
+      test('passwordRecovery sin sesión setea flag sin crash', () async {
+        final fuente = _FuenteAuthEvents();
+        when(() => mockAuthService.authStates).thenAnswer((_) => fuente.stream);
+        controller = AuthController(
+          authService: mockAuthService,
+          tokenPush: FakeTokenPushPort(),
+        );
+        controller!.initAuthListener();
+
+        // WHEN evento passwordRecovery con sesión null.
+        await fuente.emitir(
+          const AuthState(AuthChangeEvent.passwordRecovery, null),
+        );
+
+        // THEN: flag true, currentUser null, sin excepción.
+        expect(controller!.enModoRecuperacion, isTrue);
+        expect(controller!.currentUser, isNull);
+        await fuente.cerrar();
+      });
+    },
+  );
+
+  group('RST-09 — fallo de enlace de recuperación (stream onError)', () {
+    // RST-09 scenario "Expired link": error del stream tipo fallo de enlace
+    // (AuthPKCEGrantCodeExchangeError / AuthApiException) → flag false,
+    // consume-once aviso, errorMessage literal verbatim.
+    test(
+      'onError con AuthPKCEGrantCodeExchangeError → aviso one-shot + copy',
+      () async {
+        final fuente = _FuenteAuthEvents();
+        when(() => mockAuthService.authStates).thenAnswer((_) => fuente.stream);
+        controller = AuthController(
+          authService: mockAuthService,
+          tokenPush: FakeTokenPushPort(),
+        );
+        controller!.initAuthListener();
+
+        // Precondición: modo recuperación activo (simula passwordRecovery previo).
+        // NOTA: _enModoRecuperacion se setea en passwordRecovery; aquí lo
+        // forzamos a true para testear solo la rama onError.
+        // Como es privado, emitimos passwordRecovery primero.
+        await fuente.emitir(
+          AuthState(
+            AuthChangeEvent.passwordRecovery,
+            Session(
+              accessToken: 'recovery-token',
+              tokenType: 'bearer',
+              user: buildAuthUser(id: 'uid-test-001'),
+            ),
+          ),
+        );
+        expect(controller!.enModoRecuperacion, isTrue);
+
+        // WHEN: error del stream tipo fallo de canje (PKCE).
+        final errorPKCE = AuthPKCEGrantCodeExchangeError(
+          'Code verifier could not be found in local storage.',
+        );
+        await fuente.emitirError(errorPKCE);
+
+        // THEN: flag false, aviso consume-once, errorMessage literal.
+        expect(controller!.enModoRecuperacion, isFalse);
+        expect(
+          controller!.consumirAvisoEnlaceInvalido(),
+          isTrue,
+        ); // primera vez
+        expect(
+          controller!.consumirAvisoEnlaceInvalido(),
+          isFalse,
+        ); // consume-once
+        expect(
+          controller!.errorMessage,
+          'El enlace expiró o no es válido. Solicita uno nuevo.',
+        );
+        await fuente.cerrar();
+      },
+    );
+
+    // RST-09: AuthApiException también califica como fallo de enlace
+    // (design §6.1: el stream no da contexto; aceptar el tipo como señal).
+    test('onError con AuthApiException → aviso one-shot + copy', () async {
+      final fuente = _FuenteAuthEvents();
+      when(() => mockAuthService.authStates).thenAnswer((_) => fuente.stream);
+      controller = AuthController(
+        authService: mockAuthService,
+        tokenPush: FakeTokenPushPort(),
+      );
+      controller!.initAuthListener();
+
+      await fuente.emitir(
+        AuthState(
+          AuthChangeEvent.passwordRecovery,
+          Session(
+            accessToken: 'recovery-token',
+            tokenType: 'bearer',
+            user: buildAuthUser(id: 'uid-test-001'),
+          ),
+        ),
+      );
+      expect(controller!.enModoRecuperacion, isTrue);
+
+      // WHEN: AuthApiException en el stream.
+      final errorAPI = AuthApiException('Invalid code', statusCode: '400');
+      await fuente.emitirError(errorAPI);
+
+      // THEN: mismo comportamiento que PKCE.
+      expect(controller!.enModoRecuperacion, isFalse);
+      expect(controller!.consumirAvisoEnlaceInvalido(), isTrue);
+      expect(controller!.consumirAvisoEnlaceInvalido(), isFalse);
+      expect(
+        controller!.errorMessage,
+        'El enlace expiró o no es válido. Solicita uno nuevo.',
+      );
+      await fuente.cerrar();
+    });
+
+    // RST-09 / SES-02 preservado: AuthRetryableFetchException (transitorio
+    // de red/5xx) NO califica como fallo de enlace → estado intacto, solo debugPrint.
+    test(
+      'onError con AuthRetryableFetchException → sin mutación, solo traza',
+      () async {
+        final fuente = _FuenteAuthEvents();
+        when(() => mockAuthService.authStates).thenAnswer((_) => fuente.stream);
+        controller = AuthController(
+          authService: mockAuthService,
+          tokenPush: FakeTokenPushPort(),
+        );
+        controller!.initAuthListener();
+
+        await fuente.emitir(
+          AuthState(
+            AuthChangeEvent.passwordRecovery,
+            Session(
+              accessToken: 'recovery-token',
+              tokenType: 'bearer',
+              user: buildAuthUser(id: 'uid-test-001'),
+            ),
+          ),
+        );
+        expect(controller!.enModoRecuperacion, isTrue);
+
+        // WHEN: error transitorio de red.
+        final errorRed = AuthRetryableFetchException(
+          message: 'Connection timeout',
+        );
+        await fuente.emitirError(errorRed);
+
+        // THEN: flag sigue true, sin aviso, sin errorMessage, sin crash.
+        expect(controller!.enModoRecuperacion, isTrue);
+        expect(controller!.consumirAvisoEnlaceInvalido(), isFalse);
+        expect(controller!.errorMessage, isNull);
         await fuente.cerrar();
       },
     );
