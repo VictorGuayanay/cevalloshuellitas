@@ -37,8 +37,9 @@ class ProductorController extends ChangeNotifier {
     try {
       _productores = await _service.obtenerProductoresEnVenta();
       debugPrint(
-          'ProductorController: ${_productores.length} productores cargados, '
-          '${productoresConUbicacion.length} con ubicación GPS.');
+        'ProductorController: ${_productores.length} productores cargados, '
+        '${productoresConUbicacion.length} con ubicación GPS.',
+      );
     } catch (e) {
       _errorMessage = 'Error al cargar productores: $e';
       debugPrint(_errorMessage);

@@ -31,10 +31,10 @@ class CambiarContrasenaSheet extends StatefulWidget {
 }
 
 class _CambiarContrasenaSheetState extends State<CambiarContrasenaSheet> {
-  final _passCtrl    = TextEditingController();
+  final _passCtrl = TextEditingController();
   final _confirmCtrl = TextEditingController();
-  final _formKey     = GlobalKey<FormState>();
-  bool _obscurePass    = true;
+  final _formKey = GlobalKey<FormState>();
+  bool _obscurePass = true;
   bool _obscureConfirm = true;
 
   @override
@@ -48,7 +48,8 @@ class _CambiarContrasenaSheetState extends State<CambiarContrasenaSheet> {
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom),
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
       child: Container(
         decoration: const BoxDecoration(
           color: Colors.white,
@@ -65,7 +66,8 @@ class _CambiarContrasenaSheetState extends State<CambiarContrasenaSheet> {
                 // Handle
                 Center(
                   child: Container(
-                    width: 40, height: 4,
+                    width: 40,
+                    height: 4,
                     decoration: BoxDecoration(
                       color: Colors.grey.shade300,
                       borderRadius: BorderRadius.circular(2),
@@ -85,7 +87,9 @@ class _CambiarContrasenaSheetState extends State<CambiarContrasenaSheet> {
                 Text(
                   'Ingresa tu nueva contraseña',
                   style: GoogleFonts.poppins(
-                      fontSize: 12, color: Colors.grey.shade500),
+                    fontSize: 12,
+                    color: Colors.grey.shade500,
+                  ),
                 ),
                 const SizedBox(height: 20),
 
@@ -93,11 +97,11 @@ class _CambiarContrasenaSheetState extends State<CambiarContrasenaSheet> {
                   controller: _passCtrl,
                   label: 'Nueva contraseña',
                   obscure: _obscurePass,
-                  onToggle: () =>
-                      setState(() => _obscurePass = !_obscurePass),
+                  onToggle: () => setState(() => _obscurePass = !_obscurePass),
                   accentColor: widget.accentColor,
-                  validator: (v) =>
-                      (v == null || v.length < 6) ? 'Mínimo 6 caracteres' : null,
+                  validator: (v) => (v == null || v.length < 6)
+                      ? 'Mínimo 6 caracteres'
+                      : null,
                 ),
                 const SizedBox(height: 14),
                 _passwordField(
@@ -107,51 +111,68 @@ class _CambiarContrasenaSheetState extends State<CambiarContrasenaSheet> {
                   onToggle: () =>
                       setState(() => _obscureConfirm = !_obscureConfirm),
                   accentColor: widget.accentColor,
-                  validator: (v) =>
-                      v != _passCtrl.text ? 'Las contraseñas no coinciden' : null,
+                  validator: (v) => v != _passCtrl.text
+                      ? 'Las contraseñas no coinciden'
+                      : null,
                 ),
                 const SizedBox(height: 24),
 
                 SizedBox(
-                  width: double.infinity, height: 52,
+                  width: double.infinity,
+                  height: 52,
                   child: Consumer<AuthController>(
                     builder: (ctx, auth, _) => ElevatedButton(
-                      onPressed: auth.isLoading ? null : () async {
-                        if (!_formKey.currentState!.validate()) return;
-                        final ok =
-                            await auth.cambiarContrasena(_passCtrl.text);
-                        if (!context.mounted) return;
-                        if (ok) {
-                          Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content: Text(
-                                    '¡Contraseña actualizada correctamente!')),
-                          );
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                                content: Text(auth.errorMessage ??
-                                    'Error al cambiar contraseña')),
-                          );
-                        }
-                      },
+                      onPressed: auth.isLoading
+                          ? null
+                          : () async {
+                              if (!_formKey.currentState!.validate()) return;
+                              final ok = await auth.cambiarContrasena(
+                                _passCtrl.text,
+                              );
+                              if (!context.mounted) return;
+                              if (ok) {
+                                Navigator.pop(context);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      '¡Contraseña actualizada correctamente!',
+                                    ),
+                                  ),
+                                );
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      auth.errorMessage ??
+                                          'Error al cambiar contraseña',
+                                    ),
+                                  ),
+                                );
+                              }
+                            },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: widget.accentColor,
                         foregroundColor: Colors.white,
                         elevation: 0,
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14)),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
                       ),
                       child: auth.isLoading
                           ? const SizedBox(
-                              width: 24, height: 24,
+                              width: 24,
+                              height: 24,
                               child: CircularProgressIndicator(
-                                  color: Colors.white, strokeWidth: 2))
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
                           : Text(
                               'Actualizar contraseña',
                               style: GoogleFonts.poppins(
-                                  fontSize: 16, fontWeight: FontWeight.w600),
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                     ),
                   ),
@@ -181,33 +202,38 @@ Widget _passwordField({
     style: GoogleFonts.poppins(fontSize: 14, color: const Color(0xFF2D2D2D)),
     decoration: InputDecoration(
       labelText: label,
-      labelStyle:
-          GoogleFonts.poppins(color: Colors.grey.shade500, fontSize: 13),
-      prefixIcon:
-          Icon(Icons.lock_outline_rounded, color: accentColor, size: 20),
+      labelStyle: GoogleFonts.poppins(
+        color: Colors.grey.shade500,
+        fontSize: 13,
+      ),
+      prefixIcon: Icon(
+        Icons.lock_outline_rounded,
+        color: accentColor,
+        size: 20,
+      ),
       suffixIcon: IconButton(
         icon: Icon(
-            obscure
-                ? Icons.visibility_off_outlined
-                : Icons.visibility_outlined,
-            color: Colors.grey.shade400,
-            size: 20),
+          obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+          color: Colors.grey.shade400,
+          size: 20,
+        ),
         onPressed: onToggle,
       ),
       filled: true,
       fillColor: const Color(0xFFF3FAFD),
-      contentPadding:
-          const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide.none),
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide.none,
+      ),
       enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide:
-              const BorderSide(color: Color(0xFFDCEEF0), width: 1.2)),
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Color(0xFFDCEEF0), width: 1.2),
+      ),
       focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: accentColor, width: 2)),
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: accentColor, width: 2),
+      ),
     ),
   );
 }

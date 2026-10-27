@@ -35,14 +35,15 @@ class NotificacionLocalService {
 
   // ── Canales Android ────────────────────────────────────────────────────────
   // Canal de alta prioridad: alertas críticas
-  static const _channelUrgente    = 'huellitas_urgente';
+  static const _channelUrgente = 'huellitas_urgente';
   static const _channelUrgenteNom = 'Alertas Urgentes';
-  static const _channelUrgenteDesc= 'Recordatorios inmediatos y alertas críticas';
+  static const _channelUrgenteDesc =
+      'Recordatorios inmediatos y alertas críticas';
 
   // Canal normal: notificaciones generales
-  static const _channelNormal    = 'huellitas_normal';
+  static const _channelNormal = 'huellitas_normal';
   static const _channelNormalNom = 'Notificaciones';
-  static const _channelNormalDesc= 'Notificaciones generales de la app';
+  static const _channelNormalDesc = 'Notificaciones generales de la app';
 
   // ── Init ───────────────────────────────────────────────────────────────────
   Future<void> init() async {
@@ -52,8 +53,9 @@ class NotificacionLocalService {
     tz_data.initializeTimeZones();
     tz.setLocalLocation(tz.getLocation('America/Guayaquil'));
 
-    const androidSettings =
-        AndroidInitializationSettings('@mipmap/launcher_icon');
+    const androidSettings = AndroidInitializationSettings(
+      '@mipmap/launcher_icon',
+    );
     const iosSettings = DarwinInitializationSettings(
       requestAlertPermission: true,
       requestBadgePermission: true,
@@ -61,10 +63,7 @@ class NotificacionLocalService {
     );
 
     await _plugin.initialize(
-      const InitializationSettings(
-        android: androidSettings,
-        iOS: iosSettings,
-      ),
+      const InitializationSettings(android: androidSettings, iOS: iosSettings),
       // Al tocar la notificación push abre la app y navega al panel
       onDidReceiveNotificationResponse: (details) {
         debugPrint('Notificación tocada: ${details.payload}');
@@ -76,7 +75,8 @@ class NotificacionLocalService {
 
     final androidImpl = _plugin
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
+          AndroidFlutterLocalNotificationsPlugin
+        >();
 
     if (androidImpl != null) {
       // Canal urgente — MAX importance, vibración larga
@@ -120,7 +120,8 @@ class NotificacionLocalService {
   // ── Detalles por canal ─────────────────────────────────────────────────────
   static const _largeIcon = DrawableResourceAndroidBitmap('logohome');
 
-  NotificationDetails _detallesUrgente({String? subtext}) => NotificationDetails(
+  NotificationDetails _detallesUrgente({String? subtext}) =>
+      NotificationDetails(
         android: AndroidNotificationDetails(
           _channelUrgente,
           _channelUrgenteNom,
@@ -149,31 +150,31 @@ class NotificacionLocalService {
       );
 
   NotificationDetails _detallesNormal({String? subtext}) => NotificationDetails(
-        android: AndroidNotificationDetails(
-          _channelNormal,
-          _channelNormalNom,
-          channelDescription: _channelNormalDesc,
-          importance: Importance.high,
-          priority: Priority.high,
-          icon: '@mipmap/launcher_icon',
-          largeIcon: _largeIcon,
-          playSound: true,
-          enableVibration: true,
-          vibrationPattern: Int64List.fromList([0, 200, 100, 200]),
-          enableLights: true,
-          ledColor: const Color(0xFF1CB5C9),
-          ledOnMs: 500,
-          ledOffMs: 1000,
-          subText: subtext,
-          category: AndroidNotificationCategory.message,
-        ),
-        iOS: const DarwinNotificationDetails(
-          presentAlert: true,
-          presentBadge: true,
-          presentSound: true,
-          interruptionLevel: InterruptionLevel.active,
-        ),
-      );
+    android: AndroidNotificationDetails(
+      _channelNormal,
+      _channelNormalNom,
+      channelDescription: _channelNormalDesc,
+      importance: Importance.high,
+      priority: Priority.high,
+      icon: '@mipmap/launcher_icon',
+      largeIcon: _largeIcon,
+      playSound: true,
+      enableVibration: true,
+      vibrationPattern: Int64List.fromList([0, 200, 100, 200]),
+      enableLights: true,
+      ledColor: const Color(0xFF1CB5C9),
+      ledOnMs: 500,
+      ledOffMs: 1000,
+      subText: subtext,
+      category: AndroidNotificationCategory.message,
+    ),
+    iOS: const DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+      interruptionLevel: InterruptionLevel.active,
+    ),
+  );
 
   // ── API pública ────────────────────────────────────────────────────────────
 
@@ -227,7 +228,9 @@ class NotificacionLocalService {
             UILocalNotificationDateInterpretation.absoluteTime,
         matchDateTimeComponents: null,
       );
-      debugPrint('Notificación programada id=$id para $fechaHora (urgente=$urgente)');
+      debugPrint(
+        'Notificación programada id=$id para $fechaHora (urgente=$urgente)',
+      );
     } catch (e) {
       debugPrint('Error al programar notificación: $e');
     }

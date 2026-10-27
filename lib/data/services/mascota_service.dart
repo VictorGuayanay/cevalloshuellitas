@@ -16,8 +16,7 @@ class MascotaService {
 
   /// Obtiene todas las mascotas de un usuario específico.
   /// Incluye join con usuarios para mostrar datos del propietario.
-  Future<List<MascotaModel>> obtenerMascotasPorUsuario(
-      String usuarioId) async {
+  Future<List<MascotaModel>> obtenerMascotasPorUsuario(String usuarioId) async {
     final response = await _client
         .from('mascotas')
         .select('*, usuarios(usua_nombre, usua_telefono, usua_foto_url)')
@@ -104,11 +103,12 @@ class MascotaService {
     final ruta = 'mascotas/$fileName';
 
     try {
-      await _client.storage.from('mascotas_imagenes').upload(
+      await _client.storage
+          .from('mascotas_imagenes')
+          .upload(
             ruta,
             imagen,
-            fileOptions:
-                const FileOptions(cacheControl: '3600', upsert: false),
+            fileOptions: const FileOptions(cacheControl: '3600', upsert: false),
           );
     } catch (e) {
       debugPrint('Error al subir imagen a Supabase Storage: $e');

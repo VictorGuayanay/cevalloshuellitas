@@ -15,12 +15,12 @@ class NoticiaDetalleScreen extends StatelessWidget {
 
   // Mismo mapa de colores por categoría que en el home
   static const _coloresCat = {
-    'salud':       Color(0xFF4A9B7F),
-    'perdidos':    Color(0xFFE53935),
-    'adopcion':    Color(0xFFE58D57),
-    'nutricion':   Color(0xFFE58D57),
-    'bienestar':   Color(0xFF7C6FCD),
-    'prevencion':  Color(0xFF5BBFBF),
+    'salud': Color(0xFF4A9B7F),
+    'perdidos': Color(0xFFE53935),
+    'adopcion': Color(0xFFE58D57),
+    'nutricion': Color(0xFFE58D57),
+    'bienestar': Color(0xFF7C6FCD),
+    'prevencion': Color(0xFF5BBFBF),
     'emergencias': Color(0xFFE53935),
   };
 
@@ -47,8 +47,11 @@ class NoticiaDetalleScreen extends StatelessWidget {
               child: CircleAvatar(
                 backgroundColor: Colors.black26,
                 child: IconButton(
-                  icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                      color: Colors.white, size: 18),
+                  icon: const Icon(
+                    Icons.arrow_back_ios_new_rounded,
+                    color: Colors.white,
+                    size: 18,
+                  ),
                   onPressed: () => Navigator.pop(context),
                 ),
               ),
@@ -83,10 +86,7 @@ class NoticiaDetalleScreen extends StatelessWidget {
                   : Container(
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: [
-                            color,
-                            color.withValues(alpha: 0.75),
-                          ],
+                          colors: [color, color.withValues(alpha: 0.75)],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
@@ -114,9 +114,11 @@ class NoticiaDetalleScreen extends StatelessWidget {
                     children: [
                       _badgeCategoria(noticia.categoria, color),
                       const Spacer(),
-                      Icon(Icons.schedule_rounded,
-                          size: 14,
-                          color: AppColors.grey.withValues(alpha: 0.7)),
+                      Icon(
+                        Icons.schedule_rounded,
+                        size: 14,
+                        color: AppColors.grey.withValues(alpha: 0.7),
+                      ),
                       const SizedBox(width: 5),
                       Text(
                         noticia.tiempoRelativo,
@@ -167,9 +169,11 @@ class NoticiaDetalleScreen extends StatelessWidget {
                   // Fecha completa al pie
                   Row(
                     children: [
-                      Icon(Icons.calendar_today_outlined,
-                          size: 14,
-                          color: AppColors.grey.withValues(alpha: 0.6)),
+                      Icon(
+                        Icons.calendar_today_outlined,
+                        size: 14,
+                        color: AppColors.grey.withValues(alpha: 0.6),
+                      ),
                       const SizedBox(width: 6),
                       Text(
                         _formatFecha(noticia.fecha),
@@ -223,10 +227,12 @@ class NoticiaDetalleScreen extends StatelessWidget {
           ),
           child: ClipOval(
             child: (n.autorFotoUrl != null && n.autorFotoUrl!.isNotEmpty)
-                ? Image.network(n.autorFotoUrl!,
+                ? Image.network(
+                    n.autorFotoUrl!,
                     fit: BoxFit.cover,
                     errorBuilder: (_, __, ___) =>
-                        Icon(Icons.person_rounded, size: 20, color: color))
+                        Icon(Icons.person_rounded, size: 20, color: color),
+                  )
                 : Icon(Icons.person_rounded, size: 20, color: color),
           ),
         ),
@@ -244,8 +250,7 @@ class NoticiaDetalleScreen extends StatelessWidget {
             ),
             Text(
               'Autor',
-              style: GoogleFonts.poppins(
-                  fontSize: 11, color: AppColors.grey),
+              style: GoogleFonts.poppins(fontSize: 11, color: AppColors.grey),
             ),
           ],
         ),
@@ -255,8 +260,18 @@ class NoticiaDetalleScreen extends StatelessWidget {
 
   String _formatFecha(DateTime fecha) {
     const meses = [
-      'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-      'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
+      'enero',
+      'febrero',
+      'marzo',
+      'abril',
+      'mayo',
+      'junio',
+      'julio',
+      'agosto',
+      'septiembre',
+      'octubre',
+      'noviembre',
+      'diciembre',
     ];
     return '${fecha.day} de ${meses[fecha.month - 1]} de ${fecha.year}';
   }

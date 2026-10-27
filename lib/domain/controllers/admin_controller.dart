@@ -8,34 +8,35 @@ class AdminController extends ChangeNotifier {
   final AdminService _service = AdminService();
 
   // ── Estado ─────────────────────────────────────────────────────────────────
-  bool _cargandoStats       = false;
-  bool _cargandoUsuarios    = false;
+  bool _cargandoStats = false;
+  bool _cargandoUsuarios = false;
   bool _cargandoSolicitudes = false;
-  bool _cargandoNoticias    = false;
+  bool _cargandoNoticias = false;
   String? _error;
 
-  Map<String, int> _stats                          = {};
-  List<UsuarioModel> _usuarios                     = [];
+  Map<String, int> _stats = {};
+  List<UsuarioModel> _usuarios = [];
   List<Map<String, dynamic>> _solicitudesPendientes = [];
-  List<Map<String, dynamic>> _todasLasSolicitudes  = [];
-  List<NoticiaModel> _noticiasPendientes           = [];
-  List<NoticiaModel> _todasLasNoticias             = [];
-  List<MascotaModel> _ultimasMascotas              = [];
+  List<Map<String, dynamic>> _todasLasSolicitudes = [];
+  List<NoticiaModel> _noticiasPendientes = [];
+  List<NoticiaModel> _todasLasNoticias = [];
+  List<MascotaModel> _ultimasMascotas = [];
 
   // ── Getters ────────────────────────────────────────────────────────────────
-  bool get cargandoStats       => _cargandoStats;
-  bool get cargandoUsuarios    => _cargandoUsuarios;
+  bool get cargandoStats => _cargandoStats;
+  bool get cargandoUsuarios => _cargandoUsuarios;
   bool get cargandoSolicitudes => _cargandoSolicitudes;
-  bool get cargandoNoticias    => _cargandoNoticias;
-  String? get error            => _error;
+  bool get cargandoNoticias => _cargandoNoticias;
+  String? get error => _error;
 
-  Map<String, int> get stats                         => _stats;
-  List<UsuarioModel> get usuarios                    => _usuarios;
-  List<Map<String, dynamic>> get solicitudesPendientes => _solicitudesPendientes;
+  Map<String, int> get stats => _stats;
+  List<UsuarioModel> get usuarios => _usuarios;
+  List<Map<String, dynamic>> get solicitudesPendientes =>
+      _solicitudesPendientes;
   List<Map<String, dynamic>> get todasLasSolicitudes => _todasLasSolicitudes;
-  List<NoticiaModel> get noticiasPendientes          => _noticiasPendientes;
-  List<NoticiaModel> get todasLasNoticias            => _todasLasNoticias;
-  List<MascotaModel> get ultimasMascotas             => _ultimasMascotas;
+  List<NoticiaModel> get noticiasPendientes => _noticiasPendientes;
+  List<NoticiaModel> get todasLasNoticias => _todasLasNoticias;
+  List<MascotaModel> get ultimasMascotas => _ultimasMascotas;
 
   int get totalPendientes =>
       (_stats['noticiasPendientes'] ?? 0) +
@@ -52,7 +53,7 @@ class AdminController extends ChangeNotifier {
         _service.obtenerEstadisticas(),
         _service.obtenerUltimasMascotas(limit: 6),
       ]);
-      _stats          = results[0] as Map<String, int>;
+      _stats = results[0] as Map<String, int>;
       _ultimasMascotas = results[1] as List<MascotaModel>;
     } catch (e) {
       _error = 'Error al cargar el dashboard: $e';
@@ -122,8 +123,9 @@ class AdminController extends ChangeNotifier {
         solicitudId: solicitudId,
         usuarioId: usuarioId,
       );
-      final idx = _todasLasSolicitudes
-          .indexWhere((s) => s['srol_id'] == solicitudId);
+      final idx = _todasLasSolicitudes.indexWhere(
+        (s) => s['srol_id'] == solicitudId,
+      );
       if (idx != -1) {
         _todasLasSolicitudes[idx] = {
           ..._todasLasSolicitudes[idx],
@@ -145,8 +147,9 @@ class AdminController extends ChangeNotifier {
   Future<bool> rechazarSolicitud(String solicitudId) async {
     try {
       await _service.responderSolicitud(solicitudId, 'rechazada');
-      final idx = _todasLasSolicitudes
-          .indexWhere((s) => s['srol_id'] == solicitudId);
+      final idx = _todasLasSolicitudes.indexWhere(
+        (s) => s['srol_id'] == solicitudId,
+      );
       if (idx != -1) {
         _todasLasSolicitudes[idx] = {
           ..._todasLasSolicitudes[idx],
@@ -173,8 +176,9 @@ class AdminController extends ChangeNotifier {
     notifyListeners();
     try {
       _todasLasNoticias = await _service.obtenerTodasLasNoticias();
-      _noticiasPendientes =
-          _todasLasNoticias.where((n) => n.estado == 'pendiente').toList();
+      _noticiasPendientes = _todasLasNoticias
+          .where((n) => n.estado == 'pendiente')
+          .toList();
     } catch (e) {
       _error = 'Error al cargar noticias: $e';
     } finally {
@@ -274,8 +278,7 @@ class AdminController extends ChangeNotifier {
   void _actualizarEstadoNoticia(String noticiaId, String nuevoEstado) {
     _noticiasPendientes.removeWhere((n) => n.id == noticiaId);
     if (nuevoEstado == 'publicada') {
-      _stats['noticiasPendientes'] =
-          (_stats['noticiasPendientes'] ?? 1) - 1;
+      _stats['noticiasPendientes'] = (_stats['noticiasPendientes'] ?? 1) - 1;
     }
     final idx = _todasLasNoticias.indexWhere((n) => n.id == noticiaId);
     if (idx != -1) {

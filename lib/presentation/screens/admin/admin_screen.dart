@@ -89,17 +89,23 @@ class _AdminScreenState extends State<AdminScreen> {
                       context.read<AdminController>().cargarUsuarios();
                       break;
                     case 2:
-                      context.read<AdminController>().cargarSolicitudesPendientes();
+                      context
+                          .read<AdminController>()
+                          .cargarSolicitudesPendientes();
                       break;
                     case 3:
-                      context.read<AdminController>().cargarNoticiasPendientes();
+                      context
+                          .read<AdminController>()
+                          .cargarNoticiasPendientes();
                       break;
                   }
                 },
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 8),
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: selected
                         ? AppColors.tealLight.withValues(alpha: 0.12)
@@ -130,13 +136,16 @@ class _AdminScreenState extends State<AdminScreen> {
                                   shape: BoxShape.circle,
                                 ),
                                 constraints: const BoxConstraints(
-                                    minWidth: 16, minHeight: 16),
+                                  minWidth: 16,
+                                  minHeight: 16,
+                                ),
                                 child: Text(
                                   '${badges[i]}',
                                   style: GoogleFonts.poppins(
-                                      color: Colors.white,
-                                      fontSize: 9,
-                                      fontWeight: FontWeight.w800),
+                                    color: Colors.white,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w800,
+                                  ),
                                   textAlign: TextAlign.center,
                                 ),
                               ),

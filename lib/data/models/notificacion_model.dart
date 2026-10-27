@@ -17,13 +17,13 @@ enum PrioridadNotificacion { alta, media, baja }
 
 /// Representa una notificación in-app con toda la información visual.
 class NotificacionModel {
-  final String id;               // Identificador único (ej: 'perdida_abc123')
-  final TipoNotificacion tipo;   // Tipo para decidir ícono, color y prioridad
-  final String titulo;           // Texto principal de la notificación
-  final String cuerpo;           // Descripción detallada
-  final String? mascotaNombre;   // Nombre de la mascota (opcional, para el chip)
-  final DateTime creadaEn;       // Cuándo se creó (para mostrar tiempo relativo)
-  bool leida;                    // Si el usuario ya la vio (mutable a propósito)
+  final String id; // Identificador único (ej: 'perdida_abc123')
+  final TipoNotificacion tipo; // Tipo para decidir ícono, color y prioridad
+  final String titulo; // Texto principal de la notificación
+  final String cuerpo; // Descripción detallada
+  final String? mascotaNombre; // Nombre de la mascota (opcional, para el chip)
+  final DateTime creadaEn; // Cuándo se creó (para mostrar tiempo relativo)
+  bool leida; // Si el usuario ya la vio (mutable a propósito)
 
   NotificacionModel({
     required this.id,
@@ -63,16 +63,15 @@ class NotificacionModel {
     required String mascotaId,
     required String mascotaNombre,
     String? duenioNombre,
-  }) =>
-      NotificacionModel(
-        id: 'perdida_$mascotaId',
-        tipo: TipoNotificacion.mascotaPerdida,
-        titulo: '🚨 Mascota perdida reportada',
-        cuerpo: duenioNombre != null
-            ? '$duenioNombre reportó a $mascotaNombre como perdido/a. ¡Ayúdanos a encontrarla!'
-            : '$mascotaNombre fue reportado/a como perdido/a. ¡Ayúdanos a encontrarla!',
-        mascotaNombre: mascotaNombre,
-      );
+  }) => NotificacionModel(
+    id: 'perdida_$mascotaId',
+    tipo: TipoNotificacion.mascotaPerdida,
+    titulo: '🚨 Mascota perdida reportada',
+    cuerpo: duenioNombre != null
+        ? '$duenioNombre reportó a $mascotaNombre como perdido/a. ¡Ayúdanos a encontrarla!'
+        : '$mascotaNombre fue reportado/a como perdido/a. ¡Ayúdanos a encontrarla!',
+    mascotaNombre: mascotaNombre,
+  );
 
   // ── Serialización ─────────────────────────────────────────────────────────
 
@@ -96,14 +95,14 @@ class NotificacionModel {
 
   /// Convierte el modelo a un mapa JSON serializable.
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'tipo': tipo.name, // guardamos el nombre del enum como String
-        'titulo': titulo,
-        'cuerpo': cuerpo,
-        if (mascotaNombre != null) 'mascotaNombre': mascotaNombre,
-        'creadaEn': creadaEn.toIso8601String(),
-        'leida': leida,
-      };
+    'id': id,
+    'tipo': tipo.name, // guardamos el nombre del enum como String
+    'titulo': titulo,
+    'cuerpo': cuerpo,
+    if (mascotaNombre != null) 'mascotaNombre': mascotaNombre,
+    'creadaEn': creadaEn.toIso8601String(),
+    'leida': leida,
+  };
 
   // ── Utilidades ─────────────────────────────────────────────────────────────
 
@@ -111,10 +110,10 @@ class NotificacionModel {
   /// Ejemplo: "Hace 5 min", "Ayer", "3/6/2025".
   String get tiempoRelativo {
     final diff = DateTime.now().difference(creadaEn);
-    if (diff.inSeconds < 60)  return 'Ahora mismo';
-    if (diff.inMinutes < 60)  return 'Hace ${diff.inMinutes} min';
-    if (diff.inHours < 24)    return 'Hace ${diff.inHours} h';
-    if (diff.inDays == 1)     return 'Ayer';
+    if (diff.inSeconds < 60) return 'Ahora mismo';
+    if (diff.inMinutes < 60) return 'Hace ${diff.inMinutes} min';
+    if (diff.inHours < 24) return 'Hace ${diff.inHours} h';
+    if (diff.inDays == 1) return 'Ayer';
     return '${creadaEn.day}/${creadaEn.month}/${creadaEn.year}';
   }
 

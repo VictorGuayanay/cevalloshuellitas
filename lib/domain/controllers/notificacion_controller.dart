@@ -26,8 +26,7 @@ class NotificacionController extends ChangeNotifier {
       List.unmodifiable(_notificaciones);
 
   /// Cantidad de notificaciones que el usuario aún no ha leído.
-  int get totalNotificaciones =>
-      _notificaciones.where((n) => !n.leida).length;
+  int get totalNotificaciones => _notificaciones.where((n) => !n.leida).length;
 
   // ── Suscripción Realtime ──────────────────────────────────────────────────
 
@@ -50,13 +49,14 @@ class NotificacionController extends ChangeNotifier {
             if (estado.toLowerCase() != 'perdido') return;
 
             final mascotaId = record['masc_id']?.toString() ?? '';
-            final notifId   = 'perdida_$mascotaId';
+            final notifId = 'perdida_$mascotaId';
 
             // Si ya existe la notificación en la lista, no la duplicamos.
             if (_notificaciones.any((n) => n.id == notifId)) return;
 
-            final mascotaNombre = record['masc_nombre']?.toString() ?? 'Mascota';
-            final usuaId        = record['usua_id']?.toString() ?? '';
+            final mascotaNombre =
+                record['masc_nombre']?.toString() ?? 'Mascota';
+            final usuaId = record['usua_id']?.toString() ?? '';
 
             // Intentamos obtener el nombre del dueño para el mensaje.
             String? duenioNombre;
@@ -73,11 +73,13 @@ class NotificacionController extends ChangeNotifier {
               }
             }
 
-            _agregarNotificacion(NotificacionModel.mascotaPerdida(
-              mascotaId: mascotaId,
-              mascotaNombre: mascotaNombre,
-              duenioNombre: duenioNombre,
-            ));
+            _agregarNotificacion(
+              NotificacionModel.mascotaPerdida(
+                mascotaId: mascotaId,
+                mascotaNombre: mascotaNombre,
+                duenioNombre: duenioNombre,
+              ),
+            );
             notifyListeners();
           },
         )

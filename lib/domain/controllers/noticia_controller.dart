@@ -15,17 +15,17 @@ class NoticiaController extends ChangeNotifier {
 
   // ── Estado interno ─────────────────────────────────────────────────────────
   List<NoticiaModel> _noticias = [];
-  bool _isLoading    = false; // carga inicial de la lista
+  bool _isLoading = false; // carga inicial de la lista
   bool _isSubmitting = false; // envío de nueva noticia en curso
   String? _errorMessage;
 
   RealtimeChannel? _canal; // canal Realtime de Supabase
 
   // ── Getters ────────────────────────────────────────────────────────────────
-  List<NoticiaModel> get noticias     => _noticias;
-  bool get isLoading                  => _isLoading;
-  bool get isSubmitting               => _isSubmitting;
-  String? get errorMessage            => _errorMessage;
+  List<NoticiaModel> get noticias => _noticias;
+  bool get isLoading => _isLoading;
+  bool get isSubmitting => _isSubmitting;
+  String? get errorMessage => _errorMessage;
 
   // ── Cargar + Realtime ──────────────────────────────────────────────────────
 
@@ -108,7 +108,7 @@ class NoticiaController extends ChangeNotifier {
 
       // Construir el modelo y enviarlo a la BD.
       final noticia = NoticiaModel(
-        id: '',          // Supabase asigna el ID automáticamente
+        id: '', // Supabase asigna el ID automáticamente
         usuaId: usuaId,
         titulo: titulo,
         contenido: contenido,

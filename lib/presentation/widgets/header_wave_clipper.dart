@@ -18,10 +18,7 @@ class HeaderWaveClipper extends CustomClipper<Path> {
   final double curveDepth;
   final double sideOffset;
 
-  const HeaderWaveClipper({
-    this.curveDepth = 15,
-    this.sideOffset = 40,
-  });
+  const HeaderWaveClipper({this.curveDepth = 15, this.sideOffset = 40});
 
   @override
   Path getClip(Size size) {

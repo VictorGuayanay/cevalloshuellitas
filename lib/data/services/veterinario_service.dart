@@ -94,10 +94,13 @@ class VeterinarioService {
     required double longitud,
     String? direccion,
   }) async {
-    await _client.from('veterinarios').update({
-      'vete_latitud':   latitud,
-      'vete_longitud':  longitud,
-      'vete_direccion': direccion,
-    }).eq('vete_id', veteId);
+    await _client
+        .from('veterinarios')
+        .update({
+          'vete_latitud': latitud,
+          'vete_longitud': longitud,
+          'vete_direccion': direccion,
+        })
+        .eq('vete_id', veteId);
   }
 }

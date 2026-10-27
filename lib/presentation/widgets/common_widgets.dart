@@ -54,35 +54,32 @@ class SectionTitle extends StatelessWidget {
   final IconData icon;
   final Color? color;
 
-  const SectionTitle(
-    this.title,
-    this.icon, {
-    super.key,
-    this.color,
-  });
+  const SectionTitle(this.title, this.icon, {super.key, this.color});
 
   @override
   Widget build(BuildContext context) {
     final c = color ?? AppColors.tealLight;
-    return Row(children: [
-      Container(
-        padding: const EdgeInsets.all(7),
-        decoration: BoxDecoration(
-          color: c.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(10),
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(7),
+          decoration: BoxDecoration(
+            color: c.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, color: c, size: 18),
         ),
-        child: Icon(icon, color: c, size: 18),
-      ),
-      const SizedBox(width: 10),
-      Text(
-        title,
-        style: GoogleFonts.poppins(
-          fontSize: 15,
-          fontWeight: FontWeight.w700,
-          color: AppColors.darkAlt,
+        const SizedBox(width: 10),
+        Text(
+          title,
+          style: GoogleFonts.poppins(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            color: AppColors.darkAlt,
+          ),
         ),
-      ),
-    ]);
+      ],
+    );
   }
 }
 
@@ -120,17 +117,19 @@ class EmptyCard extends StatelessWidget {
           ),
         ],
       ),
-      child: Column(children: [
-        Icon(icon, size: 40, color: c),
-        const SizedBox(height: 8),
-        Text(
-          message,
-          style: GoogleFonts.poppins(
-            fontSize: 13,
-            color: Colors.grey.shade400,
+      child: Column(
+        children: [
+          Icon(icon, size: 40, color: c),
+          const SizedBox(height: 8),
+          Text(
+            message,
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              color: Colors.grey.shade400,
+            ),
           ),
-        ),
-      ]),
+        ],
+      ),
     );
   }
 }
@@ -145,39 +144,36 @@ class ResumenRow extends StatelessWidget {
   final String value;
   final double labelWidth;
 
-  const ResumenRow(
-    this.label,
-    this.value, {
-    super.key,
-    this.labelWidth = 100,
-  });
+  const ResumenRow(this.label, this.value, {super.key, this.labelWidth = 100});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
-      child: Row(children: [
-        SizedBox(
-          width: labelWidth,
-          child: Text(
-            label,
-            style: GoogleFonts.poppins(
-              fontSize: 12,
-              color: Colors.grey.shade500,
+      child: Row(
+        children: [
+          SizedBox(
+            width: labelWidth,
+            child: Text(
+              label,
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                color: Colors.grey.shade500,
+              ),
             ),
           ),
-        ),
-        Expanded(
-          child: Text(
-            value,
-            style: GoogleFonts.poppins(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: AppColors.darkAlt,
+          Expanded(
+            child: Text(
+              value,
+              style: GoogleFonts.poppins(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppColors.darkAlt,
+              ),
             ),
           ),
-        ),
-      ]),
+        ],
+      ),
     );
   }
 }
@@ -218,31 +214,36 @@ class ResumenCard extends StatelessWidget {
           ),
         ],
       ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Container(
-            padding: const EdgeInsets.all(7),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, color: color, size: 18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(7),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: color, size: 18),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                titulo,
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.darkAlt,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 10),
-          Text(
-            titulo,
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: AppColors.darkAlt,
-            ),
-          ),
-        ]),
-        const SizedBox(height: 10),
-        const Divider(height: 1, color: Color(0xFFF0F0F0)),
-        const SizedBox(height: 8),
-        ...items,
-      ]),
+          const SizedBox(height: 10),
+          const Divider(height: 1, color: Color(0xFFF0F0F0)),
+          const SizedBox(height: 8),
+          ...items,
+        ],
+      ),
     );
   }
 }
@@ -259,10 +260,7 @@ InputDecoration appInputDeco(
 }) {
   return InputDecoration(
     labelText: label,
-    labelStyle: GoogleFonts.poppins(
-      color: Colors.grey.shade500,
-      fontSize: 12,
-    ),
+    labelStyle: GoogleFonts.poppins(color: Colors.grey.shade500, fontSize: 12),
     prefixIcon: Icon(icon, color: accentColor, size: 18),
     filled: true,
     fillColor: Colors.white,

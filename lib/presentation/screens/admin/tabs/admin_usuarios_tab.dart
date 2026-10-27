@@ -24,7 +24,9 @@ class _AdminUsuariosTabState extends State<AdminUsuariosTab> {
   @override
   void initState() {
     super.initState();
-    _searchCtrl.addListener(() => setState(() => _query = _searchCtrl.text.toLowerCase()));
+    _searchCtrl.addListener(
+      () => setState(() => _query = _searchCtrl.text.toLowerCase()),
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<AdminController>().cargarUsuarios();
     });
@@ -39,7 +41,8 @@ class _AdminUsuariosTabState extends State<AdminUsuariosTab> {
   List<UsuarioModel> _filtrar(List<UsuarioModel> lista) {
     return lista.where((u) {
       final matchRol = _filtroRol == 'todos' || u.rol == _filtroRol;
-      final matchQuery = _query.isEmpty ||
+      final matchQuery =
+          _query.isEmpty ||
           u.nombre.toLowerCase().contains(_query) ||
           u.correo.toLowerCase().contains(_query);
       return matchRol && matchQuery;
@@ -102,7 +105,7 @@ class _AdminUsuariosTabState extends State<AdminUsuariosTab> {
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.06),
                     blurRadius: 10,
-                  )
+                  ),
                 ],
               ),
               child: TextField(
@@ -111,19 +114,26 @@ class _AdminUsuariosTabState extends State<AdminUsuariosTab> {
                 decoration: InputDecoration(
                   hintText: 'Buscar por nombre o correo...',
                   hintStyle: GoogleFonts.poppins(
-                      fontSize: 13, color: AppColors.grey),
-                  prefixIcon: const Icon(Icons.search_rounded,
-                      color: AppColors.tealLight, size: 20),
+                    fontSize: 13,
+                    color: AppColors.grey,
+                  ),
+                  prefixIcon: const Icon(
+                    Icons.search_rounded,
+                    color: AppColors.tealLight,
+                    size: 20,
+                  ),
                   suffixIcon: _query.isNotEmpty
                       ? IconButton(
-                          icon: const Icon(Icons.close_rounded,
-                              size: 18, color: AppColors.grey),
+                          icon: const Icon(
+                            Icons.close_rounded,
+                            size: 18,
+                            color: AppColors.grey,
+                          ),
                           onPressed: () => _searchCtrl.clear(),
                         )
                       : null,
                   border: InputBorder.none,
-                  contentPadding:
-                      const EdgeInsets.symmetric(vertical: 13),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 13),
                 ),
               ),
             ),
@@ -145,11 +155,11 @@ class _AdminUsuariosTabState extends State<AdminUsuariosTab> {
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 150),
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 4),
+                      horizontal: 14,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
-                      color: selected
-                          ? AppColors.tealLight
-                          : Colors.white,
+                      color: selected ? AppColors.tealLight : Colors.white,
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
                         color: selected
@@ -176,23 +186,26 @@ class _AdminUsuariosTabState extends State<AdminUsuariosTab> {
             child: ctrl.cargandoUsuarios
                 ? const Center(
                     child: CircularProgressIndicator(
-                        color: AppColors.tealLight),
+                      color: AppColors.tealLight,
+                    ),
                   )
                 : filtrados.isEmpty
-                    ? Center(
-                        child: Text(
-                          'Sin resultados',
-                          style: GoogleFonts.poppins(
-                              color: AppColors.grey, fontSize: 14),
-                        ),
-                      )
-                    : ListView.builder(
-                        physics: const BouncingScrollPhysics(),
-                        padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-                        itemCount: filtrados.length,
-                        itemBuilder: (context, i) =>
-                            _UsuarioTile(usuario: filtrados[i]),
+                ? Center(
+                    child: Text(
+                      'Sin resultados',
+                      style: GoogleFonts.poppins(
+                        color: AppColors.grey,
+                        fontSize: 14,
                       ),
+                    ),
+                  )
+                : ListView.builder(
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+                    itemCount: filtrados.length,
+                    itemBuilder: (context, i) =>
+                        _UsuarioTile(usuario: filtrados[i]),
+                  ),
           ),
         ],
       ),
@@ -207,17 +220,23 @@ class _UsuarioTile extends StatelessWidget {
 
   Color get _rolColor {
     switch (usuario.rol) {
-      case 'administrador': return AppColors.red;
-      case 'veterinario': return AppColors.vetGreen;
-      default: return AppColors.tealLight;
+      case 'administrador':
+        return AppColors.red;
+      case 'veterinario':
+        return AppColors.vetGreen;
+      default:
+        return AppColors.tealLight;
     }
   }
 
   IconData get _rolIcon {
     switch (usuario.rol) {
-      case 'administrador': return Icons.shield_rounded;
-      case 'veterinario': return Icons.medical_services_rounded;
-      default: return Icons.person_rounded;
+      case 'administrador':
+        return Icons.shield_rounded;
+      case 'veterinario':
+        return Icons.medical_services_rounded;
+      default:
+        return Icons.person_rounded;
     }
   }
 
@@ -237,8 +256,7 @@ class _UsuarioTile extends StatelessWidget {
         ],
       ),
       child: ListTile(
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         leading: Container(
           width: 46,
           height: 46,
@@ -248,16 +266,22 @@ class _UsuarioTile extends StatelessWidget {
           ),
           child: ClipOval(
             child: usuario.fotoUrl != null && usuario.fotoUrl!.isNotEmpty
-                ? Image.network(usuario.fotoUrl!, fit: BoxFit.cover,
+                ? Image.network(
+                    usuario.fotoUrl!,
+                    fit: BoxFit.cover,
                     errorBuilder: (_, __, ___) =>
-                        Icon(_rolIcon, color: _rolColor, size: 22))
+                        Icon(_rolIcon, color: _rolColor, size: 22),
+                  )
                 : Icon(_rolIcon, color: _rolColor, size: 22),
           ),
         ),
         title: Text(
           usuario.nombre,
           style: GoogleFonts.poppins(
-              fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.darkAlt),
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: AppColors.darkAlt,
+          ),
         ),
         subtitle: Text(
           usuario.correo,
@@ -295,9 +319,10 @@ class _RolBadge extends StatelessWidget {
       child: Text(
         rol,
         style: GoogleFonts.poppins(
-            fontSize: 10,
-            fontWeight: FontWeight.w700,
-            color: color),
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          color: color,
+        ),
       ),
     );
   }
@@ -324,7 +349,8 @@ class _CambiarRolSheet extends StatelessWidget {
         children: [
           Center(
             child: Container(
-              width: 40, height: 4,
+              width: 40,
+              height: 4,
               decoration: BoxDecoration(
                 color: Colors.grey.shade300,
                 borderRadius: BorderRadius.circular(2),
@@ -335,22 +361,23 @@ class _CambiarRolSheet extends StatelessWidget {
           Text(
             usuario.nombre,
             style: GoogleFonts.poppins(
-                fontSize: 17,
-                fontWeight: FontWeight.w700,
-                color: AppColors.darkAlt),
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
+              color: AppColors.darkAlt,
+            ),
           ),
           Text(
             usuario.correo,
-            style: GoogleFonts.poppins(
-                fontSize: 12, color: AppColors.grey),
+            style: GoogleFonts.poppins(fontSize: 12, color: AppColors.grey),
           ),
           const SizedBox(height: 16),
           Text(
             'Cambiar rol',
             style: GoogleFonts.poppins(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: AppColors.grey),
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: AppColors.grey,
+            ),
           ),
           const SizedBox(height: 10),
           ..._opcionesRol.map((rol) {
@@ -361,8 +388,8 @@ class _CambiarRolSheet extends StatelessWidget {
                 rol == 'administrador'
                     ? Icons.shield_rounded
                     : rol == 'veterinario'
-                        ? Icons.medical_services_rounded
-                        : Icons.person_rounded,
+                    ? Icons.medical_services_rounded
+                    : Icons.person_rounded,
                 color: current ? AppColors.tealLight : AppColors.grey,
                 size: 20,
               ),
@@ -370,16 +397,16 @@ class _CambiarRolSheet extends StatelessWidget {
                 rol[0].toUpperCase() + rol.substring(1),
                 style: GoogleFonts.poppins(
                   fontSize: 13,
-                  fontWeight:
-                      current ? FontWeight.w700 : FontWeight.w500,
-                  color: current
-                      ? AppColors.tealLight
-                      : AppColors.darkAlt,
+                  fontWeight: current ? FontWeight.w700 : FontWeight.w500,
+                  color: current ? AppColors.tealLight : AppColors.darkAlt,
                 ),
               ),
               trailing: current
-                  ? const Icon(Icons.check_circle_rounded,
-                      color: AppColors.tealLight, size: 20)
+                  ? const Icon(
+                      Icons.check_circle_rounded,
+                      color: AppColors.tealLight,
+                      size: 20,
+                    )
                   : null,
               onTap: current
                   ? null
@@ -389,19 +416,23 @@ class _CambiarRolSheet extends StatelessWidget {
                           .read<AdminController>()
                           .cambiarRolUsuario(usuario.id, rol);
                       if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text(
-                            ok
-                                ? 'Rol actualizado a $rol'
-                                : 'Error al cambiar rol',
-                            style: GoogleFonts.poppins(fontSize: 13),
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              ok
+                                  ? 'Rol actualizado a $rol'
+                                  : 'Error al cambiar rol',
+                              style: GoogleFonts.poppins(fontSize: 13),
+                            ),
+                            backgroundColor: ok
+                                ? AppColors.tealLight
+                                : AppColors.red,
+                            behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
-                          backgroundColor:
-                              ok ? AppColors.tealLight : AppColors.red,
-                          behavior: SnackBarBehavior.floating,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
-                        ));
+                        );
                       }
                     },
             );

@@ -70,98 +70,133 @@ class _PerfilScreenState extends State<PerfilScreen> {
               padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
               decoration: BoxDecoration(
                 color: AppColors.tealLight.withValues(alpha: 0.08),
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-              ),
-              child: Column(children: [
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: AppColors.tealLight.withValues(alpha: 0.15),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(Icons.support_agent_rounded,
-                      color: AppColors.tealLight, size: 32),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(24),
                 ),
-                const SizedBox(height: 12),
-                Text('Ayuda y Soporte',
+              ),
+              child: Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: AppColors.tealLight.withValues(alpha: 0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.support_agent_rounded,
+                      color: AppColors.tealLight,
+                      size: 32,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Ayuda y Soporte',
                     style: GoogleFonts.poppins(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.darkAlt)),
-              ]),
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.darkAlt,
+                    ),
+                  ),
+                ],
+              ),
             ),
             // Cuerpo
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-              child: Column(children: [
-                Text(
-                  'Para cualquier inquietud, sugerencia o problema, escríbenos al siguiente correo y te responderemos a la brevedad:',
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.poppins(
+              child: Column(
+                children: [
+                  Text(
+                    'Para cualquier inquietud, sugerencia o problema, escríbenos al siguiente correo y te responderemos a la brevedad:',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.poppins(
                       fontSize: 13,
                       color: AppColors.grey,
-                      height: 1.5),
-                ),
-                const SizedBox(height: 16),
-                // Caja del correo
-                GestureDetector(
-                  onTap: () async {
-                    final uri = Uri(scheme: 'mailto', path: correo);
-                    if (await canLaunchUrl(uri)) {
-                      await launchUrl(uri);
-                    }
-                  },
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 14),
-                    decoration: BoxDecoration(
-                      color: AppColors.tealLight.withValues(alpha: 0.07),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                          color: AppColors.tealLight.withValues(alpha: 0.3),
-                          width: 1.5),
+                      height: 1.5,
                     ),
-                    child: Row(children: [
-                      Icon(Icons.email_rounded,
-                          color: AppColors.tealLight, size: 20),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(correo,
-                            style: GoogleFonts.poppins(
+                  ),
+                  const SizedBox(height: 16),
+                  // Caja del correo
+                  GestureDetector(
+                    onTap: () async {
+                      final uri = Uri(scheme: 'mailto', path: correo);
+                      if (await canLaunchUrl(uri)) {
+                        await launchUrl(uri);
+                      }
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.tealLight.withValues(alpha: 0.07),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: AppColors.tealLight.withValues(alpha: 0.3),
+                          width: 1.5,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.email_rounded,
+                            color: AppColors.tealLight,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              correo,
+                              style: GoogleFonts.poppins(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
-                                color: AppColors.tealLight)),
-                      ),
-                      // Copiar al portapapeles
-                      GestureDetector(
-                        onTap: () {
-                          Clipboard.setData(
-                              const ClipboardData(text: correo));
-                          Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Correo copiado al portapapeles',
-                                  style: GoogleFonts.poppins(fontSize: 13)),
-                              backgroundColor: AppColors.tealLight,
-                              behavior: SnackBarBehavior.floating,
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12)),
-                              duration: const Duration(seconds: 2),
+                                color: AppColors.tealLight,
+                              ),
                             ),
-                          );
-                        },
-                        child: Icon(Icons.copy_rounded,
-                            color: AppColors.tealLight, size: 18),
+                          ),
+                          // Copiar al portapapeles
+                          GestureDetector(
+                            onTap: () {
+                              Clipboard.setData(
+                                const ClipboardData(text: correo),
+                              );
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    'Correo copiado al portapapeles',
+                                    style: GoogleFonts.poppins(fontSize: 13),
+                                  ),
+                                  backgroundColor: AppColors.tealLight,
+                                  behavior: SnackBarBehavior.floating,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  duration: const Duration(seconds: 2),
+                                ),
+                              );
+                            },
+                            child: Icon(
+                              Icons.copy_rounded,
+                              color: AppColors.tealLight,
+                              size: 18,
+                            ),
+                          ),
+                        ],
                       ),
-                    ]),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 6),
-                Text('Toca el correo para abrir tu cliente de email',
+                  const SizedBox(height: 6),
+                  Text(
+                    'Toca el correo para abrir tu cliente de email',
                     style: GoogleFonts.poppins(
-                        fontSize: 10, color: AppColors.grey)),
-              ]),
+                      fontSize: 10,
+                      color: AppColors.grey,
+                    ),
+                  ),
+                ],
+              ),
             ),
             // Botón cerrar
             Padding(
@@ -176,11 +211,16 @@ class _PerfilScreenState extends State<PerfilScreen> {
                     foregroundColor: Colors.white,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                   ),
-                  child: Text('Entendido',
-                      style: GoogleFonts.poppins(
-                          fontWeight: FontWeight.w600, fontSize: 14)),
+                  child: Text(
+                    'Entendido',
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -223,7 +263,9 @@ class _PerfilScreenState extends State<PerfilScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
         child: Container(
           decoration: const BoxDecoration(
             color: Colors.white,
@@ -239,17 +281,26 @@ class _PerfilScreenState extends State<PerfilScreen> {
                 children: [
                   _SheetHandle(),
                   const SizedBox(height: 20),
-                  Text('Cambiar Contraseña',
-                      style: GoogleFonts.poppins(
-                          fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.darkAlt)),
+                  Text(
+                    'Cambiar Contraseña',
+                    style: GoogleFonts.poppins(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.darkAlt,
+                    ),
+                  ),
                   const SizedBox(height: 20),
-                  _PasswordField(controller: contrasenaController, label: 'Nueva contraseña'),
+                  _PasswordField(
+                    controller: contrasenaController,
+                    label: 'Nueva contraseña',
+                  ),
                   const SizedBox(height: 14),
                   _PasswordField(
                     controller: confirmarController,
                     label: 'Confirmar contraseña',
-                    validator: (v) =>
-                        v != contrasenaController.text ? 'Las contraseñas no coinciden' : null,
+                    validator: (v) => v != contrasenaController.text
+                        ? 'Las contraseñas no coinciden'
+                        : null,
                   ),
                   const SizedBox(height: 24),
                   SizedBox(
@@ -261,19 +312,26 @@ class _PerfilScreenState extends State<PerfilScreen> {
                             ? null
                             : () async {
                                 if (!formKey.currentState!.validate()) return;
-                                final ok =
-                                    await auth.cambiarContrasena(contrasenaController.text);
+                                final ok = await auth.cambiarContrasena(
+                                  contrasenaController.text,
+                                );
                                 if (ok && context.mounted) {
                                   Navigator.pop(context);
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
-                                        content: Text('¡Contraseña actualizada correctamente!')),
+                                      content: Text(
+                                        '¡Contraseña actualizada correctamente!',
+                                      ),
+                                    ),
                                   );
                                 } else if (context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
-                                        content: Text(auth.errorMessage ??
-                                            'Error al cambiar contraseña')),
+                                      content: Text(
+                                        auth.errorMessage ??
+                                            'Error al cambiar contraseña',
+                                      ),
+                                    ),
                                   );
                                 }
                               },
@@ -281,17 +339,26 @@ class _PerfilScreenState extends State<PerfilScreen> {
                           backgroundColor: AppColors.tealLight,
                           foregroundColor: Colors.white,
                           elevation: 0,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
                         ),
                         child: auth.isLoading
                             ? const SizedBox(
                                 width: 24,
                                 height: 24,
                                 child: CircularProgressIndicator(
-                                    color: Colors.white, strokeWidth: 2))
-                            : Text('Actualizar Contraseña',
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : Text(
+                                'Actualizar Contraseña',
                                 style: GoogleFonts.poppins(
-                                    fontSize: 16, fontWeight: FontWeight.w600)),
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                       ),
                     ),
                   ),
@@ -337,9 +404,11 @@ class _PerfilScreenState extends State<PerfilScreen> {
                 ),
                 // Círculos decorativos
                 Positioned(
-                  top: -40, right: -30,
+                  top: -40,
+                  right: -30,
                   child: Container(
-                    width: 160, height: 160,
+                    width: 160,
+                    height: 160,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: Colors.white.withValues(alpha: 0.06),
@@ -347,9 +416,11 @@ class _PerfilScreenState extends State<PerfilScreen> {
                   ),
                 ),
                 Positioned(
-                  top: 40, right: 60,
+                  top: 40,
+                  right: 60,
                   child: Container(
-                    width: 80, height: 80,
+                    width: 80,
+                    height: 80,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: Colors.white.withValues(alpha: 0.04),
@@ -357,9 +428,11 @@ class _PerfilScreenState extends State<PerfilScreen> {
                   ),
                 ),
                 Positioned(
-                  bottom: 10, left: -20,
+                  bottom: 10,
+                  left: -20,
                   child: Container(
-                    width: 120, height: 120,
+                    width: 120,
+                    height: 120,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: Colors.white.withValues(alpha: 0.05),
@@ -373,24 +446,36 @@ class _PerfilScreenState extends State<PerfilScreen> {
                     children: [
                       // Barra superior
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         child: Row(
                           children: [
                             IconButton(
-                              icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                                  color: Colors.white, size: 20),
+                              icon: const Icon(
+                                Icons.arrow_back_ios_new_rounded,
+                                color: Colors.white,
+                                size: 20,
+                              ),
                               onPressed: () => Navigator.pop(context),
                             ),
                             const Spacer(),
-                            Text('Mi Perfil',
-                                style: GoogleFonts.poppins(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w700,
-                                    color: Colors.white)),
+                            Text(
+                              'Mi Perfil',
+                              style: GoogleFonts.poppins(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
+                            ),
                             const Spacer(),
                             IconButton(
-                              icon: const Icon(Icons.edit_outlined,
-                                  color: Colors.white, size: 20),
+                              icon: const Icon(
+                                Icons.edit_outlined,
+                                color: Colors.white,
+                                size: 20,
+                              ),
                               onPressed: () => _showEditProfileDialog(context),
                             ),
                           ],
@@ -422,38 +507,44 @@ class _PerfilScreenState extends State<PerfilScreen> {
                       Text(
                         user?.nombre ?? 'Usuario',
                         style: GoogleFonts.poppins(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
-                            letterSpacing: 0.2),
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                          letterSpacing: 0.2,
+                        ),
                       ),
                       const SizedBox(height: 6),
                       // Correo
                       Text(
                         user?.correo ?? '',
                         style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            color: Colors.white.withValues(alpha: 0.75),
-                            fontWeight: FontWeight.w400),
+                          fontSize: 12,
+                          color: Colors.white.withValues(alpha: 0.75),
+                          fontWeight: FontWeight.w400,
+                        ),
                       ),
                       const SizedBox(height: 12),
                       // Badge de rol
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 6),
+                          horizontal: 16,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.18),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.35),
-                              width: 1.2),
+                            color: Colors.white.withValues(alpha: 0.35),
+                            width: 1.2,
+                          ),
                         ),
                         child: Text(
                           isVet ? '🩺 Veterinario' : '🐾 Dueño de Mascotas',
                           style: GoogleFonts.poppins(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 20),
@@ -627,22 +718,28 @@ class _SectionLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(left: 2),
-      child: Row(children: [
-        Container(
-          width: 4, height: 18,
-          decoration: BoxDecoration(
-            color: AppColors.tealLight,
-            borderRadius: BorderRadius.circular(2),
+      child: Row(
+        children: [
+          Container(
+            width: 4,
+            height: 18,
+            decoration: BoxDecoration(
+              color: AppColors.tealLight,
+              borderRadius: BorderRadius.circular(2),
+            ),
           ),
-        ),
-        const SizedBox(width: 8),
-        Text(label,
+          const SizedBox(width: 8),
+          Text(
+            label,
             style: GoogleFonts.poppins(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: AppColors.darkAlt,
-                letterSpacing: 0.3)),
-      ]),
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: AppColors.darkAlt,
+              letterSpacing: 0.3,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -659,16 +756,20 @@ class _InfoCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-            color: AppColors.tealLight.withValues(alpha: 0.08), width: 1),
+          color: AppColors.tealLight.withValues(alpha: 0.08),
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 20,
-              offset: const Offset(0, 6)),
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 6),
+          ),
           BoxShadow(
-              color: AppColors.tealLight.withValues(alpha: 0.04),
-              blurRadius: 12,
-              offset: const Offset(0, 2)),
+            color: AppColors.tealLight.withValues(alpha: 0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 2),
+          ),
         ],
       ),
       child: Column(
@@ -716,7 +817,9 @@ class _InfoTile extends StatelessWidget {
               color: iconColor.withValues(alpha: 0.10),
               borderRadius: BorderRadius.circular(13),
               border: Border.all(
-                  color: iconColor.withValues(alpha: 0.18), width: 1),
+                color: iconColor.withValues(alpha: 0.18),
+                width: 1,
+              ),
             ),
             child: Icon(icon, size: 20, color: iconColor),
           ),
@@ -725,18 +828,24 @@ class _InfoTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label,
-                    style: GoogleFonts.poppins(
-                        fontSize: 11,
-                        color: AppColors.grey,
-                        fontWeight: FontWeight.w500,
-                        letterSpacing: 0.2)),
+                Text(
+                  label,
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    color: AppColors.grey,
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: 0.2,
+                  ),
+                ),
                 const SizedBox(height: 3),
-                Text(value,
-                    style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.darkAlt)),
+                Text(
+                  value,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.darkAlt,
+                  ),
+                ),
               ],
             ),
           ),
@@ -780,26 +889,35 @@ class _OptionTile extends StatelessWidget {
                   color: iconBg,
                   borderRadius: BorderRadius.circular(13),
                   border: Border.all(
-                      color: iconColor.withValues(alpha: 0.2), width: 1),
+                    color: iconColor.withValues(alpha: 0.2),
+                    width: 1,
+                  ),
                 ),
                 child: Icon(icon, size: 20, color: iconColor),
               ),
               const SizedBox(width: 14),
               Expanded(
-                child: Text(label,
-                    style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.darkAlt)),
+                child: Text(
+                  label,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.darkAlt,
+                  ),
+                ),
               ),
               Container(
-                width: 28, height: 28,
+                width: 28,
+                height: 28,
                 decoration: BoxDecoration(
                   color: const Color(0xFFF5F7FA),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(Icons.chevron_right_rounded,
-                    color: AppColors.grey.withValues(alpha: 0.6), size: 18),
+                child: Icon(
+                  Icons.chevron_right_rounded,
+                  color: AppColors.grey.withValues(alpha: 0.6),
+                  size: 18,
+                ),
               ),
             ],
           ),
@@ -847,9 +965,10 @@ class _LogoutButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-                color: const Color(0xFFE53935).withValues(alpha: 0.3),
-                blurRadius: 16,
-                offset: const Offset(0, 6)),
+              color: const Color(0xFFE53935).withValues(alpha: 0.3),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
           ],
         ),
         child: Row(
@@ -857,11 +976,14 @@ class _LogoutButton extends StatelessWidget {
           children: [
             const Icon(Icons.logout_rounded, size: 20, color: Colors.white),
             const SizedBox(width: 10),
-            Text('Cerrar Sesión',
-                style: GoogleFonts.poppins(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white)),
+            Text(
+              'Cerrar Sesión',
+              style: GoogleFonts.poppins(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+              ),
+            ),
           ],
         ),
       ),
@@ -906,14 +1028,19 @@ class _AvatarPickerState extends State<_AvatarPicker> {
     }
 
     final authController = context.read<AuthController>();
-    final ok = await authController.subirFotoUsuario(File(picked.path), extension);
+    final ok = await authController.subirFotoUsuario(
+      File(picked.path),
+      extension,
+    );
 
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(ok
-            ? 'Foto actualizada correctamente'
-            : (authController.errorMessage ?? 'Error al subir foto')),
+        content: Text(
+          ok
+              ? 'Foto actualizada correctamente'
+              : (authController.errorMessage ?? 'Error al subir foto'),
+        ),
         backgroundColor: ok ? AppColors.tealLight : Colors.redAccent,
       ),
     );
@@ -940,9 +1067,10 @@ class _AvatarPickerState extends State<_AvatarPicker> {
               border: Border.all(color: Colors.white, width: 4),
               boxShadow: [
                 BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.18),
-                    blurRadius: 16,
-                    offset: const Offset(0, 4)),
+                  color: Colors.black.withValues(alpha: 0.18),
+                  blurRadius: 16,
+                  offset: const Offset(0, 4),
+                ),
               ],
             ),
             child: ClipOval(
@@ -952,24 +1080,26 @@ class _AvatarPickerState extends State<_AvatarPicker> {
                         width: 28,
                         height: 28,
                         child: CircularProgressIndicator(
-                            color: AppColors.tealLight, strokeWidth: 2.5),
+                          color: AppColors.tealLight,
+                          strokeWidth: 2.5,
+                        ),
                       ),
                     )
                   : (fotoUrl != null && fotoUrl.isNotEmpty)
-                      ? Image.network(
-                          fotoUrl,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => const Icon(
-                            Icons.person_rounded,
-                            size: 58,
-                            color: AppColors.tealLight,
-                          ),
-                        )
-                      : const Icon(
-                          Icons.person_rounded,
-                          size: 58,
-                          color: AppColors.tealLight,
-                        ),
+                  ? Image.network(
+                      fotoUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => const Icon(
+                        Icons.person_rounded,
+                        size: 58,
+                        color: AppColors.tealLight,
+                      ),
+                    )
+                  : const Icon(
+                      Icons.person_rounded,
+                      size: 58,
+                      color: AppColors.tealLight,
+                    ),
             ),
           ),
           Container(
@@ -980,10 +1110,17 @@ class _AvatarPickerState extends State<_AvatarPicker> {
               border: Border.all(color: Colors.white, width: 2),
               boxShadow: [
                 BoxShadow(
-                    color: AppColors.orange.withValues(alpha: 0.4), blurRadius: 8, offset: const Offset(0, 2))
+                  color: AppColors.orange.withValues(alpha: 0.4),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
               ],
             ),
-            child: const Icon(Icons.camera_alt_rounded, size: 14, color: Colors.white),
+            child: const Icon(
+              Icons.camera_alt_rounded,
+              size: 14,
+              color: Colors.white,
+            ),
           ),
         ],
       ),
@@ -1006,7 +1143,7 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
   late TextEditingController _telefonoController;
   late TextEditingController _cedulaController;
   // GPS se muestra como texto pero se edita desde el mapa
-  String? _latLng;          // "lat,lng" guardado en BD
+  String? _latLng; // "lat,lng" guardado en BD
   bool _esProductor = false;
   String _tipoAnimales = 'ambos'; // "mayores" | "menores" | "ambos"
   final _formKey = GlobalKey<FormState>();
@@ -1077,28 +1214,46 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
     if (!mounted) return;
 
     if (!okPerfil) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(authController.errorMessage ?? 'Error al actualizar perfil'),
-        backgroundColor: const Color(0xFFE53935),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            authController.errorMessage ?? 'Error al actualizar perfil',
+          ),
+          backgroundColor: const Color(0xFFE53935),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
       return;
     }
 
     if (mounted) {
       Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Row(children: [
-          const Icon(Icons.check_circle_outline_rounded, color: Colors.white, size: 20),
-          const SizedBox(width: 10),
-          Text('¡Perfil actualizado correctamente!',
-              style: GoogleFonts.poppins(fontSize: 13)),
-        ]),
-        backgroundColor: AppColors.tealLight,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(
+                Icons.check_circle_outline_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
+              const SizedBox(width: 10),
+              Text(
+                '¡Perfil actualizado correctamente!',
+                style: GoogleFonts.poppins(fontSize: 13),
+              ),
+            ],
+          ),
+          backgroundColor: AppColors.tealLight,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
     }
   }
 
@@ -1112,33 +1267,43 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
       await SolicitudRolService().enviarSolicitud(uid);
       if (!mounted) return;
       Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Row(children: [
-          const Icon(Icons.schedule_rounded, color: Colors.white, size: 20),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              'Solicitud enviada. El administrador la revisará pronto.',
-              style: GoogleFonts.poppins(fontSize: 13),
-            ),
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.schedule_rounded, color: Colors.white, size: 20),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Solicitud enviada. El administrador la revisará pronto.',
+                  style: GoogleFonts.poppins(fontSize: 13),
+                ),
+              ),
+            ],
           ),
-        ]),
-        backgroundColor: const Color(0xFF7C6FCD),
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 4),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ));
+          backgroundColor: const Color(0xFF7C6FCD),
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 4),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(
-          e.toString().replaceAll('Exception: ', ''),
-          style: GoogleFonts.poppins(fontSize: 13),
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            e.toString().replaceAll('Exception: ', ''),
+            style: GoogleFonts.poppins(fontSize: 13),
+          ),
+          backgroundColor: const Color(0xFFE53935),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
-        backgroundColor: const Color(0xFFE53935),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ));
+      );
     }
   }
 
@@ -1148,7 +1313,9 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
     final user = authController.currentUser;
 
     return Container(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
@@ -1165,7 +1332,8 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
                 // Handle
                 Center(
                   child: Container(
-                    width: 40, height: 4,
+                    width: 40,
+                    height: 4,
                     decoration: BoxDecoration(
                       color: Colors.grey.shade300,
                       borderRadius: BorderRadius.circular(2),
@@ -1175,33 +1343,64 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
                 const SizedBox(height: 20),
 
                 // Encabezado con avatar
-                Row(children: [
-                  Container(
-                    width: 52, height: 52,
-                    decoration: BoxDecoration(
-                      color: AppColors.tealLight.withValues(alpha: 0.12),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.tealLight.withValues(alpha: 0.3), width: 2),
-                    ),
-                    child: (user?.fotoUrl != null && user!.fotoUrl!.isNotEmpty)
-                        ? ClipOval(
-                            child: Image.network(user.fotoUrl!, fit: BoxFit.cover,
+                Row(
+                  children: [
+                    Container(
+                      width: 52,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        color: AppColors.tealLight.withValues(alpha: 0.12),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: AppColors.tealLight.withValues(alpha: 0.3),
+                          width: 2,
+                        ),
+                      ),
+                      child:
+                          (user?.fotoUrl != null && user!.fotoUrl!.isNotEmpty)
+                          ? ClipOval(
+                              child: Image.network(
+                                user.fotoUrl!,
+                                fit: BoxFit.cover,
                                 errorBuilder: (c, e, s) => const Icon(
-                                    Icons.person_rounded, color: AppColors.tealLight, size: 28)))
-                        : const Icon(Icons.person_rounded, color: AppColors.tealLight, size: 28),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text('Editar Perfil',
-                          style: GoogleFonts.poppins(
-                              fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.darkAlt)),
-                      Text(user?.correo ?? '',
-                          style: GoogleFonts.poppins(fontSize: 12, color: AppColors.grey),
-                          overflow: TextOverflow.ellipsis),
-                    ]),
-                  ),
-                ]),
+                                  Icons.person_rounded,
+                                  color: AppColors.tealLight,
+                                  size: 28,
+                                ),
+                              ),
+                            )
+                          : const Icon(
+                              Icons.person_rounded,
+                              color: AppColors.tealLight,
+                              size: 28,
+                            ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Editar Perfil',
+                            style: GoogleFonts.poppins(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.darkAlt,
+                            ),
+                          ),
+                          Text(
+                            user?.correo ?? '',
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              color: AppColors.grey,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 24),
 
                 // Nombre
@@ -1209,7 +1408,10 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
                 const SizedBox(height: 6),
                 TextFormField(
                   controller: _nombreController,
-                  style: GoogleFonts.poppins(fontSize: 14, color: AppColors.darkAlt),
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    color: AppColors.darkAlt,
+                  ),
                   validator: (v) {
                     if (v == null || v.trim().isEmpty) {
                       return 'El nombre no puede estar vacío';
@@ -1217,7 +1419,10 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
                     if (v.trim().length < 3) return 'Mínimo 3 caracteres';
                     return null;
                   },
-                  decoration: _fieldDeco('Tu nombre completo', Icons.person_outline_rounded),
+                  decoration: _fieldDeco(
+                    'Tu nombre completo',
+                    Icons.person_outline_rounded,
+                  ),
                 ),
                 const SizedBox(height: 16),
 
@@ -1227,7 +1432,10 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
                 TextFormField(
                   controller: _telefonoController,
                   keyboardType: TextInputType.phone,
-                  style: GoogleFonts.poppins(fontSize: 14, color: AppColors.darkAlt),
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    color: AppColors.darkAlt,
+                  ),
                   validator: (v) {
                     if (v != null && v.trim().isNotEmpty) {
                       if (!RegExp(r'^\+?[0-9]{7,15}$').hasMatch(v.trim())) {
@@ -1236,7 +1444,10 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
                     }
                     return null;
                   },
-                  decoration: _fieldDeco('Ej. 0999999999', Icons.phone_outlined),
+                  decoration: _fieldDeco(
+                    'Ej. 0999999999',
+                    Icons.phone_outlined,
+                  ),
                 ),
                 const SizedBox(height: 16),
 
@@ -1246,7 +1457,10 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
                 TextFormField(
                   controller: _cedulaController,
                   keyboardType: TextInputType.number,
-                  style: GoogleFonts.poppins(fontSize: 14, color: AppColors.darkAlt),
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    color: AppColors.darkAlt,
+                  ),
                   validator: (v) {
                     if (v != null && v.trim().isNotEmpty) {
                       if (!RegExp(r'^[0-9]{8,13}$').hasMatch(v.trim())) {
@@ -1255,7 +1469,10 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
                     }
                     return null;
                   },
-                  decoration: _fieldDeco('Ej. 1234567890', Icons.badge_outlined),
+                  decoration: _fieldDeco(
+                    'Ej. 1234567890',
+                    Icons.badge_outlined,
+                  ),
                 ),
                 const SizedBox(height: 16),
 
@@ -1266,62 +1483,77 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
                   onTap: _abrirMapaGps,
                   child: Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFFF0FAFB),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                          color: (_latLng?.isNotEmpty ?? false)
-                              ? AppColors.tealLight
-                              : const Color(0xFFBBEBF0),
-                          width: 1.4),
+                        color: (_latLng?.isNotEmpty ?? false)
+                            ? AppColors.tealLight
+                            : const Color(0xFFBBEBF0),
+                        width: 1.4,
+                      ),
                     ),
-                    child: Row(children: [
-                      Icon(Icons.map_outlined,
-                          color: AppColors.tealLight, size: 20),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.map_outlined,
+                          color: AppColors.tealLight,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                          Text(
-                            (_latLng?.isNotEmpty ?? false)
-                                ? 'Coordenadas seleccionadas'
-                                : 'Toca para elegir en el mapa',
-                            style: GoogleFonts.poppins(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: (_latLng?.isNotEmpty ?? false)
-                                    ? AppColors.darkAlt
-                                    : AppColors.grey),
+                              Text(
+                                (_latLng?.isNotEmpty ?? false)
+                                    ? 'Coordenadas seleccionadas'
+                                    : 'Toca para elegir en el mapa',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: (_latLng?.isNotEmpty ?? false)
+                                      ? AppColors.darkAlt
+                                      : AppColors.grey,
+                                ),
+                              ),
+                              if (_latLng?.isNotEmpty ?? false)
+                                Text(
+                                  _latLng!,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 10,
+                                    color: AppColors.grey,
+                                  ),
+                                ),
+                            ],
                           ),
-                          if (_latLng?.isNotEmpty ?? false)
-                            Text(
-                              _latLng!,
-                              style: GoogleFonts.poppins(
-                                  fontSize: 10,
-                                  color: AppColors.grey),
-                            ),
-                        ]),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: AppColors.tealLight,
-                          borderRadius: BorderRadius.circular(10),
                         ),
-                        child: Text(
-                          (_latLng?.isNotEmpty ?? false)
-                              ? 'Cambiar'
-                              : 'Elegir',
-                          style: GoogleFonts.poppins(
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.tealLight,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            (_latLng?.isNotEmpty ?? false)
+                                ? 'Cambiar'
+                                : 'Elegir',
+                            style: GoogleFonts.poppins(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
-                              color: Colors.white),
+                              color: Colors.white,
+                            ),
+                          ),
                         ),
-                      ),
-                    ]),
+                      ],
+                    ),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -1333,7 +1565,10 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
                   decoration: BoxDecoration(
                     color: const Color(0xFFF0FAFB),
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: const Color(0xFFBBEBF0), width: 1.2),
+                    border: Border.all(
+                      color: const Color(0xFFBBEBF0),
+                      width: 1.2,
+                    ),
                   ),
                   child: Row(
                     children: [
@@ -1419,32 +1654,50 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
                       backgroundColor: AppColors.tealLight,
                       foregroundColor: Colors.white,
                       elevation: 0,
-                      disabledBackgroundColor: AppColors.tealLight.withValues(alpha: 0.5),
+                      disabledBackgroundColor: AppColors.tealLight.withValues(
+                        alpha: 0.5,
+                      ),
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14)),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                     ),
                     child: authController.isLoading
                         ? const SizedBox(
-                            width: 24, height: 24,
+                            width: 24,
+                            height: 24,
                             child: CircularProgressIndicator(
-                                color: Colors.white, strokeWidth: 2))
-                        : Text('Guardar Cambios',
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : Text(
+                            'Guardar Cambios',
                             style: GoogleFonts.poppins(
-                                fontSize: 16, fontWeight: FontWeight.w600)),
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                   ),
                 ),
 
                 // Separador
                 const SizedBox(height: 20),
-                Row(children: [
-                  Expanded(child: Divider(color: Colors.grey.shade200)),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: Text('¿Eres veterinario?',
-                        style: GoogleFonts.poppins(fontSize: 11, color: AppColors.grey)),
-                  ),
-                  Expanded(child: Divider(color: Colors.grey.shade200)),
-                ]),
+                Row(
+                  children: [
+                    Expanded(child: Divider(color: Colors.grey.shade200)),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: Text(
+                        '¿Eres veterinario?',
+                        style: GoogleFonts.poppins(
+                          fontSize: 11,
+                          color: AppColors.grey,
+                        ),
+                      ),
+                    ),
+                    Expanded(child: Divider(color: Colors.grey.shade200)),
+                  ],
+                ),
                 const SizedBox(height: 12),
 
                 // Botón solicitar ser veterinario
@@ -1454,7 +1707,8 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
                     color: const Color(0xFF7C6FCD).withValues(alpha: 0.06),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
-                        color: const Color(0xFF7C6FCD).withValues(alpha: 0.3)),
+                      color: const Color(0xFF7C6FCD).withValues(alpha: 0.3),
+                    ),
                   ),
                   child: Material(
                     color: Colors.transparent,
@@ -1462,33 +1716,56 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
                       borderRadius: BorderRadius.circular(14),
                       onTap: _solicitarRolVeterinario,
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                        child: Row(children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF7C6FCD).withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(10),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: const Color(
+                                  0xFF7C6FCD,
+                                ).withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(
+                                Icons.medical_services_outlined,
+                                color: Color(0xFF7C6FCD),
+                                size: 20,
+                              ),
                             ),
-                            child: const Icon(Icons.medical_services_outlined,
-                                color: Color(0xFF7C6FCD), size: 20),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                              Text('Solicitar rol de Veterinario',
-                                  style: GoogleFonts.poppins(
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Solicitar rol de Veterinario',
+                                    style: GoogleFonts.poppins(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
-                                      color: const Color(0xFF7C6FCD))),
-                              Text('El administrador revisará tu solicitud',
-                                  style: GoogleFonts.poppins(
-                                      fontSize: 11, color: AppColors.grey)),
-                            ]),
-                          ),
-                          const Icon(Icons.chevron_right_rounded,
-                              color: Color(0xFF7C6FCD), size: 20),
-                        ]),
+                                      color: const Color(0xFF7C6FCD),
+                                    ),
+                                  ),
+                                  Text(
+                                    'El administrador revisará tu solicitud',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 11,
+                                      color: AppColors.grey,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Icon(
+                              Icons.chevron_right_rounded,
+                              color: Color(0xFF7C6FCD),
+                              size: 20,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -1502,37 +1779,46 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
   }
 
   Widget _fieldLabel(String text) => Padding(
-        padding: const EdgeInsets.only(left: 2),
-        child: Text(text,
-            style: GoogleFonts.poppins(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: AppColors.grey,
-                letterSpacing: 0.3)),
-      );
+    padding: const EdgeInsets.only(left: 2),
+    child: Text(
+      text,
+      style: GoogleFonts.poppins(
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+        color: AppColors.grey,
+        letterSpacing: 0.3,
+      ),
+    ),
+  );
 
   InputDecoration _fieldDeco(String hint, IconData icon) => InputDecoration(
-        hintText: hint,
-        hintStyle: GoogleFonts.poppins(color: Colors.grey.shade400, fontSize: 13),
-        prefixIcon: Icon(icon, color: AppColors.tealLight, size: 20),
-        filled: true,
-        fillColor: const Color(0xFFF0FAFB),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
-        enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: Color(0xFFBBEBF0), width: 1.2)),
-        focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: AppColors.tealLight, width: 2)),
-        errorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: Color(0xFFE53935), width: 1.2)),
-        focusedErrorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: Color(0xFFE53935), width: 2)),
-      );
+    hintText: hint,
+    hintStyle: GoogleFonts.poppins(color: Colors.grey.shade400, fontSize: 13),
+    prefixIcon: Icon(icon, color: AppColors.tealLight, size: 20),
+    filled: true,
+    fillColor: const Color(0xFFF0FAFB),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(14),
+      borderSide: BorderSide.none,
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(14),
+      borderSide: const BorderSide(color: Color(0xFFBBEBF0), width: 1.2),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(14),
+      borderSide: const BorderSide(color: AppColors.tealLight, width: 2),
+    ),
+    errorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(14),
+      borderSide: const BorderSide(color: Color(0xFFE53935), width: 1.2),
+    ),
+    focusedErrorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(14),
+      borderSide: const BorderSide(color: Color(0xFFE53935), width: 2),
+    ),
+  );
 }
 
 // ═══════════════════════════════════════════════════
@@ -1564,25 +1850,42 @@ class _PasswordFieldState extends State<_PasswordField> {
       style: GoogleFonts.poppins(fontSize: 14),
       decoration: InputDecoration(
         labelText: widget.label,
-        labelStyle: GoogleFonts.poppins(color: Colors.grey.shade500, fontSize: 13),
-        prefixIcon: const Icon(Icons.lock_outline_rounded, color: AppColors.tealLight, size: 20),
+        labelStyle: GoogleFonts.poppins(
+          color: Colors.grey.shade500,
+          fontSize: 13,
+        ),
+        prefixIcon: const Icon(
+          Icons.lock_outline_rounded,
+          color: AppColors.tealLight,
+          size: 20,
+        ),
         suffixIcon: IconButton(
-          icon: Icon(_obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-              color: AppColors.grey, size: 20),
+          icon: Icon(
+            _obscure
+                ? Icons.visibility_off_outlined
+                : Icons.visibility_outlined,
+            color: AppColors.grey,
+            size: 20,
+          ),
           onPressed: () => setState(() => _obscure = !_obscure),
         ),
         filled: true,
         fillColor: const Color(0xFFF3FAFD),
         border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide.none,
+        ),
         enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: Color(0xFFDCEEF0), width: 1.2)),
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: Color(0xFFDCEEF0), width: 1.2),
+        ),
         focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: AppColors.tealLight, width: 2)),
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: AppColors.tealLight, width: 2),
+        ),
       ),
-      validator: widget.validator ??
+      validator:
+          widget.validator ??
           (v) {
             if (v == null || v.length < 6) return 'Mínimo 6 caracteres';
             return null;
@@ -1590,9 +1893,6 @@ class _PasswordFieldState extends State<_PasswordField> {
     );
   }
 }
-
-
-
 
 // ═══════════════════════════════════════════════════
 // Sheet: Enviar Noticia
@@ -1606,16 +1906,22 @@ class _EnviarNoticiaSheet extends StatefulWidget {
 }
 
 class _EnviarNoticiaSheetState extends State<_EnviarNoticiaSheet> {
-  final _tituloCtrl   = TextEditingController();
+  final _tituloCtrl = TextEditingController();
   final _contenidoCtrl = TextEditingController();
-  final _formKey      = GlobalKey<FormState>();
-  String _categoria   = 'general';
+  final _formKey = GlobalKey<FormState>();
+  String _categoria = 'general';
   File? _imagen;
   String? _extension;
 
   static const _categorias = [
-    'general', 'salud', 'nutricion', 'bienestar',
-    'prevencion', 'adopcion', 'perdidos', 'emergencias',
+    'general',
+    'salud',
+    'nutricion',
+    'bienestar',
+    'prevencion',
+    'adopcion',
+    'perdidos',
+    'emergencias',
   ];
 
   @override
@@ -1627,7 +1933,9 @@ class _EnviarNoticiaSheetState extends State<_EnviarNoticiaSheet> {
 
   Future<void> _pickImagen() async {
     final picked = await ImagePicker().pickImage(
-        source: ImageSource.gallery, imageQuality: 80);
+      source: ImageSource.gallery,
+      imageQuality: 80,
+    );
     if (picked == null) return;
     setState(() {
       _imagen = File(picked.path);
@@ -1649,25 +1957,36 @@ class _EnviarNoticiaSheetState extends State<_EnviarNoticiaSheet> {
     if (!mounted) return;
     if (ok) {
       Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Row(children: [
-          const Icon(Icons.check_circle_outline_rounded,
-              color: Colors.white, size: 18),
-          const SizedBox(width: 8),
-          const Expanded(
-            child: Text('Noticia enviada. El admin la revisará pronto.'),
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(
+                Icons.check_circle_outline_rounded,
+                color: Colors.white,
+                size: 18,
+              ),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text('Noticia enviada. El admin la revisará pronto.'),
+              ),
+            ],
           ),
-        ]),
-        backgroundColor: const Color(0xFF7C6FCD),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        duration: const Duration(seconds: 4),
-      ));
+          backgroundColor: const Color(0xFF7C6FCD),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          duration: const Duration(seconds: 4),
+        ),
+      );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(ctrl.errorMessage ?? 'Error al enviar la noticia'),
-        backgroundColor: Colors.redAccent,
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(ctrl.errorMessage ?? 'Error al enviar la noticia'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
     }
   }
 
@@ -1675,7 +1994,8 @@ class _EnviarNoticiaSheetState extends State<_EnviarNoticiaSheet> {
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom),
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
@@ -1690,48 +2010,72 @@ class _EnviarNoticiaSheetState extends State<_EnviarNoticiaSheet> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Handle
-                Center(child: Container(
-                  width: 40, height: 4,
-                  decoration: BoxDecoration(
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
                       color: Colors.grey.shade300,
-                      borderRadius: BorderRadius.circular(2)),
-                )),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 20),
 
                 // Título del sheet
-                Row(children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF7C6FCD).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(10),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF7C6FCD).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(
+                        Icons.newspaper_rounded,
+                        color: Color(0xFF7C6FCD),
+                        size: 20,
+                      ),
                     ),
-                    child: const Icon(Icons.newspaper_rounded,
-                        color: Color(0xFF7C6FCD), size: 20),
-                  ),
-                  const SizedBox(width: 10),
-                  Column(crossAxisAlignment: CrossAxisAlignment.start,
+                    const SizedBox(width: 10),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                    Text('Enviar Noticia',
-                        style: GoogleFonts.poppins(
+                        Text(
+                          'Enviar Noticia',
+                          style: GoogleFonts.poppins(
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.darkAlt)),
-                    Text('El administrador la revisará antes de publicar',
-                        style: GoogleFonts.poppins(
-                            fontSize: 11, color: AppColors.grey)),
-                  ]),
-                ]),
+                            color: AppColors.darkAlt,
+                          ),
+                        ),
+                        Text(
+                          'El administrador la revisará antes de publicar',
+                          style: GoogleFonts.poppins(
+                            fontSize: 11,
+                            color: AppColors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 20),
 
                 // Título
                 TextFormField(
                   controller: _tituloCtrl,
-                  style: GoogleFonts.poppins(fontSize: 14, color: AppColors.darkAlt),
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    color: AppColors.darkAlt,
+                  ),
                   validator: (v) => (v == null || v.trim().isEmpty)
-                      ? 'El título es requerido' : null,
-                  decoration: _inputDeco('Título de la noticia',
-                      Icons.title_rounded),
+                      ? 'El título es requerido'
+                      : null,
+                  decoration: _inputDeco(
+                    'Título de la noticia',
+                    Icons.title_rounded,
+                  ),
                 ),
                 const SizedBox(height: 12),
 
@@ -1739,23 +2083,33 @@ class _EnviarNoticiaSheetState extends State<_EnviarNoticiaSheet> {
                 TextFormField(
                   controller: _contenidoCtrl,
                   maxLines: 4,
-                  style: GoogleFonts.poppins(fontSize: 13, color: AppColors.darkAlt),
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    color: AppColors.darkAlt,
+                  ),
                   validator: (v) => (v == null || v.trim().isEmpty)
-                      ? 'El contenido es requerido' : null,
-                  decoration: _inputDeco('Descripción o contenido',
-                      Icons.article_outlined),
+                      ? 'El contenido es requerido'
+                      : null,
+                  decoration: _inputDeco(
+                    'Descripción o contenido',
+                    Icons.article_outlined,
+                  ),
                 ),
                 const SizedBox(height: 12),
 
                 // Categoría
-                Text('Categoría',
-                    style: GoogleFonts.poppins(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.darkAlt)),
+                Text(
+                  'Categoría',
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.darkAlt,
+                  ),
+                ),
                 const SizedBox(height: 8),
                 Wrap(
-                  spacing: 8, runSpacing: 8,
+                  spacing: 8,
+                  runSpacing: 8,
                   children: _categorias.map((cat) {
                     final sel = _categoria == cat;
                     return GestureDetector(
@@ -1763,20 +2117,23 @@ class _EnviarNoticiaSheetState extends State<_EnviarNoticiaSheet> {
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 150),
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 7),
+                          horizontal: 12,
+                          vertical: 7,
+                        ),
                         decoration: BoxDecoration(
                           color: sel
                               ? const Color(0xFF7C6FCD)
                               : Colors.grey.shade100,
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: Text(cat,
-                            style: GoogleFonts.poppins(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: sel
-                                    ? Colors.white
-                                    : Colors.grey.shade600)),
+                        child: Text(
+                          cat,
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: sel ? Colors.white : Colors.grey.shade600,
+                          ),
+                        ),
                       ),
                     );
                   }).toList(),
@@ -1793,7 +2150,9 @@ class _EnviarNoticiaSheetState extends State<_EnviarNoticiaSheet> {
                       color: const Color(0xFFF0F9FF),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                          color: AppColors.tealLight.withValues(alpha: 0.3), width: 1.2),
+                        color: AppColors.tealLight.withValues(alpha: 0.3),
+                        width: 1.2,
+                      ),
                     ),
                     child: _imagen != null
                         ? ClipRRect(
@@ -1803,12 +2162,19 @@ class _EnviarNoticiaSheetState extends State<_EnviarNoticiaSheet> {
                         : Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(Icons.add_photo_alternate_outlined,
-                                  color: AppColors.tealLight, size: 20),
+                              const Icon(
+                                Icons.add_photo_alternate_outlined,
+                                color: AppColors.tealLight,
+                                size: 20,
+                              ),
                               const SizedBox(width: 8),
-                              Text('Agregar imagen (opcional)',
-                                  style: GoogleFonts.poppins(
-                                      fontSize: 13, color: AppColors.tealLight)),
+                              Text(
+                                'Agregar imagen (opcional)',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 13,
+                                  color: AppColors.tealLight,
+                                ),
+                              ),
                             ],
                           ),
                   ),
@@ -1824,21 +2190,30 @@ class _EnviarNoticiaSheetState extends State<_EnviarNoticiaSheet> {
                       onPressed: ctrl.isSubmitting ? null : _enviar,
                       icon: ctrl.isSubmitting
                           ? const SizedBox(
-                              width: 18, height: 18,
+                              width: 18,
+                              height: 18,
                               child: CircularProgressIndicator(
-                                  color: Colors.white, strokeWidth: 2))
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
                           : const Icon(Icons.send_rounded, size: 18),
                       label: Text(
-                        ctrl.isSubmitting ? 'Enviando...' : 'Enviar para revisión',
+                        ctrl.isSubmitting
+                            ? 'Enviando...'
+                            : 'Enviar para revisión',
                         style: GoogleFonts.poppins(
-                            fontSize: 15, fontWeight: FontWeight.w600),
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF7C6FCD),
                         foregroundColor: Colors.white,
                         elevation: 0,
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14)),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
                       ),
                     ),
                   ),
@@ -1859,19 +2234,24 @@ class _EnviarNoticiaSheetState extends State<_EnviarNoticiaSheet> {
       filled: true,
       fillColor: const Color(0xFFF0F9FF),
       border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide.none),
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide.none,
+      ),
       enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(
-              color: AppColors.tealLight.withValues(alpha: 0.25), width: 1.2)),
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(
+          color: AppColors.tealLight.withValues(alpha: 0.25),
+          width: 1.2,
+        ),
+      ),
       focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.tealLight, width: 2)),
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: AppColors.tealLight, width: 2),
+      ),
       errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(
-              color: Color(0xFFE53935), width: 1.2)),
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Color(0xFFE53935), width: 1.2),
+      ),
     );
   }
 }
@@ -1896,7 +2276,11 @@ class _MisMascotasPerfilSection extends StatelessWidget {
             const _SectionLabel(label: 'Mis Mascotas y Carnets'),
             TextButton.icon(
               onPressed: () => Navigator.pushNamed(context, '/mis_mascotas'),
-              icon: const Icon(Icons.pets_rounded, size: 16, color: AppColors.tealLight),
+              icon: const Icon(
+                Icons.pets_rounded,
+                size: 16,
+                color: AppColors.tealLight,
+              ),
               label: Text(
                 'Gestionar (${mascotas.length})',
                 style: GoogleFonts.poppins(
@@ -1937,7 +2321,11 @@ class _MisMascotasPerfilSection extends StatelessWidget {
             ),
             child: Column(
               children: [
-                Icon(Icons.badge_outlined, size: 36, color: AppColors.grey.withValues(alpha: 0.4)),
+                Icon(
+                  Icons.badge_outlined,
+                  size: 36,
+                  color: AppColors.grey.withValues(alpha: 0.4),
+                ),
                 const SizedBox(height: 8),
                 Text(
                   'Aún no tienes mascotas registradas',
@@ -1951,11 +2339,15 @@ class _MisMascotasPerfilSection extends StatelessWidget {
                 Text(
                   'Registra a tu mascota para obtener su cédula digital con QR',
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.poppins(fontSize: 11, color: AppColors.grey),
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    color: AppColors.grey,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 ElevatedButton.icon(
-                  onPressed: () => Navigator.pushNamed(context, '/mis_mascotas'),
+                  onPressed: () =>
+                      Navigator.pushNamed(context, '/mis_mascotas'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.tealLight,
                     foregroundColor: Colors.white,
@@ -1963,11 +2355,19 @@ class _MisMascotasPerfilSection extends StatelessWidget {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                   ),
                   icon: const Icon(Icons.add_rounded, size: 18),
-                  label: Text('Agregar Mascota',
-                      style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600)),
+                  label: Text(
+                    'Agregar Mascota',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -2085,7 +2485,11 @@ class _MascotaPerfilCard extends StatelessWidget {
                       ),
                       padding: const EdgeInsets.symmetric(horizontal: 10),
                     ),
-                    icon: Icon(Icons.badge_rounded, size: 16, color: mascota.color),
+                    icon: Icon(
+                      Icons.badge_rounded,
+                      size: 16,
+                      color: mascota.color,
+                    ),
                     label: Text(
                       'Ver Cédula',
                       style: GoogleFonts.poppins(
@@ -2105,7 +2509,6 @@ class _MascotaPerfilCard extends StatelessWidget {
   }
 }
 
-
 // ═══════════════════════════════════════════════════
 // Widget: Selector de tipo de animales (mayores/menores/ambos)
 // Solo se muestra cuando _esProductor = true
@@ -2114,15 +2517,27 @@ class _TipoAnimalesSelector extends StatelessWidget {
   final String valor;
   final ValueChanged<String> onChanged;
 
-  const _TipoAnimalesSelector({
-    required this.valor,
-    required this.onChanged,
-  });
+  const _TipoAnimalesSelector({required this.valor, required this.onChanged});
 
   static const _opciones = [
-    (value: 'mayores', label: 'Mayores', icon: Icons.set_meal_rounded, desc: 'Bovinos, équidos, etc.'),
-    (value: 'menores', label: 'Menores', icon: Icons.cruelty_free_rounded, desc: 'Cerdos, aves, cuyes, etc.'),
-    (value: 'ambos',   label: 'Ambos',   icon: Icons.diversity_3_rounded, desc: 'Mayores y menores'),
+    (
+      value: 'mayores',
+      label: 'Mayores',
+      icon: Icons.set_meal_rounded,
+      desc: 'Bovinos, équidos, etc.',
+    ),
+    (
+      value: 'menores',
+      label: 'Menores',
+      icon: Icons.cruelty_free_rounded,
+      desc: 'Cerdos, aves, cuyes, etc.',
+    ),
+    (
+      value: 'ambos',
+      label: 'Ambos',
+      icon: Icons.diversity_3_rounded,
+      desc: 'Mayores y menores',
+    ),
   ];
 
   @override
@@ -2173,7 +2588,9 @@ class _TipoAnimalesSelector extends StatelessWidget {
                         style: GoogleFonts.poppins(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          color: selected ? AppColors.tealDark : AppColors.darkAlt,
+                          color: selected
+                              ? AppColors.tealDark
+                              : AppColors.darkAlt,
                         ),
                       ),
                       Text(
@@ -2187,8 +2604,11 @@ class _TipoAnimalesSelector extends StatelessWidget {
                   ),
                 ),
                 if (selected)
-                  const Icon(Icons.check_circle_rounded,
-                      color: AppColors.tealLight, size: 20),
+                  const Icon(
+                    Icons.check_circle_rounded,
+                    color: AppColors.tealLight,
+                    size: 20,
+                  ),
               ],
             ),
           ),
@@ -2247,7 +2667,8 @@ class _MapPickerSheetState extends State<_MapPickerSheet> {
       }
       if (permiso == LocationPermission.deniedForever) {
         _mostrarSnack(
-            'Permiso denegado permanentemente. Habilítalo en ajustes.');
+          'Permiso denegado permanentemente. Habilítalo en ajustes.',
+        );
         return;
       }
 
@@ -2271,12 +2692,14 @@ class _MapPickerSheetState extends State<_MapPickerSheet> {
 
   void _mostrarSnack(String msg) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg, style: GoogleFonts.poppins(fontSize: 13)),
-      backgroundColor: AppColors.grey,
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-    ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg, style: GoogleFonts.poppins(fontSize: 13)),
+        backgroundColor: AppColors.grey,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
   }
 
   @override
@@ -2298,7 +2721,8 @@ class _MapPickerSheetState extends State<_MapPickerSheet> {
               children: [
                 Center(
                   child: Container(
-                    width: 40, height: 4,
+                    width: 40,
+                    height: 4,
                     decoration: BoxDecoration(
                       color: Colors.grey.shade300,
                       borderRadius: BorderRadius.circular(2),
@@ -2314,22 +2738,32 @@ class _MapPickerSheetState extends State<_MapPickerSheet> {
                         color: AppColors.tealLight.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Icon(Icons.map_rounded,
-                          color: AppColors.tealLight, size: 20),
+                      child: const Icon(
+                        Icons.map_rounded,
+                        color: AppColors.tealLight,
+                        size: 20,
+                      ),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Selecciona tu ubicación',
-                              style: GoogleFonts.poppins(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.darkAlt)),
-                          Text('Toca el mapa para marcar el punto',
-                              style: GoogleFonts.poppins(
-                                  fontSize: 11, color: AppColors.grey)),
+                          Text(
+                            'Selecciona tu ubicación',
+                            style: GoogleFonts.poppins(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.darkAlt,
+                            ),
+                          ),
+                          Text(
+                            'Toca el mapa para marcar el punto',
+                            style: GoogleFonts.poppins(
+                              fontSize: 11,
+                              color: AppColors.grey,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -2342,17 +2776,23 @@ class _MapPickerSheetState extends State<_MapPickerSheet> {
                           color: AppColors.tealLight.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                              color: AppColors.tealLight.withValues(alpha: 0.3)),
+                            color: AppColors.tealLight.withValues(alpha: 0.3),
+                          ),
                         ),
                         child: _cargandoGps
                             ? const SizedBox(
                                 width: 18,
                                 height: 18,
                                 child: CircularProgressIndicator(
-                                    strokeWidth: 2, color: AppColors.tealLight),
+                                  strokeWidth: 2,
+                                  color: AppColors.tealLight,
+                                ),
                               )
-                            : const Icon(Icons.my_location_rounded,
-                                color: AppColors.tealLight, size: 20),
+                            : const Icon(
+                                Icons.my_location_rounded,
+                                color: AppColors.tealLight,
+                                size: 20,
+                              ),
                       ),
                     ),
                   ],
@@ -2413,26 +2853,33 @@ class _MapPickerSheetState extends State<_MapPickerSheet> {
                     width: double.infinity,
                     margin: const EdgeInsets.only(bottom: 12),
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 10),
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.tealLight.withValues(alpha: 0.07),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                          color: AppColors.tealLight.withValues(alpha: 0.3)),
+                        color: AppColors.tealLight.withValues(alpha: 0.3),
+                      ),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.location_on_rounded,
-                            color: AppColors.tealLight, size: 18),
+                        const Icon(
+                          Icons.location_on_rounded,
+                          color: AppColors.tealLight,
+                          size: 18,
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             '${_marcador!.latitude.toStringAsFixed(6)}, '
                             '${_marcador!.longitude.toStringAsFixed(6)}',
                             style: GoogleFonts.poppins(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.darkAlt),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.darkAlt,
+                            ),
                           ),
                         ),
                       ],
@@ -2447,14 +2894,21 @@ class _MapPickerSheetState extends State<_MapPickerSheet> {
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppColors.grey,
                           side: const BorderSide(
-                              color: Color(0xFFDCEEF0), width: 1.4),
+                            color: Color(0xFFDCEEF0),
+                            width: 1.4,
+                          ),
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14)),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
                           padding: const EdgeInsets.symmetric(vertical: 14),
                         ),
-                        child: Text('Cancelar',
-                            style: GoogleFonts.poppins(
-                                fontSize: 14, fontWeight: FontWeight.w600)),
+                        child: Text(
+                          'Cancelar',
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -2469,15 +2923,20 @@ class _MapPickerSheetState extends State<_MapPickerSheet> {
                           backgroundColor: AppColors.tealLight,
                           foregroundColor: Colors.white,
                           elevation: 0,
-                          disabledBackgroundColor:
-                              AppColors.tealLight.withValues(alpha: 0.4),
+                          disabledBackgroundColor: AppColors.tealLight
+                              .withValues(alpha: 0.4),
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14)),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
                           padding: const EdgeInsets.symmetric(vertical: 14),
                         ),
-                        child: Text('Confirmar ubicación',
-                            style: GoogleFonts.poppins(
-                                fontSize: 14, fontWeight: FontWeight.w600)),
+                        child: Text(
+                          'Confirmar ubicación',
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -2507,10 +2966,10 @@ class _SensoCensoSection extends StatefulWidget {
 
 class _SensoCensoSectionState extends State<_SensoCensoSection> {
   static const _accentColor = Color(0xFF4A9B7F);
-  static const _accentBg    = Color(0xFFF0FAF6);
+  static const _accentBg = Color(0xFFF0FAF6);
 
   List<SensoModel> _registros = [];
-  bool _cargando              = true;
+  bool _cargando = true;
 
   @override
   void initState() {
@@ -2529,8 +2988,10 @@ class _SensoCensoSectionState extends State<_SensoCensoSection> {
       context: context,
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        title: Text('¿Eliminar registro?',
-            style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+        title: Text(
+          '¿Eliminar registro?',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w700),
+        ),
         content: Text(
           'Se eliminará el registro de ${senso.especie} (${senso.numeroAnimales} animales).',
           style: GoogleFonts.poppins(fontSize: 13),
@@ -2538,16 +2999,24 @@ class _SensoCensoSectionState extends State<_SensoCensoSection> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text('Cancelar',
-                style: GoogleFonts.poppins(color: AppColors.grey)),
+            child: Text(
+              'Cancelar',
+              style: GoogleFonts.poppins(color: AppColors.grey),
+            ),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.red, elevation: 0),
-            child: Text('Eliminar',
-                style: GoogleFonts.poppins(
-                    color: Colors.white, fontWeight: FontWeight.w600)),
+              backgroundColor: AppColors.red,
+              elevation: 0,
+            ),
+            child: Text(
+              'Eliminar',
+              style: GoogleFonts.poppins(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ],
       ),
@@ -2566,36 +3035,44 @@ class _SensoCensoSectionState extends State<_SensoCensoSection> {
         // ── Encabezado de la sección ───────────────────────────────
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Row(children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: _accentBg,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                    color: _accentColor.withValues(alpha: 0.3)),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: _accentBg,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: _accentColor.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: const Icon(
+                  Icons.agriculture_rounded,
+                  color: _accentColor,
+                  size: 20,
+                ),
               ),
-              child: const Icon(Icons.agriculture_rounded,
-                  color: _accentColor, size: 20),
-            ),
-            const SizedBox(width: 10),
-            Text(
-              'Censo Pecuario',
-              style: GoogleFonts.poppins(
+              const SizedBox(width: 10),
+              Text(
+                'Censo Pecuario',
+                style: GoogleFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.w800,
-                  color: AppColors.darkAlt),
-            ),
-            const Spacer(),
-            if (!_cargando)
-              Text(
-                '${_registros.length} registro${_registros.length != 1 ? "s" : ""}',
-                style: GoogleFonts.poppins(
+                  color: AppColors.darkAlt,
+                ),
+              ),
+              const Spacer(),
+              if (!_cargando)
+                Text(
+                  '${_registros.length} registro${_registros.length != 1 ? "s" : ""}',
+                  style: GoogleFonts.poppins(
                     fontSize: 12,
                     color: _accentColor,
-                    fontWeight: FontWeight.w600),
-              ),
-          ]),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+            ],
+          ),
         ),
         const SizedBox(height: 12),
 
@@ -2609,60 +3086,72 @@ class _SensoCensoSectionState extends State<_SensoCensoSection> {
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                        color: _accentColor.withValues(alpha: 0.2)),
+                      color: _accentColor.withValues(alpha: 0.2),
+                    ),
                   ),
                   child: const Center(
                     child: CircularProgressIndicator(
-                        color: _accentColor, strokeWidth: 2),
+                      color: _accentColor,
+                      strokeWidth: 2,
+                    ),
                   ),
                 )
               : _registros.isEmpty
-                  ? Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: _accentBg,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                            color: _accentColor.withValues(alpha: 0.2)),
-                      ),
-                      child: Row(children: [
-                        const Icon(Icons.info_outline_rounded,
-                            color: _accentColor, size: 20),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            'Aún no tienes registros de censo. '
-                            'Usa el botón Censo en el inicio para agregar.',
-                            style: GoogleFonts.poppins(
-                                fontSize: 12, color: _accentColor),
-                          ),
-                        ),
-                      ]),
-                    )
-                  : Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                            color: _accentColor.withValues(alpha: 0.25),
-                            width: 1.2),
-                        boxShadow: [
-                          BoxShadow(
-                            color: _accentColor.withValues(alpha: 0.06),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
-                        child: SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          physics: const BouncingScrollPhysics(),
-                          child: _buildTabla(),
-                        ),
-                      ),
+              ? Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: _accentBg,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: _accentColor.withValues(alpha: 0.2),
                     ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.info_outline_rounded,
+                        color: _accentColor,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'Aún no tienes registros de censo. '
+                          'Usa el botón Censo en el inicio para agregar.',
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            color: _accentColor,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              : Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: _accentColor.withValues(alpha: 0.25),
+                      width: 1.2,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: _accentColor.withValues(alpha: 0.06),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      physics: const BouncingScrollPhysics(),
+                      child: _buildTabla(),
+                    ),
+                  ),
+                ),
         ),
       ],
     );
@@ -2677,8 +3166,13 @@ class _SensoCensoSectionState extends State<_SensoCensoSection> {
 
     const colWidths = [130.0, 90.0, 100.0, 110.0, 120.0, 90.0, 36.0];
     const headers = [
-      'Especie', 'Tipo', 'N° Animales',
-      'Alimentación', 'Destino', 'Fecha', '',
+      'Especie',
+      'Tipo',
+      'N° Animales',
+      'Alimentación',
+      'Destino',
+      'Fecha',
+      '',
     ];
 
     return Table(
@@ -2689,9 +3183,13 @@ class _SensoCensoSectionState extends State<_SensoCensoSection> {
       },
       border: TableBorder(
         horizontalInside: BorderSide(
-            color: _accentColor.withValues(alpha: 0.12), width: 1),
+          color: _accentColor.withValues(alpha: 0.12),
+          width: 1,
+        ),
         verticalInside: BorderSide(
-            color: _accentColor.withValues(alpha: 0.12), width: 1),
+          color: _accentColor.withValues(alpha: 0.12),
+          width: 1,
+        ),
       ),
       children: [
         // ── Fila de encabezados ───────────────────────────────────
@@ -2700,8 +3198,7 @@ class _SensoCensoSectionState extends State<_SensoCensoSection> {
           children: headers.map((h) {
             if (h.isEmpty) return const SizedBox.shrink();
             return Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
               child: Text(h, style: headerStyle),
             );
           }).toList(),
@@ -2712,8 +3209,7 @@ class _SensoCensoSectionState extends State<_SensoCensoSection> {
           final i = entry.key;
           final s = entry.value;
           final isEven = i % 2 == 0;
-          final rowColor =
-              isEven ? Colors.white : _accentBg;
+          final rowColor = isEven ? Colors.white : _accentBg;
 
           final fecha = s.creadoEn != null
               ? '${s.creadoEn!.day}/${s.creadoEn!.month}/${s.creadoEn!.year}'
@@ -2726,9 +3222,7 @@ class _SensoCensoSectionState extends State<_SensoCensoSection> {
               _tableCell(s.especie, bold: true),
               // Tipo
               _tableCellBadge(
-                s.produccionLabel == 'Animales Menores'
-                    ? 'Menores'
-                    : 'Mayores',
+                s.produccionLabel == 'Animales Menores' ? 'Menores' : 'Mayores',
                 s.produccionLabel == 'Animales Menores'
                     ? const Color(0xFF43B89C)
                     : const Color(0xFF5BBFBF),
@@ -2743,8 +3237,8 @@ class _SensoCensoSectionState extends State<_SensoCensoSection> {
                 s.destinacion == 'venta'
                     ? AppColors.orange
                     : s.destinacion == 'ambos'
-                        ? AppColors.purple
-                        : _accentColor,
+                    ? AppColors.purple
+                    : _accentColor,
               ),
               // Fecha
               _tableCell(fecha, small: true),
@@ -2753,12 +3247,17 @@ class _SensoCensoSectionState extends State<_SensoCensoSection> {
                 child: Center(
                   child: IconButton(
                     onPressed: () => _confirmarEliminar(s),
-                    icon: const Icon(Icons.delete_outline_rounded,
-                        size: 16, color: AppColors.red),
+                    icon: const Icon(
+                      Icons.delete_outline_rounded,
+                      size: 16,
+                      color: AppColors.red,
+                    ),
                     tooltip: 'Eliminar',
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(
-                        minWidth: 36, minHeight: 36),
+                      minWidth: 36,
+                      minHeight: 36,
+                    ),
                   ),
                 ),
               ),
@@ -2769,10 +3268,12 @@ class _SensoCensoSectionState extends State<_SensoCensoSection> {
     );
   }
 
-  TableCell _tableCell(String text,
-      {bool bold = false,
-      bool centered = false,
-      bool small = false}) {
+  TableCell _tableCell(
+    String text, {
+    bool bold = false,
+    bool centered = false,
+    bool small = false,
+  }) {
     return TableCell(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
@@ -2794,8 +3295,7 @@ class _SensoCensoSectionState extends State<_SensoCensoSection> {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
         child: Container(
-          padding:
-              const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
           decoration: BoxDecoration(
             color: color.withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(20),

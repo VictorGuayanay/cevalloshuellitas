@@ -17,21 +17,25 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   // Firebase puede no estar inicializado en el isolate de background
   await Firebase.initializeApp();
 
-  debugPrint('FCM background: ${message.notification?.title ?? message.data['titulo']}');
+  debugPrint(
+    'FCM background: ${message.notification?.title ?? message.data['titulo']}',
+  );
 
   // Si el mensaje ya trae objeto notification, el sistema Android lo muestra
   // automáticamente: no hacemos nada más para evitar duplicados.
   if (message.notification != null) return;
 
   // Mensaje data-only: mostramos la notificación manualmente.
-  final titulo = message.data['titulo'] ?? message.data['title'] ?? '🐾 Huellitas';
+  final titulo =
+      message.data['titulo'] ?? message.data['title'] ?? '🐾 Huellitas';
   final cuerpo = message.data['cuerpo'] ?? message.data['body'] ?? '';
   if (cuerpo.isEmpty) return;
 
   await NotificacionLocalService.instance.init();
   await NotificacionLocalService.instance.mostrarInmediata(
     id: NotificacionLocalService.idDesde(
-        message.messageId ?? message.data['id'] ?? titulo),
+      message.messageId ?? message.data['id'] ?? titulo,
+    ),
     titulo: titulo,
     cuerpo: cuerpo,
     urgente: message.data['urgente'] == 'true',
@@ -115,7 +119,9 @@ class FcmService {
 
       // Escuchar renovación de token y actualizarlo en Supabase
       await _tokenRefreshSubscription?.cancel();
-      _tokenRefreshSubscription = _fcm.onTokenRefresh.listen((nuevoToken) async {
+      _tokenRefreshSubscription = _fcm.onTokenRefresh.listen((
+        nuevoToken,
+      ) async {
         await Supabase.instance.client
             .from('usuarios')
             .update({'fcm_token': nuevoToken})
@@ -141,7 +147,9 @@ class FcmService {
     try {
       Firebase.app(); // guard: abortar si Firebase no está inicializado
     } on FirebaseException {
-      debugPrint('notificarMascotaPerdidaBroadcast abortado — Firebase no disponible.');
+      debugPrint(
+        'notificarMascotaPerdidaBroadcast abortado — Firebase no disponible.',
+      );
       return;
     }
     try {
@@ -149,9 +157,9 @@ class FcmService {
       final response = await Supabase.instance.client.functions.invoke(
         'notify-mascota-perdida',
         body: {
-          'mascotaId':     mascotaId,
+          'mascotaId': mascotaId,
           'mascotaNombre': mascotaNombre,
-          'duenioId':      duenioId,
+          'duenioId': duenioId,
         },
       );
       debugPrint('Broadcast mascota perdida — respuesta: ${response.data}');
@@ -186,7 +194,9 @@ class FcmService {
 
       final token = row?['fcm_token'] as String?;
       if (token == null || token.isEmpty) {
-        debugPrint('enviarNotificacion: usuario $destinatarioUserId sin fcm_token');
+        debugPrint(
+          'enviarNotificacion: usuario $destinatarioUserId sin fcm_token',
+        );
         return;
       }
 
@@ -238,12 +248,19 @@ class FcmService {
   /// Cuando llega un mensaje con la app en PRIMER PLANO, lo mostramos
   /// como notificación local (FCM no la muestra automáticamente en foreground).
   Future<void> _onMensajePrimerPlano(RemoteMessage message) async {
-    debugPrint('FCM foreground: ${message.notification?.title ?? message.data['titulo']}');
+    debugPrint(
+      'FCM foreground: ${message.notification?.title ?? message.data['titulo']}',
+    );
 
     // Extraer título y cuerpo: primero del objeto notification, luego del data
     final notif = message.notification;
-    final titulo = notif?.title ?? message.data['titulo'] ?? message.data['title'] ?? '🐾 Huellitas';
-    final cuerpo = notif?.body  ?? message.data['cuerpo'] ?? message.data['body'] ?? '';
+    final titulo =
+        notif?.title ??
+        message.data['titulo'] ??
+        message.data['title'] ??
+        '🐾 Huellitas';
+    final cuerpo =
+        notif?.body ?? message.data['cuerpo'] ?? message.data['body'] ?? '';
     if (cuerpo.isEmpty && notif == null) return;
 
     final urgente = message.data['urgente'] == 'true';

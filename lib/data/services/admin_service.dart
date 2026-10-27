@@ -26,21 +26,40 @@ class AdminService {
     try {
       // Ejecutamos cada conteo por separado para evitar problemas de tipo.
       // .count() al final de la query le dice a Supabase que devuelva solo el total.
-      final usuarios        = await _client.from('usuarios').select('usua_id').count();
-      final mascotas        = await _client.from('mascotas').select('masc_id').count();
-      final mascPerdidas    = await _client.from('mascotas').select('masc_id').eq('masc_estado', 'perdido').count();
-      final productores     = await _client.from('usuarios').select('usua_id').eq('usua_es_productor', true).count();
-      final veterinarios    = await _client.from('veterinarios').select('vete_id').count();
-      final noticiasPend    = await _client.from('noticias').select('noti_id').eq('noti_estado', 'pendiente').count();
-      final solicitudesPend = await _client.from('solicitudes_rol').select('srol_id').eq('srol_estado', 'pendiente').count();
+      final usuarios = await _client.from('usuarios').select('usua_id').count();
+      final mascotas = await _client.from('mascotas').select('masc_id').count();
+      final mascPerdidas = await _client
+          .from('mascotas')
+          .select('masc_id')
+          .eq('masc_estado', 'perdido')
+          .count();
+      final productores = await _client
+          .from('usuarios')
+          .select('usua_id')
+          .eq('usua_es_productor', true)
+          .count();
+      final veterinarios = await _client
+          .from('veterinarios')
+          .select('vete_id')
+          .count();
+      final noticiasPend = await _client
+          .from('noticias')
+          .select('noti_id')
+          .eq('noti_estado', 'pendiente')
+          .count();
+      final solicitudesPend = await _client
+          .from('solicitudes_rol')
+          .select('srol_id')
+          .eq('srol_estado', 'pendiente')
+          .count();
 
       return {
-        'usuarios':              usuarios.count        ?? 0,
-        'mascotas':              mascotas.count        ?? 0,
-        'mascotasPerdidas':      mascPerdidas.count    ?? 0,
-        'productoresPecuarios':  productores.count     ?? 0,
-        'veterinarios':          veterinarios.count    ?? 0,
-        'noticiasPendientes':    noticiasPend.count    ?? 0,
+        'usuarios': usuarios.count ?? 0,
+        'mascotas': mascotas.count ?? 0,
+        'mascotasPerdidas': mascPerdidas.count ?? 0,
+        'productoresPecuarios': productores.count ?? 0,
+        'veterinarios': veterinarios.count ?? 0,
+        'noticiasPendientes': noticiasPend.count ?? 0,
         'solicitudesPendientes': solicitudesPend.count ?? 0,
       };
     } catch (e) {
@@ -67,9 +86,7 @@ class AdminService {
         .select()
         .order('usua_nombre');
     // El response es un List<dynamic>; lo convertimos a List<UsuarioModel>.
-    return (response as List)
-        .map((e) => UsuarioModel.fromJson(e))
-        .toList();
+    return (response as List).map((e) => UsuarioModel.fromJson(e)).toList();
   }
 
   /// Cambia el rol de un usuario. Si el nuevo rol es 'veterinario',
@@ -150,9 +167,7 @@ class AdminService {
         .from('noticias')
         .select('*, usuarios(usua_nombre, usua_foto_url)')
         .order('noti_fecha', ascending: false); // más recientes primero
-    return (response as List)
-        .map((e) => NoticiaModel.fromJson(e))
-        .toList();
+    return (response as List).map((e) => NoticiaModel.fromJson(e)).toList();
   }
 
   /// Obtiene las noticias que están esperando moderación.
@@ -163,9 +178,7 @@ class AdminService {
         .select('*, usuarios(usua_nombre, usua_foto_url)')
         .eq('noti_estado', 'pendiente')
         .order('noti_fecha', ascending: true); // más antiguas primero
-    return (response as List)
-        .map((e) => NoticiaModel.fromJson(e))
-        .toList();
+    return (response as List).map((e) => NoticiaModel.fromJson(e)).toList();
   }
 
   /// Cambia el estado de una noticia a 'publicada' o 'rechazada'.
@@ -185,12 +198,12 @@ class AdminService {
     required String autorId,
   }) async {
     await _client.from('noticias').insert({
-      'usua_id':        autorId,
-      'noti_titulo':    titulo,
+      'usua_id': autorId,
+      'noti_titulo': titulo,
       'noti_contenido': contenido,
       'noti_categoria': categoria,
       if (imagenUrl != null && imagenUrl.isNotEmpty) 'noti_imagen': imagenUrl,
-      'noti_estado':    'publicada', // admin publica directamente
+      'noti_estado': 'publicada', // admin publica directamente
     });
   }
 
@@ -202,12 +215,15 @@ class AdminService {
     required String categoria,
     String? imagenUrl,
   }) async {
-    await _client.from('noticias').update({
-      'noti_titulo':    titulo,
-      'noti_contenido': contenido,
-      'noti_categoria': categoria,
-      'noti_imagen':    imagenUrl,
-    }).eq('noti_id', noticiaId);
+    await _client
+        .from('noticias')
+        .update({
+          'noti_titulo': titulo,
+          'noti_contenido': contenido,
+          'noti_categoria': categoria,
+          'noti_imagen': imagenUrl,
+        })
+        .eq('noti_id', noticiaId);
   }
 
   /// Elimina una noticia permanentemente.
@@ -225,8 +241,6 @@ class AdminService {
         .select('*, usuarios(usua_nombre, usua_telefono, usua_foto_url)')
         .order('created_at', ascending: false)
         .limit(limit);
-    return (response as List)
-        .map((e) => MascotaModel.fromJson(e))
-        .toList();
+    return (response as List).map((e) => MascotaModel.fromJson(e)).toList();
   }
 }

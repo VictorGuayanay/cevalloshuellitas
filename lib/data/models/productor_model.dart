@@ -5,12 +5,13 @@
 // Se construye desde un JOIN entre `usuarios` y `sensos`.
 
 class ProductorModel {
-  final String usuarioId;       // usua_id
-  final String nombre;          // usua_nombre
-  final String? telefono;       // usua_telefono
-  final String? fotoUrl;        // usua_foto_url
-  final String? direccionGps;   // usua_direccion_gps: "lat,lng" o texto libre
-  final String? tipoAnimales;   // usua_tipo_animales: 'menores' | 'mayores' | 'ambos'
+  final String usuarioId; // usua_id
+  final String nombre; // usua_nombre
+  final String? telefono; // usua_telefono
+  final String? fotoUrl; // usua_foto_url
+  final String? direccionGps; // usua_direccion_gps: "lat,lng" o texto libre
+  final String?
+  tipoAnimales; // usua_tipo_animales: 'menores' | 'mayores' | 'ambos'
 
   /// Lista de especies que este productor tiene disponibles para venta.
   /// Cada entrada viene de un registro de senso con destinacion 'venta' o 'ambos'.
@@ -59,10 +60,10 @@ class ProductorModel {
 
 /// Representa una especie/animal que un productor tiene disponible para venta.
 class EspecieEnVenta {
-  final String especie;         // ej: "Bovinos (vacas)", "Cerdos"
-  final String produccion;      // 'menores' | 'mayores'
-  final int numeroAnimales;     // cantidad promedio disponible
-  final String alimentacion;    // 'balanceado' | 'mixto' | 'natural'
+  final String especie; // ej: "Bovinos (vacas)", "Cerdos"
+  final String produccion; // 'menores' | 'mayores'
+  final int numeroAnimales; // cantidad promedio disponible
+  final String alimentacion; // 'balanceado' | 'mixto' | 'natural'
 
   const EspecieEnVenta({
     required this.especie,
@@ -73,19 +74,23 @@ class EspecieEnVenta {
 
   factory EspecieEnVenta.fromJson(Map<String, dynamic> json) {
     return EspecieEnVenta(
-      especie:        json['especie']          as String? ?? '',
-      produccion:     json['produccion']       as String? ?? '',
+      especie: json['especie'] as String? ?? '',
+      produccion: json['produccion'] as String? ?? '',
       numeroAnimales: (json['numero_animales'] as num?)?.toInt() ?? 0,
-      alimentacion:   json['alimentacion']     as String? ?? '',
+      alimentacion: json['alimentacion'] as String? ?? '',
     );
   }
 
   String get alimentacionLabel {
     switch (alimentacion) {
-      case 'balanceado': return 'Balanceado';
-      case 'mixto':      return 'Mixto';
-      case 'natural':    return 'Natural';
-      default:           return alimentacion;
+      case 'balanceado':
+        return 'Balanceado';
+      case 'mixto':
+        return 'Mixto';
+      case 'natural':
+        return 'Natural';
+      default:
+        return alimentacion;
     }
   }
 }

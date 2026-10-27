@@ -23,7 +23,8 @@ class AdminDashboardTab extends StatelessWidget {
         onRefresh: () => context.read<AdminController>().cargarDashboard(),
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(
-              parent: BouncingScrollPhysics()),
+            parent: BouncingScrollPhysics(),
+          ),
           slivers: [
             // ── Cabecera ──────────────────────────────────────────────────
             SliverToBoxAdapter(
@@ -55,8 +56,9 @@ class AdminDashboardTab extends StatelessWidget {
                                   'Hola, ${user?.nombre ?? 'Administrador'} 👋',
                                   style: GoogleFonts.poppins(
                                     fontSize: 14,
-                                    color: AppColors.darkAlt
-                                        .withValues(alpha: 0.7),
+                                    color: AppColors.darkAlt.withValues(
+                                      alpha: 0.7,
+                                    ),
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -74,8 +76,11 @@ class AdminDashboardTab extends StatelessWidget {
                                 color: Colors.white.withValues(alpha: 0.7),
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              child: const Icon(Icons.logout_rounded,
-                                  color: AppColors.darkAlt, size: 20),
+                              child: const Icon(
+                                Icons.logout_rounded,
+                                color: AppColors.darkAlt,
+                                size: 20,
+                              ),
                             ),
                           ),
                         ],
@@ -97,7 +102,8 @@ class AdminDashboardTab extends StatelessWidget {
                       color: AppColors.orange.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                          color: AppColors.orange.withValues(alpha: 0.35)),
+                        color: AppColors.orange.withValues(alpha: 0.35),
+                      ),
                     ),
                     child: Row(
                       children: [
@@ -107,8 +113,11 @@ class AdminDashboardTab extends StatelessWidget {
                             color: AppColors.orange,
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: const Icon(Icons.notifications_active_rounded,
-                              color: Colors.white, size: 18),
+                          child: const Icon(
+                            Icons.notifications_active_rounded,
+                            color: Colors.white,
+                            size: 18,
+                          ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -150,18 +159,19 @@ class AdminDashboardTab extends StatelessWidget {
                         child: Padding(
                           padding: EdgeInsets.all(40),
                           child: CircularProgressIndicator(
-                              color: AppColors.tealLight),
+                            color: AppColors.tealLight,
+                          ),
                         ),
                       ),
                     )
                   : SliverGrid(
                       gridDelegate:
                           const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
-                        childAspectRatio: 1.55,
-                      ),
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 12,
+                            mainAxisSpacing: 12,
+                            childAspectRatio: 1.55,
+                          ),
                       delegate: SliverChildListDelegate([
                         _StatCard(
                           label: 'Usuarios',
@@ -198,7 +208,8 @@ class AdminDashboardTab extends StatelessWidget {
                           value: ctrl.stats['noticiasPendientes'] ?? 0,
                           icon: Icons.newspaper_rounded,
                           color: AppColors.orange,
-                          highlight: (ctrl.stats['noticiasPendientes'] ?? 0) > 0,
+                          highlight:
+                              (ctrl.stats['noticiasPendientes'] ?? 0) > 0,
                         ),
                       ]),
                     ),
@@ -226,8 +237,11 @@ class AdminDashboardTab extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(20, 28, 20, 10),
                 child: Row(
                   children: [
-                    const Icon(Icons.history_rounded,
-                        color: AppColors.tealLight, size: 20),
+                    const Icon(
+                      Icons.history_rounded,
+                      color: AppColors.tealLight,
+                      size: 20,
+                    ),
                     const SizedBox(width: 8),
                     Text(
                       'Últimas mascotas registradas',
@@ -252,7 +266,9 @@ class AdminDashboardTab extends StatelessWidget {
                           child: Text(
                             'No hay mascotas registradas aún.',
                             style: GoogleFonts.poppins(
-                                color: AppColors.grey, fontSize: 13),
+                              color: AppColors.grey,
+                              fontSize: 13,
+                            ),
                           ),
                         ),
                       ),
@@ -424,7 +440,9 @@ class _MascotaAdminTile extends StatelessWidget {
                     ),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 2),
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: estadoColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(20),
@@ -444,14 +462,17 @@ class _MascotaAdminTile extends StatelessWidget {
                 Text(
                   '${mascota.especie} · ${mascota.raza}',
                   style: GoogleFonts.poppins(
-                      fontSize: 11, color: AppColors.grey),
+                    fontSize: 11,
+                    color: AppColors.grey,
+                  ),
                 ),
                 if (mascota.propietarioNombre != null)
                   Text(
                     'Dueño: ${mascota.propietarioNombre}',
                     style: GoogleFonts.poppins(
-                        fontSize: 10,
-                        color: AppColors.grey.withValues(alpha: 0.7)),
+                      fontSize: 10,
+                      color: AppColors.grey.withValues(alpha: 0.7),
+                    ),
                   ),
               ],
             ),

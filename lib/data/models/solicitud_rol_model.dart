@@ -6,9 +6,9 @@
 
 /// Representa una solicitud de cambio de rol en la base de datos.
 class SolicitudRolModel {
-  final String id;      // srol_id: identificador único de la solicitud
-  final String usuaId;  // usua_id: ID del usuario que hizo la solicitud
-  final String estado;  // srol_estado: 'pendiente' | 'aprobada' | 'rechazada'
+  final String id; // srol_id: identificador único de la solicitud
+  final String usuaId; // usua_id: ID del usuario que hizo la solicitud
+  final String estado; // srol_estado: 'pendiente' | 'aprobada' | 'rechazada'
   final DateTime? fecha; // srol_fecha: cuándo se envió la solicitud
 
   const SolicitudRolModel({

@@ -17,14 +17,16 @@
 
 /// Representa un registro del Censo Pecuario de un productor.
 class SensoModel {
-  final String? id;            // senso_id: UUID generado por Supabase
-  final String usuarioId;      // usua_id: FK hacia la tabla usuarios
-  final String produccion;     // Tipo de producción: "menores" | "mayores"
-  final String especie;        // Especie animal: "Bovinos", "Cerdos", "Aves", etc.
-  final int numeroAnimales;    // Cantidad promedio de animales
-  final String alimentacion;   // Tipo de alimentación: "balanceado" | "mixto" | "natural"
-  final String destinacion;    // Destino de la producción: "consumo" | "venta" | "ambos"
-  final DateTime? creadoEn;    // created_at: timestamp del servidor Supabase
+  final String? id; // senso_id: UUID generado por Supabase
+  final String usuarioId; // usua_id: FK hacia la tabla usuarios
+  final String produccion; // Tipo de producción: "menores" | "mayores"
+  final String especie; // Especie animal: "Bovinos", "Cerdos", "Aves", etc.
+  final int numeroAnimales; // Cantidad promedio de animales
+  final String
+  alimentacion; // Tipo de alimentación: "balanceado" | "mixto" | "natural"
+  final String
+  destinacion; // Destino de la producción: "consumo" | "venta" | "ambos"
+  final DateTime? creadoEn; // created_at: timestamp del servidor Supabase
 
   SensoModel({
     this.id,
@@ -42,13 +44,13 @@ class SensoModel {
   /// Construye un SensoModel desde el JSON que devuelve Supabase.
   factory SensoModel.fromJson(Map<String, dynamic> json) {
     return SensoModel(
-      id:             json['senso_id']?.toString(),
-      usuarioId:      json['usua_id']?.toString() ?? '',
-      produccion:     json['produccion']  as String? ?? '',
-      especie:        json['especie']     as String? ?? '',
+      id: json['senso_id']?.toString(),
+      usuarioId: json['usua_id']?.toString() ?? '',
+      produccion: json['produccion'] as String? ?? '',
+      especie: json['especie'] as String? ?? '',
       numeroAnimales: (json['numero_animales'] as num?)?.toInt() ?? 0,
-      alimentacion:   json['alimentacion'] as String? ?? '',
-      destinacion:    json['destinacion']  as String? ?? '',
+      alimentacion: json['alimentacion'] as String? ?? '',
+      destinacion: json['destinacion'] as String? ?? '',
       creadoEn: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'].toString())
           : null,
@@ -60,12 +62,12 @@ class SensoModel {
   /// JSON para INSERT — sin senso_id ni created_at (los genera Supabase).
   Map<String, dynamic> toInsertJson() {
     return {
-      'usua_id':          usuarioId,
-      'produccion':       produccion,
-      'especie':          especie,
-      'numero_animales':  numeroAnimales,
-      'alimentacion':     alimentacion,
-      'destinacion':      destinacion,
+      'usua_id': usuarioId,
+      'produccion': produccion,
+      'especie': especie,
+      'numero_animales': numeroAnimales,
+      'alimentacion': alimentacion,
+      'destinacion': destinacion,
     };
   }
 
@@ -78,20 +80,28 @@ class SensoModel {
   /// Texto legible del tipo de alimentación.
   String get alimentacionLabel {
     switch (alimentacion) {
-      case 'balanceado': return 'Balanceado';
-      case 'mixto':      return 'Mixto';
-      case 'natural':    return 'Natural';
-      default:           return alimentacion;
+      case 'balanceado':
+        return 'Balanceado';
+      case 'mixto':
+        return 'Mixto';
+      case 'natural':
+        return 'Natural';
+      default:
+        return alimentacion;
     }
   }
 
   /// Texto legible del destino de la producción.
   String get destinacionLabel {
     switch (destinacion) {
-      case 'consumo': return 'Consumo propio';
-      case 'venta':   return 'Venta';
-      case 'ambos':   return 'Consumo y venta';
-      default:        return destinacion;
+      case 'consumo':
+        return 'Consumo propio';
+      case 'venta':
+        return 'Venta';
+      case 'ambos':
+        return 'Consumo y venta';
+      default:
+        return destinacion;
     }
   }
 }

@@ -56,20 +56,20 @@ class ProductorService {
         if (mapa.containsKey(usuarioId)) {
           // Agregar especie al productor ya existente
           mapa[usuarioId] = ProductorModel(
-            usuarioId:      mapa[usuarioId]!.usuarioId,
-            nombre:         mapa[usuarioId]!.nombre,
-            telefono:       mapa[usuarioId]!.telefono,
-            fotoUrl:        mapa[usuarioId]!.fotoUrl,
-            direccionGps:   mapa[usuarioId]!.direccionGps,
-            tipoAnimales:   mapa[usuarioId]!.tipoAnimales,
+            usuarioId: mapa[usuarioId]!.usuarioId,
+            nombre: mapa[usuarioId]!.nombre,
+            telefono: mapa[usuarioId]!.telefono,
+            fotoUrl: mapa[usuarioId]!.fotoUrl,
+            direccionGps: mapa[usuarioId]!.direccionGps,
+            tipoAnimales: mapa[usuarioId]!.tipoAnimales,
             especiesEnVenta: [...mapa[usuarioId]!.especiesEnVenta, especie],
           );
         } else {
           mapa[usuarioId] = ProductorModel(
-            usuarioId:    usuarioId,
-            nombre:       usuarioData['usua_nombre']      as String? ?? 'Productor',
-            telefono:     usuarioData['usua_telefono']    as String?,
-            fotoUrl:      usuarioData['usua_foto_url']    as String?,
+            usuarioId: usuarioId,
+            nombre: usuarioData['usua_nombre'] as String? ?? 'Productor',
+            telefono: usuarioData['usua_telefono'] as String?,
+            fotoUrl: usuarioData['usua_foto_url'] as String?,
             direccionGps: usuarioData['usua_direccion_gps'] as String?,
             tipoAnimales: usuarioData['usua_tipo_animales'] as String?,
             especiesEnVenta: [especie],

@@ -49,9 +49,6 @@ class SensoService {
 
   /// Elimina un registro de senso por su ID.
   Future<void> eliminarSenso(String sensoId) async {
-    await _client
-        .from('sensos')
-        .delete()
-        .eq('senso_id', sensoId);
+    await _client.from('sensos').delete().eq('senso_id', sensoId);
   }
 }

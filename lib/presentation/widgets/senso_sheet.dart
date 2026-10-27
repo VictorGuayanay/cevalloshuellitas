@@ -23,7 +23,7 @@ void mostrarSensoSheet(BuildContext context) {
 
 // ── Colores de acento para Senso ─────────────────────────────────────────────
 const _accentColor = Color(0xFF4A9B7F); // verde pecuario
-const _accentBg    = Color(0xFFF0FAF6);
+const _accentBg = Color(0xFFF0FAF6);
 
 class _SensoSheet extends StatefulWidget {
   const _SensoSheet();
@@ -33,23 +33,35 @@ class _SensoSheet extends StatefulWidget {
 }
 
 class _SensoSheetState extends State<_SensoSheet> {
-  final _especieCtrl  = TextEditingController();
-  final _numeroCtrl   = TextEditingController();
-  final _formKey      = GlobalKey<FormState>();
+  final _especieCtrl = TextEditingController();
+  final _numeroCtrl = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
 
-  String _produccion   = 'menores';   // "menores" | "mayores"
-  String _alimentacion = 'mixto';     // "balanceado" | "mixto" | "natural"
-  String _destinacion  = 'consumo';   // "consumo" | "venta" | "ambos"
-  bool   _guardando    = false;
+  String _produccion = 'menores'; // "menores" | "mayores"
+  String _alimentacion = 'mixto'; // "balanceado" | "mixto" | "natural"
+  String _destinacion = 'consumo'; // "consumo" | "venta" | "ambos"
+  bool _guardando = false;
 
   // Especies sugeridas por tipo
   static const _especiesMenores = [
-    'Cerdos', 'Gallinas', 'Patos', 'Cuyes', 'Conejos',
-    'Codornices', 'Pavos', 'Ovejas', 'Cabras',
+    'Cerdos',
+    'Gallinas',
+    'Patos',
+    'Cuyes',
+    'Conejos',
+    'Codornices',
+    'Pavos',
+    'Ovejas',
+    'Cabras',
   ];
   static const _especiesMayores = [
-    'Bovinos (vacas)', 'Caballos', 'Mulas', 'Asnos',
-    'Búfalos', 'Llamas', 'Alpacas',
+    'Bovinos (vacas)',
+    'Caballos',
+    'Mulas',
+    'Asnos',
+    'Búfalos',
+    'Llamas',
+    'Alpacas',
   ];
 
   List<String> get _especiesSugeridas =>
@@ -67,7 +79,9 @@ class _SensoSheetState extends State<_SensoSheet> {
 
     final uid = context.read<AuthController>().currentUser?.id;
     if (uid == null) {
-      _mostrarError('No hay sesión activa. Por favor cierra y vuelve a abrir la app.');
+      _mostrarError(
+        'No hay sesión activa. Por favor cierra y vuelve a abrir la app.',
+      );
       return;
     }
 
@@ -75,12 +89,12 @@ class _SensoSheetState extends State<_SensoSheet> {
 
     try {
       final senso = SensoModel(
-        usuarioId:      uid,
-        produccion:     _produccion,
-        especie:        _especieCtrl.text.trim(),
+        usuarioId: uid,
+        produccion: _produccion,
+        especie: _especieCtrl.text.trim(),
         numeroAnimales: int.tryParse(_numeroCtrl.text.trim()) ?? 0,
-        alimentacion:   _alimentacion,
-        destinacion:    _destinacion,
+        alimentacion: _alimentacion,
+        destinacion: _destinacion,
       );
 
       await SensoService().crearSenso(senso);
@@ -88,21 +102,33 @@ class _SensoSheetState extends State<_SensoSheet> {
       if (!mounted) return;
 
       Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Row(children: [
-          const Icon(Icons.check_circle_outline_rounded,
-              color: Colors.white, size: 18),
-          const SizedBox(width: 8),
-          Text('¡Censo registrado correctamente!',
-              style: GoogleFonts.poppins(fontSize: 13)),
-        ]),
-        backgroundColor: _accentColor,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        duration: const Duration(seconds: 3),
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(
+                Icons.check_circle_outline_rounded,
+                color: Colors.white,
+                size: 18,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '¡Censo registrado correctamente!',
+                style: GoogleFonts.poppins(fontSize: 13),
+              ),
+            ],
+          ),
+          backgroundColor: _accentColor,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          duration: const Duration(seconds: 3),
+        ),
+      );
     } catch (e) {
-      final msg = e.toString()
+      final msg = e
+          .toString()
           .replaceAll('Exception: ', '')
           .replaceAll('exception: ', '');
       _mostrarError(msg);
@@ -113,21 +139,23 @@ class _SensoSheetState extends State<_SensoSheet> {
 
   void _mostrarError(String msg) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text('Error: $msg',
-          style: GoogleFonts.poppins(fontSize: 13)),
-      backgroundColor: AppColors.red,
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      duration: const Duration(seconds: 6),
-    ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Error: $msg', style: GoogleFonts.poppins(fontSize: 13)),
+        backgroundColor: AppColors.red,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        duration: const Duration(seconds: 6),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom),
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
       child: Container(
         decoration: const BoxDecoration(
           color: Colors.white,
@@ -146,7 +174,8 @@ class _SensoSheetState extends State<_SensoSheet> {
                   // Handle
                   Center(
                     child: Container(
-                      width: 40, height: 4,
+                      width: 40,
+                      height: 4,
                       decoration: BoxDecoration(
                         color: Colors.grey.shade300,
                         borderRadius: BorderRadius.circular(2),
@@ -156,69 +185,85 @@ class _SensoSheetState extends State<_SensoSheet> {
                   const SizedBox(height: 18),
 
                   // Encabezado
-                  Row(children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: _accentBg,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                            color: _accentColor.withValues(alpha: 0.25)),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: _accentBg,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: _accentColor.withValues(alpha: 0.25),
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.agriculture_rounded,
+                          color: _accentColor,
+                          size: 24,
+                        ),
                       ),
-                      child: const Icon(Icons.agriculture_rounded,
-                          color: _accentColor, size: 24),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Registro de Censo',
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Registro de Censo',
                               style: GoogleFonts.poppins(
-                                  fontSize: 19,
-                                  fontWeight: FontWeight.w800,
-                                  color: AppColors.darkAlt)),
-                          Text('Censo Pecuario',
+                                fontSize: 19,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.darkAlt,
+                              ),
+                            ),
+                            Text(
+                              'Censo Pecuario',
                               style: GoogleFonts.poppins(
-                                  fontSize: 11,
-                                  color: _accentColor,
-                                  fontWeight: FontWeight.w600)),
-                        ],
+                                fontSize: 11,
+                                color: _accentColor,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.close_rounded, color: AppColors.grey),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ]),
+                      IconButton(
+                        icon: Icon(Icons.close_rounded, color: AppColors.grey),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 22),
 
                   // ── 1. Producción de especies ──────────────────────────
                   _sectionLabel('1. Producción de especies'),
                   const SizedBox(height: 8),
-                  Row(children: [
-                    Expanded(
+                  Row(
+                    children: [
+                      Expanded(
                         child: _toggleBtn(
-                      label: 'Animales Menores',
-                      icon: Icons.cruelty_free_rounded,
-                      selected: _produccion == 'menores',
-                      onTap: () => setState(() {
-                        _produccion = 'menores';
-                        _especieCtrl.clear();
-                      }),
-                    )),
-                    const SizedBox(width: 10),
-                    Expanded(
+                          label: 'Animales Menores',
+                          icon: Icons.cruelty_free_rounded,
+                          selected: _produccion == 'menores',
+                          onTap: () => setState(() {
+                            _produccion = 'menores';
+                            _especieCtrl.clear();
+                          }),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
                         child: _toggleBtn(
-                      label: 'Animales Mayores',
-                      icon: Icons.set_meal_rounded,
-                      selected: _produccion == 'mayores',
-                      onTap: () => setState(() {
-                        _produccion = 'mayores';
-                        _especieCtrl.clear();
-                      }),
-                    )),
-                  ]),
+                          label: 'Animales Mayores',
+                          icon: Icons.set_meal_rounded,
+                          selected: _produccion == 'mayores',
+                          onTap: () => setState(() {
+                            _produccion = 'mayores';
+                            _especieCtrl.clear();
+                          }),
+                        ),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 20),
 
                   // ── 2. Especie / tipo de animal ────────────────────────
@@ -231,12 +276,13 @@ class _SensoSheetState extends State<_SensoSheet> {
                     children: _especiesSugeridas.map((e) {
                       final sel = _especieCtrl.text == e;
                       return GestureDetector(
-                        onTap: () =>
-                            setState(() => _especieCtrl.text = e),
+                        onTap: () => setState(() => _especieCtrl.text = e),
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 130),
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 7),
+                            horizontal: 12,
+                            vertical: 7,
+                          ),
                           decoration: BoxDecoration(
                             color: sel ? _accentColor : _accentBg,
                             borderRadius: BorderRadius.circular(20),
@@ -246,13 +292,14 @@ class _SensoSheetState extends State<_SensoSheet> {
                                   : _accentColor.withValues(alpha: 0.25),
                             ),
                           ),
-                          child: Text(e,
-                              style: GoogleFonts.poppins(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: sel
-                                      ? Colors.white
-                                      : _accentColor)),
+                          child: Text(
+                            e,
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: sel ? Colors.white : _accentColor,
+                            ),
+                          ),
                         ),
                       );
                     }).toList(),
@@ -262,12 +309,16 @@ class _SensoSheetState extends State<_SensoSheet> {
                   TextFormField(
                     controller: _especieCtrl,
                     style: GoogleFonts.poppins(
-                        fontSize: 14, color: AppColors.darkAlt),
+                      fontSize: 14,
+                      color: AppColors.darkAlt,
+                    ),
                     validator: (v) => (v == null || v.trim().isEmpty)
                         ? 'Ingresa la especie o tipo de animal'
                         : null,
                     decoration: _inputDeco(
-                        'O escribe la especie aquí...', Icons.pets_rounded),
+                      'O escribe la especie aquí...',
+                      Icons.pets_rounded,
+                    ),
                   ),
                   const SizedBox(height: 20),
 
@@ -279,7 +330,9 @@ class _SensoSheetState extends State<_SensoSheet> {
                     keyboardType: TextInputType.number,
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     style: GoogleFonts.poppins(
-                        fontSize: 14, color: AppColors.darkAlt),
+                      fontSize: 14,
+                      color: AppColors.darkAlt,
+                    ),
                     validator: (v) {
                       if (v == null || v.trim().isEmpty) {
                         return 'Ingresa el número de animales';
@@ -291,74 +344,82 @@ class _SensoSheetState extends State<_SensoSheet> {
                       return null;
                     },
                     decoration: _inputDeco(
-                        'Ej. 25', Icons.format_list_numbered_rounded),
+                      'Ej. 25',
+                      Icons.format_list_numbered_rounded,
+                    ),
                   ),
                   const SizedBox(height: 20),
 
                   // ── 4. Alimentación y nutrición ────────────────────────
                   _sectionLabel('4. Alimentación y nutrición'),
                   const SizedBox(height: 8),
-                  Row(children: [
-                    Expanded(
+                  Row(
+                    children: [
+                      Expanded(
                         child: _toggleBtn(
-                      label: 'Balanceado',
-                      icon: Icons.inventory_2_outlined,
-                      selected: _alimentacion == 'balanceado',
-                      onTap: () =>
-                          setState(() => _alimentacion = 'balanceado'),
-                    )),
-                    const SizedBox(width: 8),
-                    Expanded(
+                          label: 'Balanceado',
+                          icon: Icons.inventory_2_outlined,
+                          selected: _alimentacion == 'balanceado',
+                          onTap: () =>
+                              setState(() => _alimentacion = 'balanceado'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
                         child: _toggleBtn(
-                      label: 'Mixto',
-                      icon: Icons.blender_outlined,
-                      selected: _alimentacion == 'mixto',
-                      onTap: () =>
-                          setState(() => _alimentacion = 'mixto'),
-                    )),
-                    const SizedBox(width: 8),
-                    Expanded(
+                          label: 'Mixto',
+                          icon: Icons.blender_outlined,
+                          selected: _alimentacion == 'mixto',
+                          onTap: () => setState(() => _alimentacion = 'mixto'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
                         child: _toggleBtn(
-                      label: 'Natural',
-                      icon: Icons.eco_outlined,
-                      selected: _alimentacion == 'natural',
-                      onTap: () =>
-                          setState(() => _alimentacion = 'natural'),
-                    )),
-                  ]),
+                          label: 'Natural',
+                          icon: Icons.eco_outlined,
+                          selected: _alimentacion == 'natural',
+                          onTap: () =>
+                              setState(() => _alimentacion = 'natural'),
+                        ),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 20),
 
                   // ── 5. Consumo o venta ─────────────────────────────────
                   _sectionLabel('5. Consumo o venta'),
                   const SizedBox(height: 8),
-                  Row(children: [
-                    Expanded(
+                  Row(
+                    children: [
+                      Expanded(
                         child: _toggleBtn(
-                      label: 'Consumo',
-                      icon: Icons.home_rounded,
-                      selected: _destinacion == 'consumo',
-                      onTap: () =>
-                          setState(() => _destinacion = 'consumo'),
-                    )),
-                    const SizedBox(width: 8),
-                    Expanded(
+                          label: 'Consumo',
+                          icon: Icons.home_rounded,
+                          selected: _destinacion == 'consumo',
+                          onTap: () => setState(() => _destinacion = 'consumo'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
                         child: _toggleBtn(
-                      label: 'Venta',
-                      icon: Icons.store_rounded,
-                      selected: _destinacion == 'venta',
-                      onTap: () =>
-                          setState(() => _destinacion = 'venta'),
-                    )),
-                    const SizedBox(width: 8),
-                    Expanded(
+                          label: 'Venta',
+                          icon: Icons.store_rounded,
+                          selected: _destinacion == 'venta',
+                          onTap: () => setState(() => _destinacion = 'venta'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
                         child: _toggleBtn(
-                      label: 'Ambos',
-                      icon: Icons.swap_horiz_rounded,
-                      selected: _destinacion == 'ambos',
-                      onTap: () =>
-                          setState(() => _destinacion = 'ambos'),
-                    )),
-                  ]),
+                          label: 'Ambos',
+                          icon: Icons.swap_horiz_rounded,
+                          selected: _destinacion == 'ambos',
+                          onTap: () => setState(() => _destinacion = 'ambos'),
+                        ),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 28),
 
                   // ── Botón guardar ──────────────────────────────────────
@@ -369,23 +430,31 @@ class _SensoSheetState extends State<_SensoSheet> {
                       onPressed: _guardando ? null : _guardar,
                       icon: _guardando
                           ? const SizedBox(
-                              width: 18, height: 18,
+                              width: 18,
+                              height: 18,
                               child: CircularProgressIndicator(
-                                  color: Colors.white, strokeWidth: 2))
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
                           : const Icon(Icons.save_rounded, size: 20),
                       label: Text(
                         _guardando ? 'Guardando...' : 'Registrar Censo',
                         style: GoogleFonts.poppins(
-                            fontSize: 15, fontWeight: FontWeight.w700),
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: _accentColor,
                         foregroundColor: Colors.white,
                         elevation: 0,
-                        disabledBackgroundColor:
-                            _accentColor.withValues(alpha: 0.5),
+                        disabledBackgroundColor: _accentColor.withValues(
+                          alpha: 0.5,
+                        ),
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14)),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
                       ),
                     ),
                   ),
@@ -401,11 +470,14 @@ class _SensoSheetState extends State<_SensoSheet> {
   // ── Helpers de UI ─────────────────────────────────────────────────────────
 
   Widget _sectionLabel(String text) {
-    return Text(text,
-        style: GoogleFonts.poppins(
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
-            color: AppColors.darkAlt));
+    return Text(
+      text,
+      style: GoogleFonts.poppins(
+        fontSize: 13,
+        fontWeight: FontWeight.w700,
+        color: AppColors.darkAlt,
+      ),
+    );
   }
 
   Widget _toggleBtn({
@@ -432,15 +504,17 @@ class _SensoSheetState extends State<_SensoSheet> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon,
-                size: 20, color: selected ? Colors.white : _accentColor),
+            Icon(icon, size: 20, color: selected ? Colors.white : _accentColor),
             const SizedBox(height: 5),
-            Text(label,
-                textAlign: TextAlign.center,
-                style: GoogleFonts.poppins(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: selected ? Colors.white : _accentColor)),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.poppins(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: selected ? Colors.white : _accentColor,
+              ),
+            ),
           ],
         ),
       ),
@@ -450,30 +524,34 @@ class _SensoSheetState extends State<_SensoSheet> {
   InputDecoration _inputDeco(String hint, IconData icon) {
     return InputDecoration(
       hintText: hint,
-      hintStyle:
-          GoogleFonts.poppins(color: Colors.grey.shade400, fontSize: 13),
+      hintStyle: GoogleFonts.poppins(color: Colors.grey.shade400, fontSize: 13),
       prefixIcon: Icon(icon, color: _accentColor, size: 20),
       filled: true,
       fillColor: _accentBg,
-      contentPadding:
-          const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide.none),
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide.none,
+      ),
       enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide:
-              BorderSide(color: _accentColor.withValues(alpha: 0.25), width: 1.2)),
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(
+          color: _accentColor.withValues(alpha: 0.25),
+          width: 1.2,
+        ),
+      ),
       focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: _accentColor, width: 2)),
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: _accentColor, width: 2),
+      ),
       errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide:
-              const BorderSide(color: AppColors.red, width: 1.2)),
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: AppColors.red, width: 1.2),
+      ),
       focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.red, width: 2)),
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: AppColors.red, width: 2),
+      ),
     );
   }
 }

@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../../core/app_colors.dart';
 
 /// Widget de imagen de red con manejo de errores y loading integrados.
@@ -79,20 +79,20 @@ class SafeNetworkImage extends StatelessWidget {
   }
 
   Widget _fallback() => Container(
-        width: width,
-        height: height,
-        color: fallbackBg ?? fallbackColor.withValues(alpha: 0.10),
-        child: Center(
-          child: Icon(fallbackIcon, color: fallbackColor, size: fallbackIconSize),
-        ),
-      );
+    width: width,
+    height: height,
+    color: fallbackBg ?? fallbackColor.withValues(alpha: 0.10),
+    child: Center(
+      child: Icon(fallbackIcon, color: fallbackColor, size: fallbackIconSize),
+    ),
+  );
 
   Widget _shimmer() => Container(
-        width: width,
-        height: height,
-        color: Colors.grey.shade200,
-        child: const _ShimmerBox(),
-      );
+    width: width,
+    height: height,
+    color: Colors.grey.shade200,
+    child: const _ShimmerBox(),
+  );
 }
 
 /// Versión circular (para avatars de veterinarios/usuarios).
@@ -149,9 +149,10 @@ class _ShimmerBoxState extends State<_ShimmerBox>
       vsync: this,
       duration: const Duration(milliseconds: 900),
     )..repeat(reverse: true);
-    _anim = Tween<double>(begin: 0.3, end: 0.7).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
-    );
+    _anim = Tween<double>(
+      begin: 0.3,
+      end: 0.7,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
   }
 
   @override
@@ -164,9 +165,8 @@ class _ShimmerBoxState extends State<_ShimmerBox>
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _anim,
-      builder: (_, __) => Container(
-        color: Colors.grey.shade300.withValues(alpha: _anim.value),
-      ),
+      builder: (_, __) =>
+          Container(color: Colors.grey.shade300.withValues(alpha: _anim.value)),
     );
   }
 }

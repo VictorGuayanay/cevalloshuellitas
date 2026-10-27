@@ -48,52 +48,71 @@ class _MisMascotasScreenState extends State<MisMascotasScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFEBEE),
-              borderRadius: BorderRadius.circular(10),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFEBEE),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.delete_outline_rounded,
+                color: Color(0xFFE53935),
+                size: 22,
+              ),
             ),
-            child: const Icon(Icons.delete_outline_rounded,
-                color: Color(0xFFE53935), size: 22),
-          ),
-          const SizedBox(width: 12),
-          Text('Eliminar mascota',
+            const SizedBox(width: 12),
+            Text(
+              'Eliminar mascota',
               style: GoogleFonts.poppins(
-                  fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.darkAlt)),
-        ]),
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+                color: AppColors.darkAlt,
+              ),
+            ),
+          ],
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               '¿Estás seguro que deseas eliminar a ',
-              style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey.shade600),
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                color: Colors.grey.shade600,
+              ),
             ),
             Text(
               '"${mascota.nombre}"?',
               style: GoogleFonts.poppins(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.darkAlt),
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: AppColors.darkAlt,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               'Esta acción no se puede deshacer.',
               style: GoogleFonts.poppins(
-                  fontSize: 12,
-                  color: const Color(0xFFE53935),
-                  fontWeight: FontWeight.w500),
+                fontSize: 12,
+                color: const Color(0xFFE53935),
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Cancelar',
-                style: GoogleFonts.poppins(
-                    color: Colors.grey.shade600, fontWeight: FontWeight.w600)),
+            child: Text(
+              'Cancelar',
+              style: GoogleFonts.poppins(
+                color: Colors.grey.shade600,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
           Consumer<MascotaController>(
             builder: (context, ctrl, _) => ElevatedButton(
@@ -104,26 +123,36 @@ class _MisMascotasScreenState extends State<MisMascotasScreen> {
                       final mascotaCtrl = context.read<MascotaController>();
                       final ok = await mascotaCtrl.eliminarMascota(mascota.id);
                       if (!context.mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text(ok
-                            ? '"${mascota.nombre}" eliminada correctamente'
-                            : (mascotaCtrl.errorMessage ?? 'Error al eliminar')),
-                        backgroundColor:
-                            ok ? const Color(0xFF43B89C) : const Color(0xFFE53935),
-                        behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                      ));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            ok
+                                ? '"${mascota.nombre}" eliminada correctamente'
+                                : (mascotaCtrl.errorMessage ??
+                                      'Error al eliminar'),
+                          ),
+                          backgroundColor: ok
+                              ? const Color(0xFF43B89C)
+                              : const Color(0xFFE53935),
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      );
                     },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFE53935),
                 foregroundColor: Colors.white,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
-              child: Text('Eliminar',
-                  style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+              child: Text(
+                'Eliminar',
+                style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+              ),
             ),
           ),
         ],
@@ -145,7 +174,10 @@ class _MisMascotasScreenState extends State<MisMascotasScreen> {
         hoverElevation: 8,
         label: Text(
           'Agregar Mascota',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: Colors.white),
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
         ),
         icon: const Icon(Icons.add_rounded, color: Colors.white, size: 24),
       ),
@@ -169,7 +201,11 @@ class _MisMascotasScreenState extends State<MisMascotasScreen> {
                         child: Row(
                           children: [
                             IconButton(
-                              icon: Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.darkAlt, size: 20),
+                              icon: Icon(
+                                Icons.arrow_back_ios_new_rounded,
+                                color: AppColors.darkAlt,
+                                size: 20,
+                              ),
                               onPressed: () => Navigator.pop(context),
                             ),
                             const Spacer(),
@@ -182,7 +218,9 @@ class _MisMascotasScreenState extends State<MisMascotasScreen> {
                               ),
                             ),
                             const Spacer(),
-                            const SizedBox(width: 48), // Equilibrar el botón de retroceso
+                            const SizedBox(
+                              width: 48,
+                            ), // Equilibrar el botón de retroceso
                           ],
                         ),
                       ),
@@ -208,46 +246,49 @@ class _MisMascotasScreenState extends State<MisMascotasScreen> {
             sliver: mascotaController.isLoading
                 ? const SliverFillRemaining(
                     child: Center(
-                      child: CircularProgressIndicator(color: AppColors.tealLight),
+                      child: CircularProgressIndicator(
+                        color: AppColors.tealLight,
+                      ),
                     ),
                   )
                 : mascotas.isEmpty
-                    ? SliverFillRemaining(
-                        child: Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.pets_rounded, size: 64, color: AppColors.grey.withValues(alpha: 0.3)),
-                              const SizedBox(height: 16),
-                              Text(
-                                'No tienes mascotas registradas.',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.darkAlt,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Toca "Agregar Mascota" para registrar una.',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 13,
-                                  color: AppColors.grey,
-                                ),
-                              ),
-                            ],
+                ? SliverFillRemaining(
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.pets_rounded,
+                            size: 64,
+                            color: AppColors.grey.withValues(alpha: 0.3),
                           ),
-                        ),
-                      )
-                    : SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                          (context, index) {
-                            final mascota = mascotas[index];
-                            return _buildMascotaCard(mascota);
-                          },
-                          childCount: mascotas.length,
-                        ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No tienes mascotas registradas.',
+                            style: GoogleFonts.poppins(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.darkAlt,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Toca "Agregar Mascota" para registrar una.',
+                            style: GoogleFonts.poppins(
+                              fontSize: 13,
+                              color: AppColors.grey,
+                            ),
+                          ),
+                        ],
                       ),
+                    ),
+                  )
+                : SliverList(
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      final mascota = mascotas[index];
+                      return _buildMascotaCard(mascota);
+                    }, childCount: mascotas.length),
+                  ),
           ),
         ],
       ),
@@ -321,7 +362,11 @@ class _MisMascotasScreenState extends State<MisMascotasScreen> {
                         spacing: 6,
                         runSpacing: 4,
                         children: [
-                          _buildChip(mascota.edad, Icons.cake_outlined, AppColors.tealLight),
+                          _buildChip(
+                            mascota.edad,
+                            Icons.cake_outlined,
+                            AppColors.tealLight,
+                          ),
                           _buildEstadoChip(mascota.estado),
                         ],
                       ),
@@ -343,14 +388,19 @@ class _MisMascotasScreenState extends State<MisMascotasScreen> {
                             color: mascota.color.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: Icon(Icons.badge_rounded, color: mascota.color, size: 18),
+                          child: Icon(
+                            Icons.badge_rounded,
+                            color: mascota.color,
+                            size: 18,
+                          ),
                         ),
                       ),
                     ),
                     const SizedBox(height: 8),
                     // Editar
                     GestureDetector(
-                      onTap: () => _showAddMascotaSheet(context, mascota: mascota),
+                      onTap: () =>
+                          _showAddMascotaSheet(context, mascota: mascota),
                       child: Tooltip(
                         message: 'Editar Mascota',
                         child: Container(
@@ -359,7 +409,11 @@ class _MisMascotasScreenState extends State<MisMascotasScreen> {
                             color: AppColors.tealLight.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: Icon(Icons.edit_rounded, color: AppColors.tealLight, size: 18),
+                          child: Icon(
+                            Icons.edit_rounded,
+                            color: AppColors.tealLight,
+                            size: 18,
+                          ),
                         ),
                       ),
                     ),
@@ -375,8 +429,11 @@ class _MisMascotasScreenState extends State<MisMascotasScreen> {
                             color: const Color(0xFFFFEBEE),
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: const Icon(Icons.delete_outline_rounded,
-                              color: Color(0xFFE53935), size: 18),
+                          child: const Icon(
+                            Icons.delete_outline_rounded,
+                            color: Color(0xFFE53935),
+                            size: 18,
+                          ),
                         ),
                       ),
                     ),

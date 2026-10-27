@@ -12,16 +12,16 @@ class VeterinarioController extends ChangeNotifier {
   final VeterinarioService _service = VeterinarioService();
 
   // ── Estado interno ─────────────────────────────────────────────────────────
-  VeterinarioModel? _perfil;       // perfil del veterinario autenticado
+  VeterinarioModel? _perfil; // perfil del veterinario autenticado
   List<VeterinarioModel> _todos = []; // todos los veterinarios de la plataforma
-  bool _isLoading   = false;
+  bool _isLoading = false;
   String? _errorMessage;
 
   // ── Getters ────────────────────────────────────────────────────────────────
-  VeterinarioModel? get perfil    => _perfil;
+  VeterinarioModel? get perfil => _perfil;
   List<VeterinarioModel> get todos => _todos;
-  bool get isLoading               => _isLoading;
-  String? get errorMessage         => _errorMessage;
+  bool get isLoading => _isLoading;
+  String? get errorMessage => _errorMessage;
 
   // ── Perfil del veterinario ─────────────────────────────────────────────────
 
@@ -56,17 +56,17 @@ class VeterinarioController extends ChangeNotifier {
       } else {
         // Ya existe → actualizar conservando el ID y los datos de ubicación.
         final vetConId = VeterinarioModel(
-          id:           _perfil!.id,
-          usuarioId:    _perfil!.usuarioId,
-          nombre:       _perfil!.nombre,
+          id: _perfil!.id,
+          usuarioId: _perfil!.usuarioId,
+          nombre: _perfil!.nombre,
           especialidad: vet.especialidad,
-          experiencia:  vet.experiencia,
-          tarifa:       vet.tarifa,
-          fotoUrl:      vet.fotoUrl,
-          disponible:   vet.disponible,
+          experiencia: vet.experiencia,
+          tarifa: vet.tarifa,
+          fotoUrl: vet.fotoUrl,
+          disponible: vet.disponible,
           // Conservamos la ubicación anterior (no se edita desde este formulario).
-          latitud:   _perfil!.latitud,
-          longitud:  _perfil!.longitud,
+          latitud: _perfil!.latitud,
+          longitud: _perfil!.longitud,
           direccion: _perfil!.direccion,
         );
         _perfil = await _service.actualizarVeterinario(vetConId);
@@ -90,7 +90,7 @@ class VeterinarioController extends ChangeNotifier {
     if (_perfil == null || _perfil!.id.isEmpty) return false;
 
     final valorAnterior = _perfil!.disponible;
-    final nuevoValor    = !valorAnterior;
+    final nuevoValor = !valorAnterior;
 
     // Actualizar en la UI de inmediato para que la respuesta sea fluida.
     _perfil = _perfil!.copyWith(disponible: nuevoValor);
@@ -123,15 +123,15 @@ class VeterinarioController extends ChangeNotifier {
     notifyListeners();
     try {
       await _service.guardarUbicacion(
-        veteId:   _perfil!.id,
-        latitud:  latitud,
+        veteId: _perfil!.id,
+        latitud: latitud,
         longitud: longitud,
         direccion: direccion,
       );
       // Actualizar el modelo local con la nueva ubicación.
       _perfil = _perfil!.copyWith(
-        latitud:   latitud,
-        longitud:  longitud,
+        latitud: latitud,
+        longitud: longitud,
         direccion: direccion,
       );
       _isLoading = false;
@@ -165,7 +165,7 @@ class VeterinarioController extends ChangeNotifier {
   /// Limpia el estado del controlador. Se llama al cerrar sesión.
   void limpiar() {
     _perfil = null;
-    _todos  = [];
+    _todos = [];
     _errorMessage = null;
     notifyListeners();
   }

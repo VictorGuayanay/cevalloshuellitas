@@ -1,4 +1,4 @@
-﻿// mapa_veterinarios_screen.dart
+// mapa_veterinarios_screen.dart
 //
 // Mejoras de rendimiento:
 //   · FlutterMap vive en su propio StatefulWidget (_MapView) para que los
@@ -77,9 +77,13 @@ class _MapaVeterinariosScreenState extends State<MapaVeterinariosScreen>
     super.initState();
 
     _cardAnim = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 280));
-    _cardSlide = Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero)
-        .animate(CurvedAnimation(parent: _cardAnim, curve: Curves.easeOutCubic));
+      vsync: this,
+      duration: const Duration(milliseconds: 280),
+    );
+    _cardSlide = Tween<Offset>(
+      begin: const Offset(0, 1),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _cardAnim, curve: Curves.easeOutCubic));
 
     _searchCtrl.addListener(() => setState(() {}));
 
@@ -149,8 +153,10 @@ class _MapaVeterinariosScreenState extends State<MapaVeterinariosScreen>
         'https://nominatim.openstreetmap.org/search'
         '?q=${Uri.encodeComponent(q)}&format=json&limit=5&addressdetails=1',
       );
-      final res = await http.get(url,
-          headers: {'User-Agent': 'com.cevallos.huellitas/1.0.0'});
+      final res = await http.get(
+        url,
+        headers: {'User-Agent': 'com.cevallos.huellitas/1.0.0'},
+      );
       if (res.statusCode == 200) {
         final data = json.decode(res.body);
         if (data is List) setState(() => _searchResults = data);
@@ -184,7 +190,9 @@ class _MapaVeterinariosScreenState extends State<MapaVeterinariosScreen>
         return;
       }
       final pos = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+        ),
       );
       final ll = LatLng(pos.latitude, pos.longitude);
       setState(() => _currentLocation = ll);
@@ -198,13 +206,15 @@ class _MapaVeterinariosScreenState extends State<MapaVeterinariosScreen>
 
   void _snack(String msg) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg, style: GoogleFonts.poppins(fontSize: 13)),
-      backgroundColor: AppColors.darkAlt,
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      duration: const Duration(seconds: 2),
-    ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg, style: GoogleFonts.poppins(fontSize: 13)),
+        backgroundColor: AppColors.darkAlt,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   // ── Build ──────────────────────────────────────────────────────────────────
@@ -213,11 +223,13 @@ class _MapaVeterinariosScreenState extends State<MapaVeterinariosScreen>
   Widget build(BuildContext context) {
     // Leer controllers solo para saber si están cargando y actualizar listas
     // locales. El mapa NO escucha estos consumers directamente.
-    final vetCtrl  = context.watch<VeterinarioController>();
+    final vetCtrl = context.watch<VeterinarioController>();
     final prodCtrl = context.watch<ProductorController>();
 
     // Filtrar y cachear listas (solo cuando cambian los controllers)
-    _vets  = vetCtrl.todos.where((v) => v.latitud != null && v.longitud != null).toList();
+    _vets = vetCtrl.todos
+        .where((v) => v.latitud != null && v.longitud != null)
+        .toList();
     _prods = prodCtrl.productoresConUbicacion;
 
     final isLoading = vetCtrl.isLoading || prodCtrl.isLoading;
@@ -265,8 +277,8 @@ class _MapaVeterinariosScreenState extends State<MapaVeterinariosScreen>
                       _searchCtrl.clear();
                       setState(() {
                         _searchResults = [];
-                        _searchMarker  = null;
-                        _searchLabel   = null;
+                        _searchMarker = null;
+                        _searchLabel = null;
                       });
                       FocusScope.of(context).unfocus();
                     },
@@ -276,8 +288,8 @@ class _MapaVeterinariosScreenState extends State<MapaVeterinariosScreen>
                       results: _searchResults,
                       onSelect: (lat, lon, label) {
                         setState(() {
-                          _searchMarker  = LatLng(lat, lon);
-                          _searchLabel   = label;
+                          _searchMarker = LatLng(lat, lon);
+                          _searchLabel = label;
                           _searchResults = [];
                         });
                         _mapController.move(LatLng(lat, lon), 15);
@@ -286,26 +298,31 @@ class _MapaVeterinariosScreenState extends State<MapaVeterinariosScreen>
                     ),
                   const SizedBox(height: 8),
                   // Toggles de capa
-                  Row(children: [
-                    const SizedBox(width: 52),
-                    _LayerToggle(
-                      color: AppColors.tealLight,
-                      icon: Icons.medical_services_rounded,
-                      label: 'Veterinarios',
-                      count: _vets.length,
-                      active: _mostrarVets,
-                      onTap: () => setState(() => _mostrarVets = !_mostrarVets),
-                    ),
-                    const SizedBox(width: 8),
-                    _LayerToggle(
-                      color: AppColors.vetGreen,
-                      icon: Icons.agriculture_rounded,
-                      label: 'Productores',
-                      count: _prods.length,
-                      active: _mostrarProductores,
-                      onTap: () => setState(() => _mostrarProductores = !_mostrarProductores),
-                    ),
-                  ]),
+                  Row(
+                    children: [
+                      const SizedBox(width: 52),
+                      _LayerToggle(
+                        color: AppColors.tealLight,
+                        icon: Icons.medical_services_rounded,
+                        label: 'Veterinarios',
+                        count: _vets.length,
+                        active: _mostrarVets,
+                        onTap: () =>
+                            setState(() => _mostrarVets = !_mostrarVets),
+                      ),
+                      const SizedBox(width: 8),
+                      _LayerToggle(
+                        color: AppColors.vetGreen,
+                        icon: Icons.agriculture_rounded,
+                        label: 'Productores',
+                        count: _prods.length,
+                        active: _mostrarProductores,
+                        onTap: () => setState(
+                          () => _mostrarProductores = !_mostrarProductores,
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -322,21 +339,27 @@ class _MapaVeterinariosScreenState extends State<MapaVeterinariosScreen>
                   valueListenable: _rotationNotifier,
                   builder: (_, rot, __) {
                     if (rot.abs() < 1.0) return const SizedBox.shrink();
-                    return Column(children: [
-                      _FloatingBtn(
-                        icon: Icons.explore_rounded,
-                        color: AppColors.orange,
-                        rotate: -rot * (3.14159265 / 180),
-                        onTap: () => _mapController.rotate(0.0),
-                      ),
-                      const SizedBox(height: 8),
-                    ]);
+                    return Column(
+                      children: [
+                        _FloatingBtn(
+                          icon: Icons.explore_rounded,
+                          color: AppColors.orange,
+                          rotate: -rot * (3.14159265 / 180),
+                          onTap: () => _mapController.rotate(0.0),
+                        ),
+                        const SizedBox(height: 8),
+                      ],
+                    );
                   },
                 ),
                 // GPS
                 _FloatingBtn(
-                  icon: _locating ? Icons.sync_rounded : Icons.my_location_rounded,
-                  color: _currentLocation != null ? AppColors.tealLight : AppColors.grey,
+                  icon: _locating
+                      ? Icons.sync_rounded
+                      : Icons.my_location_rounded,
+                  color: _currentLocation != null
+                      ? AppColors.tealLight
+                      : AppColors.grey,
                   loading: _locating,
                   onTap: _irAMiUbicacion,
                 ),
@@ -347,7 +370,8 @@ class _MapaVeterinariosScreenState extends State<MapaVeterinariosScreen>
                   onTap: () => _mapReady
                       ? _mapController.move(
                           _mapController.camera.center,
-                          _mapController.camera.zoom + 1)
+                          _mapController.camera.zoom + 1,
+                        )
                       : null,
                 ),
                 const SizedBox(height: 4),
@@ -357,7 +381,8 @@ class _MapaVeterinariosScreenState extends State<MapaVeterinariosScreen>
                   onTap: () => _mapReady
                       ? _mapController.move(
                           _mapController.camera.center,
-                          _mapController.camera.zoom - 1)
+                          _mapController.camera.zoom - 1,
+                        )
                       : null,
                 ),
               ],
@@ -367,12 +392,17 @@ class _MapaVeterinariosScreenState extends State<MapaVeterinariosScreen>
           // ── 5. Card de detalle ─────────────────────────────────────────
           if (_hayCard)
             Positioned(
-              bottom: 0, left: 0, right: 0,
+              bottom: 0,
+              left: 0,
+              right: 0,
               child: SlideTransition(
                 position: _cardSlide,
                 child: _tipoSeleccionado == _TipoSeleccionado.veterinario
                     ? _VetCard(vet: _vetSeleccionado!, onClose: _cerrarCard)
-                    : _ProductorCard(p: _productorSeleccionado!, onClose: _cerrarCard),
+                    : _ProductorCard(
+                        p: _productorSeleccionado!,
+                        onClose: _cerrarCard,
+                      ),
               ),
             ),
 
@@ -463,24 +493,32 @@ class _MapViewState extends State<_MapView> {
 
         // ── Ubicación del usuario ──────────────────────────────────────
         if (widget.currentLocation != null)
-          MarkerLayer(markers: [
-            Marker(
-              point: widget.currentLocation!,
-              width: 48, height: 48,
-              child: const RepaintBoundary(child: _UserDot()),
-            ),
-          ]),
+          MarkerLayer(
+            markers: [
+              Marker(
+                point: widget.currentLocation!,
+                width: 48,
+                height: 48,
+                child: const RepaintBoundary(child: _UserDot()),
+              ),
+            ],
+          ),
 
         // ── Marcador de búsqueda ───────────────────────────────────────
         if (widget.searchMarker != null)
-          MarkerLayer(markers: [
-            Marker(
-              point: widget.searchMarker!,
-              width: 130, height: 76,
-              child: _PinLabel(label: widget.searchLabel ?? 'Dirección',
-                  color: AppColors.orange),
-            ),
-          ]),
+          MarkerLayer(
+            markers: [
+              Marker(
+                point: widget.searchMarker!,
+                width: 130,
+                height: 76,
+                child: _PinLabel(
+                  label: widget.searchLabel ?? 'Dirección',
+                  color: AppColors.orange,
+                ),
+              ),
+            ],
+          ),
 
         // ── Marcadores productores ─────────────────────────────────────
         MarkerLayer(
@@ -488,7 +526,8 @@ class _MapViewState extends State<_MapView> {
             final sel = widget.prodSeleccionadoId == p.usuarioId;
             return Marker(
               point: LatLng(p.latitud!, p.longitud!),
-              width: sel ? 68 : 54, height: sel ? 80 : 64,
+              width: sel ? 68 : 54,
+              height: sel ? 80 : 64,
               child: RepaintBoundary(
                 child: GestureDetector(
                   onTap: () => widget.onTapProductor(p),
@@ -510,7 +549,8 @@ class _MapViewState extends State<_MapView> {
             final sel = widget.vetSeleccionadoId == v.id;
             return Marker(
               point: LatLng(v.latitud!, v.longitud!),
-              width: sel ? 68 : 54, height: sel ? 80 : 64,
+              width: sel ? 68 : 54,
+              height: sel ? 80 : 64,
               child: RepaintBoundary(
                 child: GestureDetector(
                   onTap: () => widget.onTapVet(v),
@@ -528,7 +568,6 @@ class _MapViewState extends State<_MapView> {
       ],
     );
   }
-
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -572,8 +611,11 @@ class _PinMarker extends StatelessWidget {
           ),
           child: ClipOval(
             child: foto != null && foto!.isNotEmpty
-                ? Image.network(foto!, fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => _fallback(selected))
+                ? Image.network(
+                    foto!,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => _fallback(selected),
+                  )
                 : _fallback(selected),
           ),
         ),
@@ -586,9 +628,8 @@ class _PinMarker extends StatelessWidget {
     );
   }
 
-  Widget _fallback(bool sel) => Icon(icon,
-      size: sel ? 24 : 18,
-      color: sel ? Colors.white : color);
+  Widget _fallback(bool sel) =>
+      Icon(icon, size: sel ? 24 : 18, color: sel ? Colors.white : color);
 }
 
 class _PinTipPainter extends CustomPainter {
@@ -602,9 +643,12 @@ class _PinTipPainter extends CustomPainter {
         ..lineTo(s.width, 0)
         ..lineTo(s.width / 2, s.height)
         ..close(),
-      Paint()..color = color..style = PaintingStyle.fill,
+      Paint()
+        ..color = color
+        ..style = PaintingStyle.fill,
     );
   }
+
   @override
   bool shouldRepaint(_) => false;
 }
@@ -627,10 +671,13 @@ class _MapSkeletonState extends State<_MapSkeleton>
   void initState() {
     super.initState();
     _anim = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 1200))
-      ..repeat(reverse: true);
-    _shimmer = Tween(begin: 0.0, end: 1.0)
-        .animate(CurvedAnimation(parent: _anim, curve: Curves.easeInOut));
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat(reverse: true);
+    _shimmer = Tween(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _anim, curve: Curves.easeInOut));
   }
 
   @override
@@ -657,19 +704,28 @@ class _MapSkeletonState extends State<_MapSkeleton>
               borderRadius: BorderRadius.circular(18),
               boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 16)],
             ),
-            child: Row(mainAxisSize: MainAxisSize.min, children: [
-              SizedBox(
-                width: 20, height: 20,
-                child: CircularProgressIndicator(
-                    strokeWidth: 2.5, color: AppColors.tealLight),
-              ),
-              const SizedBox(width: 14),
-              Text('Cargando mapa…',
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.5,
+                    color: AppColors.tealLight,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Text(
+                  'Cargando mapa…',
                   style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.darkAlt)),
-            ]),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.darkAlt,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -718,16 +774,26 @@ class _SearchBar extends StatelessWidget {
             child: Row(
               children: [
                 const SizedBox(width: 14),
-                Icon(Icons.search_rounded, color: AppColors.tealLight, size: 20),
+                Icon(
+                  Icons.search_rounded,
+                  color: AppColors.tealLight,
+                  size: 20,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: TextField(
                     controller: controller,
-                    style: GoogleFonts.poppins(fontSize: 13, color: AppColors.darkAlt),
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      color: AppColors.darkAlt,
+                    ),
                     textInputAction: TextInputAction.search,
                     decoration: InputDecoration(
                       hintText: 'Buscar dirección…',
-                      hintStyle: GoogleFonts.poppins(fontSize: 13, color: AppColors.grey),
+                      hintStyle: GoogleFonts.poppins(
+                        fontSize: 13,
+                        color: AppColors.grey,
+                      ),
                       border: InputBorder.none,
                       isDense: true,
                       contentPadding: const EdgeInsets.symmetric(vertical: 14),
@@ -738,17 +804,29 @@ class _SearchBar extends StatelessWidget {
                 if (controller.text.isNotEmpty) ...[
                   isSearching
                       ? SizedBox(
-                          width: 16, height: 16,
+                          width: 16,
+                          height: 16,
                           child: CircularProgressIndicator(
-                              strokeWidth: 2, color: AppColors.tealLight))
+                            strokeWidth: 2,
+                            color: AppColors.tealLight,
+                          ),
+                        )
                       : GestureDetector(
                           onTap: () => onSearch(controller.text),
-                          child: Icon(Icons.search_rounded,
-                              color: AppColors.tealLight, size: 18)),
+                          child: Icon(
+                            Icons.search_rounded,
+                            color: AppColors.tealLight,
+                            size: 18,
+                          ),
+                        ),
                   const SizedBox(width: 4),
                   GestureDetector(
                     onTap: onClear,
-                    child: Icon(Icons.close_rounded, size: 18, color: AppColors.grey),
+                    child: Icon(
+                      Icons.close_rounded,
+                      size: 18,
+                      color: AppColors.grey,
+                    ),
                   ),
                 ],
                 const SizedBox(width: 10),
@@ -780,16 +858,18 @@ class _SearchResultsList extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withValues(alpha: 0.10),
-              blurRadius: 14,
-              offset: const Offset(0, 4)),
+            color: Colors.black.withValues(alpha: 0.10),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       child: ListView.separated(
         shrinkWrap: true,
         padding: const EdgeInsets.symmetric(vertical: 4),
         itemCount: results.length,
-        separatorBuilder: (_, __) => Divider(color: Colors.grey.shade100, height: 1),
+        separatorBuilder: (_, __) =>
+            Divider(color: Colors.grey.shade100, height: 1),
         itemBuilder: (_, i) {
           final item = results[i];
           return ListTile(
@@ -800,11 +880,18 @@ class _SearchResultsList extends StatelessWidget {
                 color: AppColors.tealLight.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.location_on_rounded, color: AppColors.tealLight, size: 14),
+              child: Icon(
+                Icons.location_on_rounded,
+                color: AppColors.tealLight,
+                size: 14,
+              ),
             ),
             title: Text(
               item['display_name'] ?? '',
-              style: GoogleFonts.poppins(fontSize: 12, color: AppColors.darkAlt),
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                color: AppColors.darkAlt,
+              ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
@@ -814,7 +901,10 @@ class _SearchResultsList extends StatelessWidget {
               if (lat == null || lon == null) return;
               final addr = item['address'];
               final label = addr != null
-                  ? (addr['road'] ?? addr['suburb'] ?? addr['city'] ?? 'Dirección')
+                  ? (addr['road'] ??
+                        addr['suburb'] ??
+                        addr['city'] ??
+                        'Dirección')
                   : 'Dirección';
               onSelect(lat, lon, label as String);
             },
@@ -856,38 +946,50 @@ class _LayerToggle extends StatelessWidget {
           color: active ? color.withValues(alpha: 0.12) : Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-              color: active ? color : Colors.grey.shade300, width: 1.2),
+            color: active ? color : Colors.grey.shade300,
+            width: 1.2,
+          ),
           boxShadow: [
             BoxShadow(
-                color: Colors.black.withValues(alpha: 0.06),
-                blurRadius: 6,
-                offset: const Offset(0, 2)),
-          ],
-        ),
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Icon(icon, size: 13, color: active ? color : Colors.grey.shade400),
-          const SizedBox(width: 5),
-          Text(label,
-              style: GoogleFonts.poppins(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: active ? color : Colors.grey.shade400)),
-          if (count > 0) ...[
-            const SizedBox(width: 5),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-              decoration: BoxDecoration(
-                color: active ? color : Colors.grey.shade200,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text('$count',
-                  style: GoogleFonts.poppins(
-                      fontSize: 9,
-                      fontWeight: FontWeight.w800,
-                      color: active ? Colors.white : Colors.grey.shade500)),
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
             ),
           ],
-        ]),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 13, color: active ? color : Colors.grey.shade400),
+            const SizedBox(width: 5),
+            Text(
+              label,
+              style: GoogleFonts.poppins(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: active ? color : Colors.grey.shade400,
+              ),
+            ),
+            if (count > 0) ...[
+              const SizedBox(width: 5),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                decoration: BoxDecoration(
+                  color: active ? color : Colors.grey.shade200,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  '$count',
+                  style: GoogleFonts.poppins(
+                    fontSize: 9,
+                    fontWeight: FontWeight.w800,
+                    color: active ? Colors.white : Colors.grey.shade500,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -902,7 +1004,8 @@ class _UserDot extends StatefulWidget {
   State<_UserDot> createState() => _UserDotState();
 }
 
-class _UserDotState extends State<_UserDot> with SingleTickerProviderStateMixin {
+class _UserDotState extends State<_UserDot>
+    with SingleTickerProviderStateMixin {
   late AnimationController _pulse;
   late Animation<double> _scale;
 
@@ -910,10 +1013,13 @@ class _UserDotState extends State<_UserDot> with SingleTickerProviderStateMixin 
   void initState() {
     super.initState();
     _pulse = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 1500))
-      ..repeat(reverse: true);
-    _scale = Tween(begin: 0.7, end: 1.4)
-        .animate(CurvedAnimation(parent: _pulse, curve: Curves.easeInOut));
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat(reverse: true);
+    _scale = Tween(
+      begin: 0.7,
+      end: 1.4,
+    ).animate(CurvedAnimation(parent: _pulse, curve: Curves.easeInOut));
   }
 
   @override
@@ -932,7 +1038,8 @@ class _UserDotState extends State<_UserDot> with SingleTickerProviderStateMixin 
           builder: (_, __) => Transform.scale(
             scale: _scale.value,
             child: Container(
-              width: 42, height: 42,
+              width: 42,
+              height: 42,
               decoration: BoxDecoration(
                 color: AppColors.tealLight.withValues(alpha: 0.18),
                 shape: BoxShape.circle,
@@ -941,16 +1048,18 @@ class _UserDotState extends State<_UserDot> with SingleTickerProviderStateMixin 
           ),
         ),
         Container(
-          width: 16, height: 16,
+          width: 16,
+          height: 16,
           decoration: BoxDecoration(
             color: AppColors.tealLight,
             shape: BoxShape.circle,
             border: Border.all(color: Colors.white, width: 2.5),
             boxShadow: [
               BoxShadow(
-                  color: AppColors.tealLight.withValues(alpha: 0.6),
-                  blurRadius: 10,
-                  spreadRadius: 1)
+                color: AppColors.tealLight.withValues(alpha: 0.6),
+                blurRadius: 10,
+                spreadRadius: 1,
+              ),
             ],
           ),
         ),
@@ -979,11 +1088,16 @@ class _PinLabel extends StatelessWidget {
             borderRadius: BorderRadius.circular(8),
             boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 5)],
           ),
-          child: Text(label,
-              style: GoogleFonts.poppins(
-                  fontSize: 10, color: Colors.white, fontWeight: FontWeight.w600),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis),
+          child: Text(
+            label,
+            style: GoogleFonts.poppins(
+              fontSize: 10,
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
         CustomPaint(
           painter: _PinTipPainter(color: color),
@@ -1018,7 +1132,8 @@ class _FloatingBtn extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 44, height: 44,
+        width: 44,
+        height: 44,
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
@@ -1033,17 +1148,24 @@ class _FloatingBtn extends StatelessWidget {
         child: loading
             ? Center(
                 child: SizedBox(
-                  width: 18, height: 18,
+                  width: 18,
+                  height: 18,
                   child: CircularProgressIndicator(
-                      strokeWidth: 2, color: AppColors.tealLight),
+                    strokeWidth: 2,
+                    color: AppColors.tealLight,
+                  ),
                 ),
               )
             : rotate != null
-                ? Transform.rotate(
-                    angle: rotate!,
-                    child: Icon(icon,
-                        color: color ?? AppColors.tealLight, size: 22))
-                : Icon(icon, color: color ?? AppColors.tealLight, size: 22),
+            ? Transform.rotate(
+                angle: rotate!,
+                child: Icon(
+                  icon,
+                  color: color ?? AppColors.tealLight,
+                  size: 22,
+                ),
+              )
+            : Icon(icon, color: color ?? AppColors.tealLight, size: 22),
       ),
     );
   }
@@ -1062,42 +1184,68 @@ class _VetCard extends StatelessWidget {
     return _DetailCardShell(
       accentColor: AppColors.tealLight,
       onClose: onClose,
-      header: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        _Avatar(url: vet.fotoUrl, color: AppColors.tealLight,
-            fallback: Icons.medical_services_rounded),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(vet.nombre ?? 'Veterinario',
-                style: GoogleFonts.poppins(
+      header: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _Avatar(
+            url: vet.fotoUrl,
+            color: AppColors.tealLight,
+            fallback: Icons.medical_services_rounded,
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  vet.nombre ?? 'Veterinario',
+                  style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.darkAlt)),
-            const SizedBox(height: 4),
-            if (vet.especialidad != null && vet.especialidad!.isNotEmpty)
-              Text(vet.especialidad!,
-                  style: GoogleFonts.poppins(
+                    color: AppColors.darkAlt,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                if (vet.especialidad != null && vet.especialidad!.isNotEmpty)
+                  Text(
+                    vet.especialidad!,
+                    style: GoogleFonts.poppins(
                       fontSize: 12,
                       color: AppColors.tealLight,
-                      fontWeight: FontWeight.w500)),
-          ]),
-        ),
-        _StatusBadge(
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          _StatusBadge(
             label: vet.disponible ? 'Disponible' : 'Ocupado',
-            color: vet.disponible ? Colors.green.shade600 : Colors.grey.shade500,
-            bg: vet.disponible ? Colors.green.shade50 : Colors.grey.shade100),
-      ]),
+            color: vet.disponible
+                ? Colors.green.shade600
+                : Colors.grey.shade500,
+            bg: vet.disponible ? Colors.green.shade50 : Colors.grey.shade100,
+          ),
+        ],
+      ),
       chips: [
         if (vet.experiencia != null)
-          _Chip(icon: Icons.workspace_premium_rounded,
-              label: '${vet.experiencia} años', color: AppColors.tealLight),
+          _Chip(
+            icon: Icons.workspace_premium_rounded,
+            label: '${vet.experiencia} años',
+            color: AppColors.tealLight,
+          ),
         if (vet.tarifa != null)
-          _Chip(icon: Icons.attach_money_rounded,
-              label: '\$${vet.tarifa!.toStringAsFixed(2)}/consulta',
-              color: AppColors.green),
+          _Chip(
+            icon: Icons.attach_money_rounded,
+            label: '\$${vet.tarifa!.toStringAsFixed(2)}/consulta',
+            color: AppColors.green,
+          ),
         if (vet.telefono != null)
-          _Chip(icon: Icons.phone_rounded,
-              label: vet.telefono!, color: AppColors.orange),
+          _Chip(
+            icon: Icons.phone_rounded,
+            label: vet.telefono!,
+            color: AppColors.orange,
+          ),
       ],
       extra: vet.direccion != null && vet.direccion!.isNotEmpty
           ? _AddressRow(text: vet.direccion!)
@@ -1119,39 +1267,64 @@ class _ProductorCard extends StatelessWidget {
     return _DetailCardShell(
       accentColor: AppColors.vetGreen,
       onClose: onClose,
-      header: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        _Avatar(url: p.fotoUrl, color: AppColors.vetGreen,
-            fallback: Icons.agriculture_rounded),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(p.nombre,
-                style: GoogleFonts.poppins(
+      header: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _Avatar(
+            url: p.fotoUrl,
+            color: AppColors.vetGreen,
+            fallback: Icons.agriculture_rounded,
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  p.nombre,
+                  style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.darkAlt)),
-            const SizedBox(height: 4),
-            Text('Productor pecuario',
-                style: GoogleFonts.poppins(
+                    color: AppColors.darkAlt,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Productor pecuario',
+                  style: GoogleFonts.poppins(
                     fontSize: 12,
                     color: AppColors.vetGreen,
-                    fontWeight: FontWeight.w500)),
-          ]),
-        ),
-        _StatusBadge(
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          _StatusBadge(
             label: 'En venta',
             color: AppColors.vetGreen,
-            bg: AppColors.vetGreen.withValues(alpha: 0.1)),
-      ]),
+            bg: AppColors.vetGreen.withValues(alpha: 0.1),
+          ),
+        ],
+      ),
       chips: [
-        _Chip(icon: Icons.pets_rounded,
-            label: '${p.totalAnimales} animales', color: AppColors.vetGreen),
+        _Chip(
+          icon: Icons.pets_rounded,
+          label: '${p.totalAnimales} animales',
+          color: AppColors.vetGreen,
+        ),
         if (p.tipoAnimales != null)
-          _Chip(icon: Icons.category_rounded,
-              label: _tipoLabel(p.tipoAnimales!), color: AppColors.orange),
+          _Chip(
+            icon: Icons.category_rounded,
+            label: _tipoLabel(p.tipoAnimales!),
+            color: AppColors.orange,
+          ),
         if (p.telefono != null)
-          _Chip(icon: Icons.phone_rounded,
-              label: p.telefono!, color: AppColors.teal),
+          _Chip(
+            icon: Icons.phone_rounded,
+            label: p.telefono!,
+            color: AppColors.teal,
+          ),
       ],
       extra: p.especiesEnVenta.isNotEmpty
           ? _EspeciesWrap(especies: p.especiesEnVenta)
@@ -1161,10 +1334,14 @@ class _ProductorCard extends StatelessWidget {
 
   String _tipoLabel(String t) {
     switch (t) {
-      case 'menores': return 'Animales menores';
-      case 'mayores': return 'Animales mayores';
-      case 'ambos':   return 'Menores y mayores';
-      default:        return t;
+      case 'menores':
+        return 'Animales menores';
+      case 'mayores':
+        return 'Animales mayores';
+      case 'ambos':
+        return 'Menores y mayores';
+      default:
+        return t;
     }
   }
 }
@@ -1196,13 +1373,15 @@ class _DetailCardShell extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-              color: accentColor.withValues(alpha: 0.15),
-              blurRadius: 20,
-              offset: const Offset(0, -4)),
+            color: accentColor.withValues(alpha: 0.15),
+            blurRadius: 20,
+            offset: const Offset(0, -4),
+          ),
           BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
-              blurRadius: 20,
-              offset: const Offset(0, -2)),
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 20,
+            offset: const Offset(0, -2),
+          ),
         ],
       ),
       child: Column(
@@ -1213,7 +1392,9 @@ class _DetailCardShell extends StatelessWidget {
             height: 4,
             decoration: BoxDecoration(
               color: accentColor,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(24),
+              ),
             ),
           ),
           Padding(
@@ -1227,10 +1408,12 @@ class _DetailCardShell extends StatelessWidget {
                     Expanded(
                       child: Center(
                         child: Container(
-                          width: 36, height: 4,
+                          width: 36,
+                          height: 4,
                           decoration: BoxDecoration(
-                              color: Colors.grey.shade200,
-                              borderRadius: BorderRadius.circular(2)),
+                            color: Colors.grey.shade200,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
                         ),
                       ),
                     ),
@@ -1239,9 +1422,14 @@ class _DetailCardShell extends StatelessWidget {
                       child: Container(
                         padding: const EdgeInsets.all(5),
                         decoration: BoxDecoration(
-                            color: Colors.grey.shade100, shape: BoxShape.circle),
-                        child: Icon(Icons.close_rounded,
-                            size: 15, color: Colors.grey.shade500),
+                          color: Colors.grey.shade100,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.close_rounded,
+                          size: 15,
+                          color: Colors.grey.shade500,
+                        ),
                       ),
                     ),
                   ],
@@ -1252,10 +1440,7 @@ class _DetailCardShell extends StatelessWidget {
                   const SizedBox(height: 12),
                   Wrap(spacing: 6, runSpacing: 6, children: chips),
                 ],
-                if (extra != null) ...[
-                  const SizedBox(height: 10),
-                  extra!,
-                ],
+                if (extra != null) ...[const SizedBox(height: 10), extra!],
               ],
             ),
           ),
@@ -1273,12 +1458,17 @@ class _Avatar extends StatelessWidget {
   final String? url;
   final Color color;
   final IconData fallback;
-  const _Avatar({required this.url, required this.color, required this.fallback});
+  const _Avatar({
+    required this.url,
+    required this.color,
+    required this.fallback,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 62, height: 62,
+      width: 62,
+      height: 62,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: color.withValues(alpha: 0.08),
@@ -1286,9 +1476,12 @@ class _Avatar extends StatelessWidget {
       ),
       child: ClipOval(
         child: url != null && url!.isNotEmpty
-            ? Image.network(url!, fit: BoxFit.cover,
+            ? Image.network(
+                url!,
+                fit: BoxFit.cover,
                 errorBuilder: (_, __, ___) =>
-                    Icon(fallback, color: color, size: 28))
+                    Icon(fallback, color: color, size: 28),
+              )
             : Icon(fallback, color: color, size: 28),
       ),
     );
@@ -1299,16 +1492,28 @@ class _StatusBadge extends StatelessWidget {
   final String label;
   final Color color;
   final Color bg;
-  const _StatusBadge({required this.label, required this.color, required this.bg});
+  const _StatusBadge({
+    required this.label,
+    required this.color,
+    required this.bg,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(10)),
-      child: Text(label,
-          style: GoogleFonts.poppins(
-              fontSize: 10, fontWeight: FontWeight.w700, color: color)),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        label,
+        style: GoogleFonts.poppins(
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          color: color,
+        ),
+      ),
     );
   }
 }
@@ -1327,13 +1532,21 @@ class _Chip extends StatelessWidget {
         color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(10),
       ),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Icon(icon, size: 13, color: color),
-        const SizedBox(width: 5),
-        Text(label,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: color),
+          const SizedBox(width: 5),
+          Text(
+            label,
             style: GoogleFonts.poppins(
-                fontSize: 11, color: color, fontWeight: FontWeight.w600)),
-      ]),
+              fontSize: 11,
+              color: color,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -1344,16 +1557,20 @@ class _AddressRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(children: [
-      Icon(Icons.location_on_rounded, size: 14, color: AppColors.orange),
-      const SizedBox(width: 6),
-      Expanded(
-        child: Text(text,
+    return Row(
+      children: [
+        Icon(Icons.location_on_rounded, size: 14, color: AppColors.orange),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            text,
             style: GoogleFonts.poppins(fontSize: 11, color: AppColors.grey),
             maxLines: 2,
-            overflow: TextOverflow.ellipsis),
-      ),
-    ]);
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -1366,31 +1583,56 @@ class _EspeciesWrap extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Disponibles para venta:',
-            style: GoogleFonts.poppins(
-                fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.grey)),
+        Text(
+          'Disponibles para venta:',
+          style: GoogleFonts.poppins(
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            color: AppColors.grey,
+          ),
+        ),
         const SizedBox(height: 6),
         Wrap(
-          spacing: 6, runSpacing: 6,
-          children: especies.map((e) => Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(
-              color: AppColors.vetGreen.withValues(alpha: 0.07),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                  color: AppColors.vetGreen.withValues(alpha: 0.2), width: 1),
-            ),
-            child: Row(mainAxisSize: MainAxisSize.min, children: [
-              Text(e.especie,
-                  style: GoogleFonts.poppins(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.vetGreen)),
-              Text(' · ${e.numeroAnimales}',
-                  style: GoogleFonts.poppins(
-                      fontSize: 11, color: AppColors.grey)),
-            ]),
-          )).toList(),
+          spacing: 6,
+          runSpacing: 6,
+          children: especies
+              .map(
+                (e) => Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.vetGreen.withValues(alpha: 0.07),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: AppColors.vetGreen.withValues(alpha: 0.2),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        e.especie,
+                        style: GoogleFonts.poppins(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.vetGreen,
+                        ),
+                      ),
+                      Text(
+                        ' · ${e.numeroAnimales}',
+                        style: GoogleFonts.poppins(
+                          fontSize: 11,
+                          color: AppColors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+              .toList(),
         ),
       ],
     );
@@ -1414,32 +1656,43 @@ class _EmptyState extends StatelessWidget {
           borderRadius: BorderRadius.circular(22),
           boxShadow: [
             BoxShadow(
-                color: Colors.black.withValues(alpha: 0.08), blurRadius: 16)
+              color: Colors.black.withValues(alpha: 0.08),
+              blurRadius: 16,
+            ),
           ],
         ),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppColors.tealLight.withValues(alpha: 0.08),
-              shape: BoxShape.circle,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.tealLight.withValues(alpha: 0.08),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.location_off_rounded,
+                size: 38,
+                color: AppColors.tealLight,
+              ),
             ),
-            child: Icon(Icons.location_off_rounded,
-                size: 38, color: AppColors.tealLight),
-          ),
-          const SizedBox(height: 14),
-          Text('Sin ubicaciones aún',
+            const SizedBox(height: 14),
+            Text(
+              'Sin ubicaciones aún',
               style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.darkAlt)),
-          const SizedBox(height: 6),
-          Text(
-            'Veterinarios y productores\naún no han registrado su ubicación.',
-            textAlign: TextAlign.center,
-            style: GoogleFonts.poppins(fontSize: 13, color: AppColors.grey),
-          ),
-        ]),
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: AppColors.darkAlt,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Veterinarios y productores\naún no han registrado su ubicación.',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.poppins(fontSize: 13, color: AppColors.grey),
+            ),
+          ],
+        ),
       ),
     );
   }

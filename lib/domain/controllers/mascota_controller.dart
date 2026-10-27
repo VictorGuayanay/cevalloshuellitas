@@ -1,4 +1,4 @@
-﻿// mascota_controller.dart — Controlador de mascotas.
+// mascota_controller.dart — Controlador de mascotas.
 //
 // Gestiona tres listas de mascotas:
 //   - mascotas: las del usuario autenticado (con Realtime)
@@ -20,26 +20,26 @@ class MascotaController extends ChangeNotifier {
   final MascotaService _mascotaService = MascotaService();
 
   // ── Estado interno ─────────────────────────────────────────────────────────
-  List<MascotaModel> _mascotas          = []; // mascotas del usuario actual
-  List<MascotaModel> _mascotasPerdidas  = []; // mascotas con estado 'perdido'
-  List<MascotaModel> _todasLasMascotas  = []; // todas (para el veterinario)
+  List<MascotaModel> _mascotas = []; // mascotas del usuario actual
+  List<MascotaModel> _mascotasPerdidas = []; // mascotas con estado 'perdido'
+  List<MascotaModel> _todasLasMascotas = []; // todas (para el veterinario)
 
-  bool _isLoading        = false; // operación principal en curso
+  bool _isLoading = false; // operación principal en curso
   bool _isLoadingPerdidas = false; // carga de mascotas perdidas en curso
   String? _errorMessage;
 
   // Canales Realtime de Supabase.
-  RealtimeChannel? _canalPerdidas;    // escucha mascotas perdidas
+  RealtimeChannel? _canalPerdidas; // escucha mascotas perdidas
   RealtimeChannel? _canalMisMascotas; // escucha mascotas del usuario
-  String? _usuarioIdSuscrito;         // evita suscribir el mismo usuario dos veces
+  String? _usuarioIdSuscrito; // evita suscribir el mismo usuario dos veces
 
   // ── Getters ────────────────────────────────────────────────────────────────
-  List<MascotaModel> get mascotas         => _mascotas;
+  List<MascotaModel> get mascotas => _mascotas;
   List<MascotaModel> get mascotasPerdidas => _mascotasPerdidas;
   List<MascotaModel> get todasLasMascotas => _todasLasMascotas;
-  bool get isLoading         => _isLoading;
+  bool get isLoading => _isLoading;
   bool get isLoadingPerdidas => _isLoadingPerdidas;
-  String? get errorMessage   => _errorMessage;
+  String? get errorMessage => _errorMessage;
 
   // ── Mis Mascotas (usuario autenticado) ────────────────────────────────────
 
@@ -156,11 +156,12 @@ class MascotaController extends ChangeNotifier {
             _mascotaService
                 .obtenerMascotasPorUsuario(usuarioId)
                 .then((lista) {
-              _mascotas = lista;
-              notifyListeners();
-            }).catchError((e) {
-              debugPrint('Error recargar mis mascotas reconexión: $e');
-            });
+                  _mascotas = lista;
+                  notifyListeners();
+                })
+                .catchError((e) {
+                  debugPrint('Error recargar mis mascotas reconexión: $e');
+                });
           }
         });
   }
@@ -202,11 +203,14 @@ class MascotaController extends ChangeNotifier {
           table: 'mascotas',
           callback: (payload) async {
             final nuevo = payload.newRecord;
-            if (nuevo['masc_estado']?.toString().toLowerCase() != 'perdido') return;
+            if (nuevo['masc_estado']?.toString().toLowerCase() != 'perdido')
+              return;
             try {
               final row = await Supabase.instance.client
                   .from('mascotas')
-                  .select('*, usuarios(usua_nombre, usua_telefono, usua_foto_url)')
+                  .select(
+                    '*, usuarios(usua_nombre, usua_telefono, usua_foto_url)',
+                  )
                   .eq('masc_id', nuevo['masc_id'].toString())
                   .maybeSingle();
               if (row != null) {
@@ -226,7 +230,7 @@ class MascotaController extends ChangeNotifier {
           schema: 'public',
           table: 'mascotas',
           callback: (payload) async {
-            final nuevo  = payload.newRecord;
+            final nuevo = payload.newRecord;
             final mascId = nuevo['masc_id']?.toString() ?? '';
             if (mascId.isEmpty) return;
             final estado = nuevo['masc_estado']?.toString().toLowerCase() ?? '';
@@ -236,12 +240,16 @@ class MascotaController extends ChangeNotifier {
               try {
                 final row = await Supabase.instance.client
                     .from('mascotas')
-                    .select('*, usuarios(usua_nombre, usua_telefono, usua_foto_url)')
+                    .select(
+                      '*, usuarios(usua_nombre, usua_telefono, usua_foto_url)',
+                    )
                     .eq('masc_id', mascId)
                     .maybeSingle();
                 if (row != null) {
                   final model = MascotaModel.fromJson(row);
-                  final idx = _mascotasPerdidas.indexWhere((m) => m.id == mascId);
+                  final idx = _mascotasPerdidas.indexWhere(
+                    (m) => m.id == mascId,
+                  );
                   if (idx != -1) {
                     _mascotasPerdidas[idx] = model;
                   } else {
@@ -276,12 +284,15 @@ class MascotaController extends ChangeNotifier {
           debugPrint('Canal mascotas_perdidas: $status ${error ?? ""}');
           if (status == 'SUBSCRIBED') {
             // Recargar al reconectar.
-            _mascotaService.obtenerMascotasPerdidas().then((lista) {
-              _mascotasPerdidas = lista;
-              notifyListeners();
-            }).catchError((e) {
-              debugPrint('Error recargar perdidas reconexión: $e');
-            });
+            _mascotaService
+                .obtenerMascotasPerdidas()
+                .then((lista) {
+                  _mascotasPerdidas = lista;
+                  notifyListeners();
+                })
+                .catchError((e) {
+                  debugPrint('Error recargar perdidas reconexión: $e');
+                });
           }
         });
   }
@@ -320,9 +331,9 @@ class MascotaController extends ChangeNotifier {
       // Si se creó directamente como perdida, notificar a todos.
       if (nueva.estado.toLowerCase() == 'perdido') {
         FcmService.instance.notificarMascotaPerdidaBroadcast(
-          mascotaId:     nueva.id,
+          mascotaId: nueva.id,
           mascotaNombre: nueva.nombre,
-          duenioId:      nueva.usuarioId,
+          duenioId: nueva.usuarioId,
         );
       }
 
@@ -334,7 +345,8 @@ class MascotaController extends ChangeNotifier {
       if (msg.contains('violates')) {
         _errorMessage = 'Error de validación en la base de datos: $msg';
       } else if (msg.contains('null value')) {
-        _errorMessage = 'Falta un campo requerido. Revisa los datos ingresados.';
+        _errorMessage =
+            'Falta un campo requerido. Revisa los datos ingresados.';
       } else {
         _errorMessage = 'Error al guardar la mascota: $msg';
       }
@@ -355,8 +367,7 @@ class MascotaController extends ChangeNotifier {
 
     // Capturamos el estado anterior antes de hacer el update.
     final estadoAnterior = _mascotas
-        .firstWhere((m) => m.id == mascota.id,
-            orElse: () => mascota)
+        .firstWhere((m) => m.id == mascota.id, orElse: () => mascota)
         .estado
         .toLowerCase();
 
@@ -373,9 +384,9 @@ class MascotaController extends ChangeNotifier {
       if (actualizada.estado.toLowerCase() == 'perdido' &&
           estadoAnterior != 'perdido') {
         FcmService.instance.notificarMascotaPerdidaBroadcast(
-          mascotaId:     actualizada.id,
+          mascotaId: actualizada.id,
           mascotaNombre: actualizada.nombre,
-          duenioId:      actualizada.usuarioId,
+          duenioId: actualizada.usuarioId,
         );
       }
 
@@ -411,7 +422,7 @@ class MascotaController extends ChangeNotifier {
     try {
       await _mascotaService.eliminarMascota(mascotaId);
       // Eliminar de todas las listas para mantener la UI consistente.
-      _mascotas.removeWhere((m)         => m.id == mascotaId);
+      _mascotas.removeWhere((m) => m.id == mascotaId);
       _mascotasPerdidas.removeWhere((m) => m.id == mascotaId);
       _todasLasMascotas.removeWhere((m) => m.id == mascotaId);
       _isLoading = false;

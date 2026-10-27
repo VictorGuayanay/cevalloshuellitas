@@ -25,8 +25,9 @@ class SolicitudRolService {
 
     if (existente != null) {
       throw Exception(
-          'Ya tienes una solicitud pendiente. '
-          'Espera la respuesta del administrador.');
+        'Ya tienes una solicitud pendiente. '
+        'Espera la respuesta del administrador.',
+      );
     }
 
     // 2. Insertar la solicitud y retornar la fila creada.

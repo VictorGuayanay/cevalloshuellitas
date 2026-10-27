@@ -51,11 +51,12 @@ class NoticiaService {
     final ruta = 'noticias/$fileName';
 
     try {
-      await _client.storage.from('noticias_imagenes').upload(
+      await _client.storage
+          .from('noticias_imagenes')
+          .upload(
             ruta,
             imagen,
-            fileOptions:
-                const FileOptions(cacheControl: '3600', upsert: false),
+            fileOptions: const FileOptions(cacheControl: '3600', upsert: false),
           );
     } catch (e) {
       debugPrint('Error al subir imagen de noticia: $e');
