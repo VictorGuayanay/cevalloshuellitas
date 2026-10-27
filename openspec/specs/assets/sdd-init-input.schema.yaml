@@ -1,0 +1,29 @@
+# openspec/specs/assets/sdd-init-input.schema.yaml
+# Written by sdd-init. Documents the schema for non-interactive sdd-init runs.
+#
+# To use sdd-init in non-interactive mode (no TTY available), create a sibling
+# file named `.sdd-init-input.yaml` (same directory) following this exact schema.
+# sdd-init will read it instead of asking the user.
+
+standards:
+  documented: true | false       # required
+
+  # If documented = true, list the docs to read
+  docs_paths:
+    - "docs/TEAM_CONVENTIONS.md"
+    - "CONTRIBUTING.md"
+  inherited_from_root: true | false   # only meaningful in monorepo sub-projects
+
+  # If documented = false, choose ONE inference source
+  inference_source: "code" | "similar_project" | "corporate_only" | "verbal"
+
+  # Required only when inference_source = similar_project
+  similar_project_path: "../path/to/similar-project"
+
+  # Required only when inference_source = verbal
+  verbal_description: |
+    Multi-line description of the project's conventions.
+    Example: we use kebab-case for filenames, snake_case for variables, etc.
+
+# Future versions of sdd-init may add more interactive sections here.
+# Each section will be optional unless this skill version requires it.

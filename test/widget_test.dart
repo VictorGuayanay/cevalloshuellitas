@@ -41,9 +41,7 @@ class _RutaRaiz extends StatelessWidget {
               body: Center(child: Text('Panel administrador')),
             );
           }
-          return const Scaffold(
-            body: Center(child: Text('Inicio de la app')),
-          );
+          return const Scaffold(body: Center(child: Text('Inicio de la app')));
         }
         return const Scaffold(
           body: Center(child: Text('Inicia sesión para continuar')),
@@ -89,8 +87,9 @@ void main() {
       // Estado C: sesión administradora → panel de administración.
       when(() => authController.isInitializing).thenReturn(false);
       when(() => authController.isAuthenticated).thenReturn(true);
-      when(() => authController.currentUser)
-          .thenReturn(buildUsuarioModel(rol: 'administrador'));
+      when(
+        () => authController.currentUser,
+      ).thenReturn(buildUsuarioModel(rol: 'administrador'));
       await tester.pumpWidget(
         ChangeNotifierProvider<AuthController>.value(
           value: authController,

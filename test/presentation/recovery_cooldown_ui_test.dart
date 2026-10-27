@@ -5,9 +5,12 @@
 //   - banner de error anunciado: Semantics(liveRegion: true) + tokens
 //     AppColors.red/redDark/redBg (contraste redDark sobre redBg verificado
 //     manualmente = 6.14:1 ≥ 4.5, R1 UI/UX);
-//   - botón de reenvío deshabilitado con cuenta regresiva 'Reenviar en N s'
+//   - botón de reenvío deshabilitado con cuenta regresiva 'Reintentar en N s'
 //     mientras `!puedeReenviarCodigo` (ERR-07, R3);
-//   - enlace "Enviar de nuevo" con target táctil ≥ 44 px (R4).
+//   - botón "Reenviar enlace" con target táctil ≥ 44 px tras éxito (R4).
+//
+// Re-pin sancionado (AMD-2026-10-23-05 + decisión user-validated RST-DD-2):
+// 'Enviar código' → 'Restablecer contraseña'; 'Reenviar en N s' → 'Reintentar en N s'.
 
 import 'package:aplicacion/core/app_colors.dart';
 import 'package:aplicacion/domain/controllers/auth_controller.dart';
@@ -21,9 +24,23 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../auth/mocks.dart';
 
+/// Espera hasta que [finder] encuentre al menos un widget, con timeout.
+Future<void> waitForWidget(
+  WidgetTester tester,
+  Finder finder, {
+  Duration timeout = const Duration(seconds: 5),
+}) async {
+  final stopwatch = Stopwatch()..start();
+  while (stopwatch.elapsed < timeout) {
+    if (tester.any(finder)) return;
+    await tester.pump(const Duration(milliseconds: 50));
+  }
+  // Último intento para fallar con mensaje claro
+  expect(tester.any(finder), isTrue, reason: 'Timeout esperando $finder');
+}
+
 void main() {
   late MockAuthService mockAuthService;
-  late AuthController controller;
 
   setUpAll(() {
     // Sin fetching en tests: google_fonts no debe hacer HTTP al pintar.
@@ -32,15 +49,16 @@ void main() {
 
   setUp(() {
     mockAuthService = MockAuthService();
-    controller = AuthController(
-      authService: mockAuthService,
-      tokenPush: FakeTokenPushPort(),
-    );
   });
 
   testWidgets(
     'banner liveRegion+tokens, reenvío deshabilitado con countdown y link ≥44 px',
     (tester) async {
+      final controller = AuthController(
+        authService: mockAuthService,
+        tokenPush: FakeTokenPushPort(),
+      );
+
       // GIVEN un login fallido dejó el banner de error visible
       when(
         () => mockAuthService.signIn(
@@ -52,8 +70,8 @@ void main() {
       );
 
       await tester.pumpWidget(
-        ChangeNotifierProvider<AuthController>(
-          create: (_) => controller,
+        ChangeNotifierProvider<AuthController>.value(
+          value: controller,
           child: const MaterialApp(home: LoginScreen()),
         ),
       );
@@ -98,12 +116,6 @@ void main() {
       final textoBanner = tester.widget<Text>(find.text(mensaje));
       expect(textoBanner.style?.color, AppColors.redDark);
 
-      // GIVEN un cooldown activo (envío de código exitoso)
-      when(
-        () => mockAuthService.enviarRecuperacionContrasena('ana@test.local'),
-      ).thenAnswer((_) async {});
-      await controller.recuperarContrasena('ana@test.local');
-
       // El formulario de recuperación parte del correo del login.
       await tester.enterText(
         find.byType(TextFormField).first,
@@ -119,39 +131,77 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 350));
 
-      // THEN la acción de reenvío está deshabilitada mostrando la cuenta
-      // regresiva 'Reenviar en N s' (ERR-07, R3).
-      await tester.pump();
-      final etiqueta = 'Reenviar en ${controller.cooldownRestante.inSeconds} s';
+      // THEN la acción principal muestra "Restablecer contraseña" (re-pin RST-01)
+      expect(find.text('Restablecer contraseña'), findsOneWidget);
+      expect(find.text('Enviar código'), findsNothing);
+
+      // GIVEN un envío exitoso
+      when(
+        () => mockAuthService.enviarRecuperacionContrasena('ana@test.local'),
+      ).thenAnswer((_) async {});
+
+      // WHEN tap en "Restablecer contraseña" → éxito → muestra mensaje M
+      await tester.tap(find.text('Restablecer contraseña'));
+      // Esperamos a que la operación async complete y el widget se reconstruya
+      await waitForWidget(
+        tester,
+        find.text(
+          'Si el correo existe, recibirás un enlace para restablecer tu '
+          'contraseña. Revisa tu correo y la carpeta de spam.',
+        ),
+      );
+
+      // THEN mensaje anti-enumeración M visible
+      const mensajeM =
+          'Si el correo existe, recibirás un enlace para restablecer tu '
+          'contraseña. Revisa tu correo y la carpeta de spam.';
+      expect(find.text(mensajeM), findsOneWidget);
+
+      // THEN durante cooldown, el botón de reenvío muestra "Reintentar en N s"
+      // (re-pin RST-DD-2: 'Reenviar en N s' → 'Reintentar en N s')
+      await waitForWidget(
+        tester,
+        find.widgetWithText(
+          ElevatedButton,
+          'Reintentar en ${controller.cooldownRestante.inSeconds} s',
+        ),
+      );
+
+      // El cooldown empieza en 60s (iniciarCooldownReenvio lo setea inmediatamente)
+      expect(controller.cooldownRestante.inSeconds, greaterThan(0));
+
+      final etiqueta =
+          'Reintentar en ${controller.cooldownRestante.inSeconds} s';
       expect(
         find.widgetWithText(ElevatedButton, etiqueta),
         findsOneWidget,
-        reason: 'el botón debe mostrar el countdown del cooldown',
+        reason:
+            'el botón debe mostrar el countdown del cooldown con "Reintentar"',
       );
-      final botonReenvio = tester.widget<ElevatedButton>(
+      final botonReintento = tester.widget<ElevatedButton>(
         find.widgetWithText(ElevatedButton, etiqueta),
       );
-      expect(botonReenvio.onPressed, isNull);
+      expect(botonReintento.onPressed, isNull);
       expect(
-        find.widgetWithText(ElevatedButton, 'Enviar código'),
+        find.widgetWithText(ElevatedButton, 'Restablecer contraseña'),
         findsNothing,
       );
 
-      // THEN a los 61 s se habilita de nuevo con su label original.
+      // THEN a los 61 s se habilita de nuevo con su label "Reenviar enlace".
       await tester.pump(const Duration(seconds: 61));
+      await tester.pumpAndSettle();
       expect(
-        find.widgetWithText(ElevatedButton, 'Enviar código'),
+        find.widgetWithText(ElevatedButton, 'Reenviar enlace'),
         findsOneWidget,
       );
       final botonHabilitado = tester.widget<ElevatedButton>(
-        find.widgetWithText(ElevatedButton, 'Enviar código'),
+        find.widgetWithText(ElevatedButton, 'Reenviar enlace'),
       );
       expect(botonHabilitado.onPressed, isNotNull);
 
-      // Limpieza: desmontar el árbol — ChangeNotifierProvider es DUEÑO del
-      // controlador (create:) y lo dispone al desmontar, cancelando el timer
-      // del cooldown (regla de duración ERR-07: cero timers tras dispose).
+      // Limpieza
       await tester.pumpWidget(const SizedBox());
+      controller.dispose();
     },
   );
 }

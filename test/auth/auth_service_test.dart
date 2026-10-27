@@ -22,6 +22,8 @@ void main() {
     // PostgrestBuilder implementa Future: 'await' llama a then(onValue).
     // any() sobre ese callback exige un fallback con el mismo tipo funcional.
     registerFallbackValue((Map<String, dynamic> value) => value);
+    // Fallback para UserAttributes (se usa en updateUser / restablecerContrasena)
+    registerFallbackValue(UserAttributes());
   });
 
   setUp(() {
@@ -31,6 +33,71 @@ void main() {
     mockFilterBuilder = MockPostgrestFilterBuilder();
     mockTransformBuilder = MockPostgrestTransformBuilder();
     when(() => mockClient.auth).thenReturn(mockAuth);
+  });
+
+  group('enviarRecuperacionContrasena', () {
+    test(
+      'llama a resetPasswordForEmail con email recortado y redirectTo huellitas://password-recovery (RST-03)',
+      () async {
+        // Arrange
+        when(
+          () => mockAuth.resetPasswordForEmail(
+            any(),
+            redirectTo: any(named: 'redirectTo'),
+            captchaToken: any(named: 'captchaToken'),
+          ),
+        ).thenAnswer((_) async {});
+
+        final servicio = AuthService(client: mockClient);
+
+        // Act
+        await servicio.enviarRecuperacionContrasena(' a@b.c ');
+
+        // Assert
+        verify(
+          () => mockAuth.resetPasswordForEmail(
+            'a@b.c',
+            redirectTo: 'huellitas://password-recovery',
+            captchaToken: null,
+          ),
+        ).called(1);
+      },
+    );
+  });
+
+  group('restablecerContrasena', () {
+    test(
+      'llama a updateUser con UserAttributes(password) exactamente una vez (RST-11)',
+      () async {
+        // Arrange
+        when(
+          () => mockAuth.updateUser(
+            any(),
+            emailRedirectTo: any(named: 'emailRedirectTo'),
+          ),
+        ).thenAnswer(
+          (_) async => UserResponse.fromJson({
+            'id': 'uid-test-001',
+            'email': 'ana@test.local',
+            'aud': 'authenticated',
+            'created_at': '2026-01-01T00:00:00.000Z',
+          }),
+        );
+
+        final servicio = AuthService(client: mockClient);
+
+        // Act
+        await servicio.restablecerContrasena('nueva123');
+
+        // Assert
+        verify(
+          () => mockAuth.updateUser(
+            UserAttributes(password: 'nueva123'),
+            emailRedirectTo: null,
+          ),
+        ).called(1);
+      },
+    );
   });
 
   group('signIn', () {

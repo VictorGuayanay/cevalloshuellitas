@@ -21,6 +21,8 @@ import 'domain/controllers/admin_controller.dart';
 import 'domain/controllers/productor_controller.dart';
 import 'presentation/screens/login/login_screen.dart';
 import 'presentation/screens/login/register_screen.dart';
+import 'presentation/screens/login/recuperar_contrasena_screen.dart';
+import 'presentation/screens/login/nueva_contrasena_screen.dart';
 import 'presentation/screens/usuario/home_screen.dart';
 import 'presentation/screens/usuario/mis_mascotas_screen.dart';
 import 'presentation/screens/usuario/servicios_screen.dart';
@@ -119,15 +121,21 @@ class MyApp extends StatelessWidget {
   static final GlobalKey<NavigatorState> navigatorKey =
       GlobalKey<NavigatorState>();
 
-  /// Programa (post-frame) el reset de la pila de navegación a `/login`
-  /// tras un cierre de sesión (SES-02). Sólo navega si la pila puede
+  /// Programa (post-frame) el reset de la pila de navegación a [ruta]
+  /// tras un cierre de sesión (SES-02) o enlace inválido (RST-09).
+  /// Si [forzar] es false (default), sólo navega si la pila puede
   /// poppear (`canPop()`): en la raíz no hay nada que desapilar y el
   /// `Consumer` raíz ya renderiza `LoginScreen` desde el estado.
-  static void programarResetDePila() {
+  /// Si [forzar] es true, navega incluso sin profundidad (caso en caliente
+  /// RST-09: reset forzado a `/login` aunque la pila esté en raíz).
+  static void programarResetDePila({
+    String ruta = '/login',
+    bool forzar = false,
+  }) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final nav = navigatorKey.currentState;
-      if (nav != null && nav.canPop()) {
-        nav.pushNamedAndRemoveUntil('/login', (route) => false);
+      if (nav != null && (forzar || nav.canPop())) {
+        nav.pushNamedAndRemoveUntil(ruta, (route) => false);
       }
     });
   }
@@ -147,11 +155,21 @@ class MyApp extends StatelessWidget {
       // Pantalla inicial: decidida dinámicamente según el estado de auth.
       home: Consumer<AuthController>(
         builder: (context, authController, _) {
+          // RST-09: consume-once — tras un enlace de recuperación inválido,
+          // programar reset de pila forzado a `/login`.
+          if (authController.consumirAvisoEnlaceInvalido()) {
+            MyApp.programarResetDePila(ruta: '/login', forzar: true);
+          }
+
           // SES-02 (DP-P2-1): consume-once — tras un `signedOut`, programar
           // el reset de pila (post-frame, sólo si hay profundidad que poppear).
           if (authController.consumirAvisoDeCierre()) {
             MyApp.programarResetDePila();
           }
+
+          // RST-DP-1(a): modo recuperación tiene prioridad sobre sesión/home.
+          if (authController.enModoRecuperacion)
+            return const NuevaContrasenaScreen();
 
           // Mientras restauramos la sesión, mostramos el splash.
           if (authController.isInitializing) return const SplashScreen();
@@ -194,6 +212,9 @@ class MyApp extends StatelessWidget {
         '/servicios': (context) => const ServiciosScreen(),
         '/perfil': (context) => const PerfilScreen(),
         '/mapa_veterinarios': (context) => const MapaVeterinariosScreen(),
+        '/nueva_contrasena': (context) => const NuevaContrasenaScreen(),
+        '/recuperar_contrasena': (context) =>
+            const RecuperarContrasenaScreen(correoInicial: ''),
       },
     );
   }
